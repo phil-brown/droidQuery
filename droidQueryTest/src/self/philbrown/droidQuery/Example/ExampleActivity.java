@@ -23,10 +23,8 @@ import java.util.Map.Entry;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import self.philbrown.droidMail.MailOptions;
 import self.philbrown.droidProgress.Progress;
 import self.philbrown.droidProgress.ProgressOptions;
-import self.philbrown.droidMail.$Mail;
 import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.AjaxOptions;
 import self.philbrown.droidQuery.AnimationOptions;
@@ -47,7 +45,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Example Activity with droidQuery uses
+ * Example Activity shows how to use some components of 
+ * <a href="https://github.com/phil-brown/droidQuery">droidQuery</a>, an Android port of jQuery.
+ * <br>This example displays the public stream for <a href="http://app.net">App.net</a>.
  * @author Phil Brown
  *
  */
@@ -59,8 +59,8 @@ public class ExampleActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.example);
         
+        //droidQuery supports extensions/plug-ins.
         Map<String, String> extensions = null;
-        
         
         try
         {
@@ -115,9 +115,10 @@ public class ExampleActivity extends Activity
         	}
         });
         
+        //refresh the list.
         refresh();
         
-        
+        //Register a click event
         $.with(this, R.id.btn_refresh).click(new Function() {
 			@Override
 			public void invoke(Object... params) {
@@ -126,6 +127,7 @@ public class ExampleActivity extends Activity
 			}
         });
         
+        //or use the "on" method to register a longClick event.
         $.with(this, R.id.btn_longrefresh).on("longClick", new Function() {
         	@Override
 			public void invoke(Object... params) {
@@ -137,6 +139,7 @@ public class ExampleActivity extends Activity
         
 	}
 	
+	//be sure to cancel all AsyncTasks when the app is destroyed, in order to prevent memory leaks.
 	@Override
 	public void onDestroy()
 	{
@@ -145,7 +148,18 @@ public class ExampleActivity extends Activity
 	}
 	
 	/**
-	 * Refresh List
+	 * Refreshes the list of cells containing App.net messages. This <em>ListView</em> is actually
+	 * a <em>scrollable LinearLayout</em>, and is assembled in much the same way a layout would be
+	 * made using <em>JavaScript</em>, with the <em>CSS3</em> attribute <em>overscroll-y: scroll</em>.
+	 * <br>
+	 * For this example, the public stream is retrieved using <em>ajax</em>, and for each message
+	 * received, a new cell is created. For each cell, a new <em>ajax</em> request is started to
+	 * retrieve the thumbnail image for the user. As all these events occur on a background thread, the
+	 * main ScrollView is populated with cells and displayed to the user.
+	 * <br>
+	 * The stream <em>JSON</em> request is performed in a <em>global ajax</em> request, which will
+	 * trigger the global start and stop events (which show a progress indicator, using a droidQuery
+	 * extension). The image get requests are not global, so they will not trigger global events.
 	 */
 	public void refresh()
 	{

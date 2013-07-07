@@ -28,19 +28,26 @@ import android.util.Log;
 import android.view.animation.Interpolator;
 
 /**
- * Effects (Animation) Options for droidQuery
+ * Effect (Animation) Options for droidQuery
  * @author Phil Brown
- *
  */
 public class AnimationOptions 
 {
+	/** Contains the methods found in this Class */
 	private static Method[] methods = AnimationOptions.class.getMethods();
 
+	/**
+	 * Default constructor
+	 */
 	public AnimationOptions()
 	{
 		
 	}
 	
+	/**
+	 * Constructor. Accepts a key-value mapping of animation options.
+	 * @param options a key-value mapping of animation options.
+	 */
 	public AnimationOptions(Map<String, Object> options)
 	{
 		this();
@@ -58,6 +65,12 @@ public class AnimationOptions
 		}
 	}
 	
+	/**
+	 * Constructor. Accepts a JSONObject that maps options to their values.
+	 * @param options the JSONObject that contains the options.
+	 * @throws JSONException if the JSONObject is malformed
+	 * @throws Throwable if another error occurs
+	 */
 	public AnimationOptions(JSONObject options) throws JSONException, Throwable
 	{
 		@SuppressWarnings("unchecked")
@@ -88,21 +101,43 @@ public class AnimationOptions
 	    }
 	}
 	
+	/**
+	 * Constructor. Accepts a JSON string that maps options to their values.
+	 * @param options the JSON string that contains the options.
+	 * @throws JSONException if the JSON string is malformed
+	 * @throws Throwable if another error occurs
+	 */
 	public AnimationOptions(String json) throws JSONException, Throwable
 	{
 		this(new JSONObject(json));
 	}
 	
+	/**
+	 * Creates a new AnimationOptions Object
+	 * @return
+	 */
 	public static AnimationOptions create()
 	{
 		return new AnimationOptions();
 	}
 	
+	/**
+	 * Creates a new AnimationOptions Object
+	 * @param options
+	 * @return
+	 * @see #AnimationOptions(Map)
+	 */
 	public static AnimationOptions create(Map<String, Object> options)
 	{
 		return new AnimationOptions(options);
 	}
 	
+	/**
+	 * Creates a new AnimationOptions Object
+	 * @param json
+	 * @return
+	 * @see #AnimationOptions(JSONObject)
+	 */
 	public static AnimationOptions create(JSONObject json)
 	{
 		try {
@@ -112,6 +147,12 @@ public class AnimationOptions
 		}
 	}
 	
+	/**
+	 * Creates a new AnimationOptions Object
+	 * @param json
+	 * @return
+	 * @see #AnimationOptions(String)
+	 */
 	public static AnimationOptions create(String json)
 	{
 		try {
@@ -122,10 +163,20 @@ public class AnimationOptions
 	}
 	
 	/**
-	 * determines how long the animation will run in milliseconds. Default is 400.
+	 * Determines how long the animation will run in milliseconds. Default is 400.
 	 */
 	private long duration = 400;
+	
+	/**
+	 * @return the length of time an animation will run in milliseconds.
+	 */
 	public long duration() { return duration; }
+	
+	/**
+	 * Sets the length of time an animation will run, in milliseconds
+	 * @param duration the length of time, in milliseconds, that the animation will run
+	 * @return this
+	 */
 	public AnimationOptions duration(long duration)
 	{
 		this.duration = duration;
@@ -133,13 +184,38 @@ public class AnimationOptions
 	}
 	
 	/**
-	 * indicates which function to use for the transition. Default is Linear.
+	 * Indicates which function to use for the transition. Default is Linear.
 	 */
 	private $.Easing easing = $.Easing.LINEAR;
+	/**
+	 * @return the Easing function that will be used to animate the view
+	 */
 	public $.Easing easing() { return easing; }
+	
+	/**
+	 * Set the Easing type that will be used to animate the view
+	 * @param easing
+	 * @return
+	 */
 	public AnimationOptions easing($.Easing easing)
 	{
 		this.easing = easing;
+		return this;
+	}
+	
+	/**
+	 * Set the Easing type that will be used to animate the view. If the given String
+	 * does not match with an Easing type, the easing type is set to Linear.
+	 * @param easing
+	 * @return
+	 */
+	public AnimationOptions easing(String easing)
+	{
+		this.easing = $.Easing.valueOf(easing.toUpperCase());
+		if (this.easing == null) 
+		{
+			this.easing = $.Easing.LINEAR;
+		}
 		return this;
 	}
 	
@@ -166,10 +242,18 @@ public class AnimationOptions
 //	}
 	
 	/**
-	 * custom interpolator
+	 * Custom Interpolator
 	 */
 	private Interpolator specialEasing;
+	/**
+	 * @return the custom animation interpolator
+	 */
 	public Interpolator specialEasing() { return specialEasing; }
+	/**
+	 * Set a custom animation interpolator
+	 * @param specialEasing the interpolator
+	 * @return this
+	 */
 	public AnimationOptions specialEasing(Interpolator specialEasing)
 	{
 		this.specialEasing = specialEasing;
@@ -177,11 +261,28 @@ public class AnimationOptions
 	}
 	
 	/**
-	 * A function called after each step of the animation. The invoke method will receive two args:
-	 * 1. Object current value 2. long remaining milliseconds
+	 * A function called after each step of the animation. The invoked method will receive two 
+	 * arguments:
+	 * <ol>
+	 * <li><b>Object</b> current value
+	 * <li><b>long</b> remaining milliseconds
+	 * </ol>
 	 */
 	private Function progress;
+	/**
+	 * @return the function called after each animation step
+	 */
 	public Function progress() { return progress; }
+	/**
+	 * Set the function called after each step of the animation. The invoked function will receive
+	 * two arguments:
+	 * <ol>
+	 * <li><b>Object</b> current value
+	 * <li><b>long</b> remaining milliseconds
+	 * </ol>
+	 * @param progress the Function
+	 * @return this
+	 */
 	public AnimationOptions progress(Function progress)
 	{
 		this.progress = progress;
@@ -189,13 +290,23 @@ public class AnimationOptions
 	}
 	
 	/**
-	 * A function to call once the animtion is complete
+	 * A function to call once the animation has completed successfully
 	 */
-	private Function complete;
-	public Function complete() { return complete; }
-	public AnimationOptions complete(Function complete)
+	private Function success;
+	
+	/**
+	 * @return the Function called once the animation has completed successfully
+	 */
+	public Function success() { return success; }
+	
+	/**
+	 * Set the function to call once the animation has completed successfully
+	 * @param complete the function
+	 * @return this
+	 */
+	public AnimationOptions success(Function success)
 	{
-		this.complete = complete;
+		this.success = success;
 		return this;
 	}
 	
@@ -203,7 +314,17 @@ public class AnimationOptions
 	 * Called when the animation is unsuccessful (such as canceled)
 	 */
 	private Function fail;
+	
+	/**
+	 * @return get the function to call when the animation is unsuccessful
+	 */
 	public Function fail() { return fail; }
+	
+	/**
+	 * Sets the function to call when the animation is unsuccessful
+	 * @param fail the function
+	 * @return this
+	 */
 	public AnimationOptions fail(Function fail)
 	{
 		this.fail = fail;
@@ -211,15 +332,23 @@ public class AnimationOptions
 	}
 	
 	/**
-	 * Always called after fail or completion
+	 * Always called after fail or success
 	 */
-	private Function always;
-	public Function always() { return always; }
-	public AnimationOptions always(Function always)
+	private Function complete;
+	
+	/**
+	 * @return the function to call when the animation has completed
+	 */
+	public Function complete() { return complete; }
+	/**
+	 * Sets the function to call when the animation has completed
+	 * @param complete the function
+	 * @return this
+	 */
+	public AnimationOptions complete(Function complete)
 	{
-		this.always = always;
+		this.complete = complete;
 		return this;
 	}
-	
 	
 }

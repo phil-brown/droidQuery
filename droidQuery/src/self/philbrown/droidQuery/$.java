@@ -91,19 +91,34 @@ import android.widget.Toast;
 
 
 /** 
- * droidQuery:<br>
- * jQuery-esque functions for Android.
+ * <h1>droidQuery</h1>
+ * An <a href="https://github.com/github/android">Android</a> <i>port</i> of 
+ * <a href="https://github.com/jquery/jquery">jQuery</a>.
  * @author Phil Brown
  */
 public class $ 
 {
+	/**
+	 * Data types for <em>ajax</em> request responses
+	 */
 	public static enum DataType
 	{
-		JSON, XML, TEXT, SCRIPT, IMAGE
+		/** JavaScript Object Notation */
+		JSON, 
+		/** Extensible Markup Language */
+		XML, 
+		/** Textual response */
+		TEXT, 
+		/** Bourne Script response*/
+		SCRIPT, 
+		/** Bitmap response */
+		IMAGE
 	};
 	
 	/**
-	 * File locations used for {@code write} methods
+	 * File locations used for {@code write} methods.
+	 * @see $#write(byte[], FileLocation, String, boolean, boolean)
+	 * @see $#write(byte[], FileLocation, String, boolean, boolean, Function, Function)
 	 */
 	public static enum FileLocation
 	{
@@ -138,7 +153,7 @@ public class $
 	};
 	
 	/**
-	 * Relates to the interpolator used for droidQuery animations
+	 * Relates to the interpolator used for <em>droidQuery</em> animations
 	 */
 	public static enum Easing
 	{
@@ -160,8 +175,10 @@ public class $
 		OVERSHOOT
 	}
 	
+	/** Used to correctly call methods that use simple type parameters via reflection */
 	private static final Map<Class<?>, Class<?>> PRIMITIVE_TYPE_MAP = buildPrimitiveTypeMap();
 
+	/** Inflates the mapping of data types to primitive types */
 	private static Map<Class<?>, Class<?>> buildPrimitiveTypeMap()
 	{
 	    Map<Class<?>, Class<?>> map = new HashMap<Class<?>, Class<?>>();
@@ -175,23 +192,48 @@ public class $
 	    return map;
 	}
 	
-	
-	/** Keeps track of {@link LogFileObserver}s so they are not freed by garbage collection before they are used */
+	/** 
+	 * Keeps track of {@link LogFileObserver}s so they are not freed by garbage collection 
+	 * before they are used 
+	 */
 	private static List<LogFileObserver> fileObservers;
 
+	/**
+	 * Provides access to the system and the layout
+	 */
 	private Context context;
+	/** The current view that will be manipulated */
 	private View view;
+	/** The lowest level view registered with {@code this} droidQuery. */
 	private View rootView;
+	/** Contains a mapping of {@code droidQuery} extensions. */
 	private static Map<String, Constructor<?>> extensions = new HashMap<String, Constructor<?>>();
-	
-	private Function onFocus, offFocus;
-	private Function keyDown, keyPress, keyUp;
-	private Function swipe, swipeUp, swipeDown, swipeLeft, swipeRight;
-	
+	/** Function to be called when this{@link #view} gains focus */
+	private Function onFocus;
+	/** Function to be called when this {@link #view} no longer has focus. */
+	private Function offFocus;
+	/** Function to be called when a key is pressed down when this {@link #view} has the focus. */
+	private Function keyDown;
+	/** Function to be called when a key is pressed when this {@link #view} has the focus. */
+	private Function keyPress;
+	/** Function to be called when a key is released when this {@link #view} has the focus. */
+	private Function keyUp;
+	/** Function to be called when a swipe event is captured by this {@link #view}. */
+	private Function swipe;
+	/** Function to be called when a swipe-up event is captured by this {@link #view}. */
+	private Function swipeUp;
+	/** Function to be called when a swipe-down event is captured by this {@link #view}. */
+	private Function swipeDown;
+	/** Function to be called when a swipe-left event is captured by this {@link #view}. */
+	private Function swipeLeft;
+	/** Function to be called when a swipe-right event is captured by this {@link #view}. */
+	private Function swipeRight;
+	/** Used to detect swipes on this {@link #view}. */
 	private SwipeDetector swiper;
 	
 	/**
-	 * Constructor<br>
+	 * Constructor. Accepts a {@code Context} Object. If the {@code context} is an {@link Activity},
+	 * {@link #view} will be set to the content view. For example:<br>
 	 * <pre>
 	 * new $(context)
 	 * </pre>
@@ -218,6 +260,14 @@ public class $
 		setup();
 	}
 	
+	/**
+	 * Constructor. Accepts a {@code View} Object.For example:<br>
+	 * <pre>
+	 * new $(myView)
+	 * </pre>
+	 * @param view
+	 * @see #with(View)
+	 */
 	public $(View view)
 	{
 		this.rootView = view;
@@ -226,6 +276,9 @@ public class $
 		setup();
 	}
 	
+	/**
+	 * Refreshes the listeners for focus changes, key inputs, and swipe events.
+	 */
 	private void setup()
 	{
 		setupFocusListener();
@@ -233,6 +286,9 @@ public class $
 		setupSwipeListener();
 	}
 	
+	/**
+	 * Refreshes the listeners for focus changes
+	 */
 	private void setupFocusListener()
 	{
 		this.view.setOnFocusChangeListener(new View.OnFocusChangeListener(){
@@ -252,6 +308,9 @@ public class $
 		});
 	}
 	
+	/**
+	 * Refreshes the listeners for key events
+	 */
 	private void setupKeyListener()
 	{
 		this.view.setOnKeyListener(new View.OnKeyListener() {
@@ -289,6 +348,9 @@ public class $
 		});
 	}
 	
+	/**
+	 * Refreshes the listeners for swipe events
+	 */
 	private void setupSwipeListener()
 	{
 		swiper = new SwipeDetector(new SwipeListener(){
@@ -358,32 +420,51 @@ public class $
 		});
 	}
 	
-	/** Convenience method for initializing class (removes the need for the new keyword): 
+	/** 
+	 * Convenience method for initializing a droidQuery Object. For example:
 	 * <pre>
 	 * $.with(context)
 	 * </pre> 
+	 * @param context
+	 * @return a new droidQuery instance
 	 */
 	public static $ with(Context context)
 	{
 		return new $(context);
 	}
 	
+	/** 
+	 * Convenience method for initializing a droidQuery Object. For example:
+	 * <pre>
+	 * $.with(myView)
+	 * </pre> 
+	 * @param context
+	 * @return a new droidQuery instance
+	 */
 	public static $ with(View view)
 	{
 		return new $(view);
 	}
 	
 	/**
-	 * Shortcut method to $.with(this).id(R.id.main)
+	 * Shortcut method for initializing a droidQuery Object and setting the view to manipulate.
+	 * For example:<pre>
+	 * $.with(this).id(R.id.main)
+	 * </pre>
 	 * @param context
 	 * @param id
-	 * @return
+	 * @return a new droidQuery instance
 	 */
 	public static $ with(Context context, int id) 
 	{
 		return $.with(context).id(id);
 	}
 	
+	/**
+	 * Finds a view that is identified by the given id
+	 * @param id
+	 * @return the found view, or {@code null} if it was not found.
+	 */
 	private View findViewById(int id)
 	{
 		View v = null;
@@ -394,7 +475,23 @@ public class $
 		return v;
 	}
 
-	/** creates a new view and sets its reference in {@link #view} */
+	/** 
+	 * Creates a new View of the given String type, and sets this droidQuery instance to manipulate
+	 * that new instance. For example:
+	 * <pre>
+	 * $.with(this, R.id.myView).fadeIn().attr("alpha", 0.5f).push("android.widget.Button").click(new Function() {
+	 * 	public void invoke(Object... params) {
+	 *   	$.alert(MyActivity.this, "button clicked");
+	 * 	}
+	 * }).manage(new Function() {
+	 * 	public void invoke(Object... params) {
+	 * 		Context context = (Context) params[0];
+	 * 		View view = (View) params[1];
+	 * 		findViewById(R.id.mainView).addView(view);
+	 * 	}
+	 * });
+	 * </pre>
+	 */
 	public $ push(String className)
 	{
 		try
@@ -416,7 +513,17 @@ public class $
 		return this;
 	}
 
-	/** gets a new view and sets its reference in {@link #view} */
+	/** 
+	 * Gets a new View by the given id, and sets this droidQuery instance to manipulate
+	 * that view. For example:
+	 * <pre>
+	 * $.with(this, R.id.myView).fadeIn().attr("alpha", 0.5f).push(R.id.myButton).click(new Function() {
+	 * 	public void invoke(Object... params) {
+	 *   	$.alert(MyActivity.this, "button clicked");
+	 * 	}
+	 * });
+	 * </pre>
+	 */
 	public $ push(int id)
 	{
 		View v = findViewById(id);
@@ -428,15 +535,29 @@ public class $
 		return add(v);
 	}
 	
-	/** gets a new view and sets its reference in {@link #view} */
+	/** 
+	 * Sets this droidQuery instance to manipulate the given view. For example:
+	 * <pre>
+	 * $.with(this, R.id.myView).fadeIn().attr("alpha", 0.5f).push(myButton).click(new Function() {
+	 * 	public void invoke(Object... params) {
+	 *   	$.alert(MyActivity.this, "button clicked");
+	 * 	}
+	 * });
+	 * </pre>
+	 */
 	public $ push(View v)
 	{
 		return add(v);
 	}
 	
 	/**
-	 * Pops up an entire generation in hierarchy - meaning any siblings will also be removed
-	 * @return
+	 * Pops up an entire generation in the view hierarchy - meaning any siblings will also be removed.
+	 * This will only pop views if views have been pushed, and then only down to the originally loaded
+	 * view.
+	 * @return this
+	 * @see #push(int)
+	 * @see #push(String)
+	 * @see #push(View)
 	 */
 	public $ pop()
 	{
@@ -450,6 +571,15 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Pops all generation in the view hierarchy above the original view.
+	 * This will only pop views if views have been pushed, and then only down to the originally loaded
+	 * view.
+	 * @return this
+	 * @see #push(int)
+	 * @see #push(String)
+	 * @see #push(View)
+	 */
 	public $ popAll()
 	{
 		if (this.view == this.rootView)
@@ -465,7 +595,7 @@ public class $
 		return this;
 	}
 	
-	/** sets the controlling view to the parent of the current view. Does not remove any view. */
+	/** Sets this droidQuery instance to manipulate the parent view. Does not remove any view. */
 	public $ parent()
 	{
 		if (this.view == this.rootView)
@@ -477,6 +607,7 @@ public class $
 		return this;
 	}
 	
+	/** Sets this droidQuery instance to manipulate the child view at the given index. */
 	public $ child(int index)
 	{
 		View v = ((ViewGroup) this.view).getChildAt(index);
@@ -489,6 +620,19 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Animates the {@link #view} using the JSON properties, the given duration, the easing function,
+	 * and with the onComplete callback
+	 * @param properties JSON String of an {@link AnimationOptions} Object
+	 * @param duration the duration of the animation, in milliseconds
+	 * @param easing the Easing function to use
+	 * @param complete the Function to invoke once the animation has completed
+	 * @return this
+	 * @see Easing
+	 * @see #animate(Map, long, Easing, Function)
+	 * @see #animate(String, AnimationOptions)
+	 * @see #animate(Map, AnimationOptions)
+	 */
 	public $ animate(String properties, long duration, Easing easing, Function complete)
 	{
 		return animate(properties, AnimationOptions.create().duration(duration).easing(easing).complete(complete));
@@ -498,24 +642,22 @@ public class $
 	 * Animate the current view. Example:
 	 * <pre>
 	 * $.with(mView).animate("{
-	 *                           left: 1000dip;
-	 *                           top: 0px;
-	 *                           width: 50%;
+	 *                           left: 1000;
+	 *                           top: 0;
+	 *                           width: " + ((int) $.with(myView).parent().width()/2) + ";
 	 *                           alpha: 0.5;
 	 *                        }", 
-	 *                        3000, 
-	 *                        "linear", 
-	 *                        new Function() {
-	 *                        	public void invoke(Object... args) {
-	 *                        		$.alert("Animation Complete!");
-	 *                        	}
-	 *                        }");
+	 *                        new AnimationOptions("{ duration: 3000,
+	 *                                                easing: linear
+	 *                                            }").complete(new Function() {
+	 *                        						public void invoke(Object... args) {
+	 *                        							$.alert("Animation Complete!");
+	 *                        						}
+	 *                        					  });
 	 * </pre>
-	 * @param properties CSS representation
-	 * @param duration
-	 * @param easing default is linear
-	 * @param complete
-	 * @return
+	 * @param properties to animate, in CSS representation
+	 * @param options the {@link AnimationOptions} for the animation
+	 * @return this
 	 */
 	public $ animate(String properties, AnimationOptions options)
 	{
@@ -543,6 +685,15 @@ public class $
 		}
 	}
 	
+	/**
+	 * Animate the current {@link #view}
+	 * @param properties mapping of {@link AnimationOptions} attributes
+	 * @param duration the length of time for the animation to last
+	 * @param easing the Easing to use to interpolate the animation
+	 * @param complete the Function to call once the animation has completed or has been canceled.
+	 * @return this
+	 * @see QuickMap
+	 */
 	public $ animate(Map<String, Object> properties, long duration, Easing easing, final Function complete)
 	{
 		return animate(properties, AnimationOptions.create().duration(duration).easing(easing).complete(complete));
@@ -569,16 +720,16 @@ public class $
 			public void onAnimationCancel(Animator animation) {
 				if (options.fail() != null)
 					options.fail().invoke($.this);
-				if (options.always() != null)
-					options.always().invoke($.this);
+				if (options.complete() != null)
+					options.complete().invoke($.this);
 			}
 
 			@Override
 			public void onAnimationEnd(Animator animation) {
+				if (options.success() != null)
+					options.success().invoke($.this);
 				if (options.complete() != null)
 					options.complete().invoke($.this);
-				if (options.always() != null)
-					options.always().invoke($.this);
 			}
 
 			@Override
