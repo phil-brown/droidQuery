@@ -2687,25 +2687,50 @@ public class $
 	}
 	
 	/**
-	 * Selects the 
-	 * @return
+	 * Select all {@link View#INVISIBLE invisible}, {@link View#GONE gone}, and 0-alpha views within the 
+	 * view hierarchy rooted at the current view
+	 * @return a list of droidQuery Objects that wrap the found views
 	 */
 	public List<$> selectHidden()
 	{
 		return recursivelySelectHidden(view);
 	}
 	
+	/**
+	 * Select all {@link View#VISIBLE visible} and 1-alpha views within the current view hierarchy
+	 * @return a list of droidQuery Objects that wrap the found views
+	 */
+	public List<$> selectVisible()
+	{
+		return recursivelySelectVisible(view);
+	}
+	
+	/**
+	 * Set the current view to the view with the given id
+	 * @param id the id of the view to manipulate
+	 * @return this
+	 */
 	public $ id(int id)
 	{
 		this.view = this.findViewById(id);
 		return this;
 	}
 	
+	/**
+	 * Selects all {@link ImageView}s within the current view hierarchy
+	 * @return a list of droidQuery Objects that wrap the found {@code ImageView}s
+	 */
 	public List<$> selectImages()
 	{
 		return recursivelySelectByType(view, ImageView.class);
 	}
 
+	/**
+	 * Selects all views within the given view hierarchy that are the single children of their 
+	 * parent views
+	 * @param v the view whose hierarchy will be checked
+	 * @return a list of droidQuery Objects that wrap the found views.
+	 */
 	private List<$> recursivelySelectOnlyChilds(View v)
 	{
 		List<$> list = new ArrayList<$>();
@@ -2721,19 +2746,23 @@ public class $
 		return list;
 	}
 	
+	/**
+	 * Selects all views within the current view hierarchy that are the single children of their 
+	 * parent views
+	 * @return a list of droidQuery Objects that wrap the found views.
+	 */
 	public List<$> selectOnlyChilds()
 	{
 		return recursivelySelectOnlyChilds(view);
 	}
 	
+	/**
+	 * Selects all views in the current hierarchy that can contain other child views
+	 * @return a list of droidQuery Objects that wrap the found ViewGroups
+	 */
 	public List<$> selectParents()
 	{
 		return recursivelySelectByType(view, ViewGroup.class);
-	}
-	
-	public List<$> selectVisible()
-	{
-		return recursivelySelectVisible(view);
 	}
 	
 	
@@ -2796,7 +2825,7 @@ public class $
 	
 	/**
 	 * Load the extension with the name defined in {@link #extend(String, String)}
-	 * @param extension
+	 * @param extension the name of the extension to load
 	 * @return the new extension instance
 	 */
 	public $Extension ext(String extension, Object... args)
@@ -2816,11 +2845,11 @@ public class $
 	/////File IO
 	
 	/**
-	 * Write a String to file
-	 * @param s
-	 * @param path
-	 * @param append
-	 * @param async
+	 * Write a byte stream to file
+	 * @param s the bytes to write to the file
+	 * @param path defines the save location of the file
+	 * @param append {@code true} to append the new data to the end of the file. {@code false} to overwrite any existing file.
+	 * @param async {@code true} if the operation should be performed asynchronously. Otherwise, {@code false}.
 	 */
 	public void write(byte[] s, FileLocation path, String fileName, boolean append, boolean async)
 	{
@@ -2829,13 +2858,179 @@ public class $
 	}
 	
 	/**
+	 * Write a String to file
+	 * @param s the String to write to the file
+	 * @param path defines the save location of the file
+	 * @param append {@code true} to append the new String to the end of the file. {@code false} to overwrite any existing file.
+	 * @param async {@code true} if the operation should be performed asynchronously. Otherwise, {@code false}.
+	 */
+	public void write(String s, FileLocation path, String fileName, boolean append, boolean async)
+	{
+		write(s.getBytes(), path, fileName, append, async, null, null);
+		
+	}
+	
+	/**
 	 * Write a String to file, and execute functions once complete. 
-	 * @param s
-	 * @param path
-	 * @param append
-	 * @param async
-	 * @param success. Parameters will be the byte[] to write and the path to file.
-	 * @param error. Parameters will be the byte[] to write, the path to the file and error message.
+	 * @param s the String to write to the file
+	 * @param path defines the save location of the file
+	 * @param append {@code true} to append the new String to the end of the file. {@code false} to overwrite any existing file.
+	 * @param async {@code true} if the operation should be performed asynchronously. Otherwise, {@code false}.
+	 * @param success Function to invoke on a successful file-write. Parameters received will be:
+	 * <ol>
+	 * <li>the String to write
+	 * <li>the path to the file
+	 * </ol>
+	 * @param error Function to invoke on a file I/O error. Parameters received will be:
+	 * <ol>
+	 * <li>the String to write
+	 * <li>the path to the file
+	 * </ol>
+	 */
+	public void write(final String s, final FileLocation path, String fileName, boolean append, boolean async, final Function success, Function error)
+	{
+		boolean hasWritePermissions = false;
+		try {
+			PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
+			if (info.requestedPermissions != null)
+			{
+				for (String p : info.requestedPermissions)
+				{
+					if (p.equals("android.permission.WRITE_EXTERNAL_STORAGE"))
+					{
+						hasWritePermissions = true;
+						break;
+					}
+				}
+			}
+		} catch (Exception e)
+		{
+			if (error != null)
+			{
+				error.invoke(s, path, "Invalid Project Package!");
+			}
+			return;
+		}
+		if (!hasWritePermissions)
+		{
+			if (error != null)
+			{
+				error.invoke(s, path, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
+			}
+			return;
+		}
+		
+		File logFile;
+		
+		if (path == FileLocation.INTERNAL)
+		{
+			if (fileName.contains("\\")) {
+				if (error != null)
+				{
+					error.invoke(s, path, "Internal file names cannot include a path separator. Aborting.");
+				}
+				return;
+			}
+			try {
+				if (fileObservers == null)
+				{
+					fileObservers = new ArrayList<LogFileObserver>();
+				}
+				LogFileObserver o = new LogFileObserver(fileName, new Runnable(){
+					@Override
+					public void run()
+					{
+						if (success != null)
+							success.invoke(s, path);
+					}
+				});
+				fileObservers.add(o);
+				o.startWatching();
+				
+				FileOutputStream fw = context.openFileOutput(fileName, (append ? Context.MODE_APPEND : Context.MODE_PRIVATE));
+				fw.write(s.getBytes());
+				fw.close();
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
+			return;
+		}
+		else if (path == FileLocation.CACHE)
+		{
+			String storageDir = context.getCacheDir().toString();
+			
+			logFile = new File(String.format(Locale.US, "%s/%s", storageDir, fileName));
+			//make the parent directory if it does not exist
+			logFile.getParentFile().mkdirs();
+		}
+		else if (path == FileLocation.DATA)
+		{
+			String storageDir = Environment.getExternalStorageDirectory().toString();
+			String mainDirName = String.format(Locale.US, "%s/Android/data/%s", storageDir, context.getPackageName());
+			
+			logFile = new File(String.format(Locale.US, "%s/%s", mainDirName, fileName));
+			//make the parent directory if it does not exist
+			logFile.getParentFile().mkdirs();
+		}
+		else if (path == FileLocation.CUSTOM)
+		{
+			logFile = new File(fileName);
+			//make the parent directory if it does not exist
+			logFile.getParentFile().mkdirs();
+		}
+		else //external (default)
+		{
+			String storageDir = Environment.getExternalStorageDirectory().toString();
+			String mainDirName = String.format(Locale.US, "%s/%s", storageDir, context.getPackageName());
+			
+			logFile = new File(String.format(Locale.US, "%s/%s", mainDirName, fileName));
+			//make the parent directory if it does not exist
+			logFile.getParentFile().mkdirs();
+		}
+		
+		try {
+			if (fileObservers == null)
+			{
+				fileObservers = new ArrayList<LogFileObserver>();
+			}
+			LogFileObserver o = new LogFileObserver(logFile, new Runnable(){
+				@Override
+				public void run()
+				{
+					if (success != null)
+						success.invoke(s, path);
+				}
+			});
+			
+			fileObservers.add(o);
+			o.startWatching();
+			
+			FileOutputStream os = new FileOutputStream(logFile, append);
+			os.write(s.getBytes());
+			os.close();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Write a byte stream to file, and execute functions once complete. 
+	 * @param s the bytes to write to the file
+	 * @param path defines the save location of the file
+	 * @param append {@code true} to append the new bytes to the end of the file. {@code false} to overwrite any existing file.
+	 * @param async {@code true} if the operation should be performed asynchronously. Otherwise, {@code false}.
+	 * @param success Function to invoke on a successful file-write. Parameters received will be:
+	 * <ol>
+	 * <li>the byte[] to write
+	 * <li>the path to the file
+	 * </ol>
+	 * @param error Function to invoke on a file I/O error. Parameters received will be:
+	 * <ol>
+	 * <li>the byte[] to write
+	 * <li>the path to the file
+	 * </ol>
 	 */
 	public void write(final byte[] s, final FileLocation path, String fileName, boolean append, boolean async, final Function success, Function error)
 	{
@@ -2968,11 +3163,11 @@ public class $
 	////Utilities
 	
 	/**
-	 * 
+	 * Convert an Object Array to a JSONArray
 	 * @param array an Object[] containing any of: JSONObject, JSONArray, String, Boolean, Integer, 
-	 * Long, Double, NULL, or null. May not be NaNs or infinities. Unsupported values are not 
+	 * Long, Double, NULL, or null. May not include NaNs or infinities. Unsupported values are not 
 	 * permitted and will cause the JSONArray to be in an inconsistent state.
-	 * @return
+	 * @return the newly-created JSONArray Object
 	 */
 	public static JSONArray makeArray(Object[] array)
 	{
@@ -2984,6 +3179,11 @@ public class $
 		return json;
 	}
 	
+	/**
+	 * Convert a JSONArray to an Object Array
+	 * @param array the array to convert
+	 * @return the converted array
+	 */
 	public static Object[] makeArray(JSONArray array)
 	{
 		Object[] obj = new Object[array.length()];
@@ -3002,11 +3202,23 @@ public class $
 		
 	}
 	
+	/**
+	 * Converts a JSON String to a Map
+	 * @param json the String to convert
+	 * @return a Key-Value Mapping of attributes declared in the JSON string.
+	 * @throws JSONException thrown if the JSON string is malformed or incorrectly written
+	 */
 	public static Map<String, ?> map(String json) throws JSONException
 	{
 		return map(new JSONObject(json));
 	}
 	
+	/**
+	 * Convert a {@code JSONObject} to a Map
+	 * @param json the JSONObject to parse
+	 * @return a Key-Value mapping of the Objects set in the JSONObject
+	 * @throws JSONException if the JSON is malformed
+	 */
 	public static Map<String, ?> map(JSONObject json) throws JSONException
 	{
 		@SuppressWarnings("unchecked")
@@ -3031,7 +3243,9 @@ public class $
 		return map;
 	}
 	
-	/** Merge the contents of two arrays together into the first array. */
+	/** 
+	 * Merges the contents of two arrays together into the first array. 
+	 */
 	public static void merge(Object[] array1, Object[] array2)
 	{
 		Object[] newArray = new Object[array1.length + array2.length];
@@ -3046,6 +3260,9 @@ public class $
 		array1 = newArray;
 	}
 	
+	/**
+	 * @return a new Function that does nothing when invoked
+	 */
 	public static Function noop()
 	{
 		return new Function() {
@@ -3054,15 +3271,18 @@ public class $
 		};
 	}
 	
+	/**
+	 * @return the current time, in milliseconds
+	 */
 	public static long now()
 	{
 		return new Date().getTime();
 	}
 	
 	/**
-	 * parses a json string.
-	 * @param json
-	 * @return JSONObject if parse succeeds. Otherwise null.
+	 * Parses a JSON string into a JSONObject
+	 * @param json the String to parse
+	 * @return JSONObject if parse succeeds. Otherwise {@code null}.
 	 */
 	public JSONObject parseJSON(String json)
 	{
@@ -3074,9 +3294,9 @@ public class $
 	}
 	
 	/**
-	 * parses the XML
-	 * @param xml
-	 * @return XML Document if parse succeeds. Otherwise null.
+	 * Parses XML into an XML Document
+	 * @param xml the XML to parse
+	 * @return XML Document if parse succeeds. Otherwise {@code null}.
 	 */
 	public Document parseXML(String xml)
 	{
@@ -3089,9 +3309,9 @@ public class $
 	}
 	
 	/**
-	 * parses the HTML
-	 * @param html
-	 * @return
+	 * Parses HTML into a {@link Spanned} Object
+	 * @param html the HTML to parse
+	 * @return the Spanned Object created from the given HTML
 	 */
 	public Spanned parseHTML(String html)
 	{
@@ -3102,7 +3322,8 @@ public class $
 	/////AJAX
 	
 	/**
-	 * Map
+	 * Perform a new Ajax Task using the AjaxOptions set in the given Key-Value Map
+	 * @param options {@link AjaxOptions} options
 	 */
 	public static void ajax(Map<String, Object> options)
 	{
@@ -3110,8 +3331,8 @@ public class $
 	}
 	
 	/**
-	 * JSON String
-	 * @param options
+	 * Perform a new Ajax Task using the given JSON string to configure the {@link AjaxOptions}
+	 * @param options {@link AjaxOptions} as a JSON String
 	 */
 	public static void ajax(String options)
 	{
@@ -3126,8 +3347,8 @@ public class $
 	}
 	
 	/**
-	 * JSONObject
-	 * @param options
+	 * Perform a new Ajax Task using the given JSONObject to configure the {@link AjaxOptions}
+	 * @param options {@link AjaxOptions} as a JSONObject Object
 	 */
 	public static void ajax(JSONObject options)
 	{
@@ -3141,6 +3362,10 @@ public class $
 		}
 	}
 	
+	/**
+	 * Perform an Ajax Task using the given {@code AjaxOptions}
+	 * @param options the options to set for the Ajax Task
+	 */
 	public static void ajax(AjaxOptions options)
 	{
 		try
@@ -3155,21 +3380,52 @@ public class $
 	
 	///////ajax shortcut methods
 	
+	/**
+	 * Shortcut method to use the default AjaxOptions to perform an Ajax GET request
+	 * @param url the URL to access
+	 * @param data the data to pass, if any
+	 * @param success the Function to invoke once the task completes successfully.
+	 * @param dataType the type of data to expect as a response from the URL. See 
+	 * {@link AjaxOptions#dataType()} for a list of available data types
+	 */
 	public static void get(String url, Object data, Function success, String dataType)
 	{
 		$.ajax(new AjaxOptions().url(url).data(data).success(success).dataType(dataType));
 	}
 	
+	/**
+	 * Shortcut method to use the default Ajax Options to perform an Ajax GET request and receive
+	 * a JSON-formatted response
+	 * @param url the URL to access
+	 * @param data the data to send, if any
+	 * @param success Function to invoke once the task completes successfully.
+	 */
 	public static void getJSON(String url, Object data, Function success)
 	{
 		get(url, data, success, "JSON");
 	}
 	
+	/**
+	 * Shortcut method to use the default Ajax Options to perform an Ajax GET request and receive
+	 * a Script response
+	 * @param url the URL to access
+	 * @param data the data to send, if any
+	 * @param success Function to invoke once the task completes successfully.
+	 * @see {@link ScriptResponse}
+	 */
 	public static void getScript(String url, Function success)
 	{
 		$.ajax(new AjaxOptions().url(url).success(success).dataType("SCRIPT"));
 	}
 	
+	/**
+	 * Shortcut method to use the default Ajax Options to perform an Ajax POST request
+	 * @param url the URL to access
+	 * @param data the data to post
+	 * @param success Function to invoke once the task completes successfully.
+	 * @param dataType the type of data to expect as a response from the URL. See 
+	 * {@link AjaxOptions#dataType()} for a list of available data types
+	 */
 	public static void post(String url, Object data, Function success, String dataType)
 	{
 		$.ajax(new AjaxOptions().type("POST")
@@ -3179,55 +3435,114 @@ public class $
 				                .dataType(dataType));
 	}
 	
+	/**
+	 * Register an event to invoke a Function every time a global Ajax Task completes
+	 * @param complete the Function to call.
+	 */
 	public static void ajaxComplete(Function complete)
 	{
 		EventCenter.bind("ajaxComplete", complete, null);
 	}
+	
+	/**
+	 * Manually invoke the Function set to be called every time a global Ajax Task completes.
+	 * @see #ajaxComplete(Function)
+	 */
 	public static void ajaxComplete()
 	{
 		EventCenter.trigger("ajaxComplete", null, null);
 	}
+	
+	/**
+	 * Register an event to invoke a Function every time a global Ajax Task receives an error
+	 * @param error the Function to call.
+	 */
 	public static void ajaxError(Function error)
 	{
 		EventCenter.bind("ajaxError", error, null);
 	}
+	
+	/**
+	 * Manually invoke the Function set to be called every time a global Ajax Task receives an error.
+	 * @see #ajaxError(Function)
+	 */
 	public static void ajaxError()
 	{
 		EventCenter.trigger("ajaxError", null, null);
 	}
-	//send start stop success
 
+	/**
+	 * Register an event to invoke a Function every time a global Ajax Task sends data
+	 * @param send the Function to call.
+	 */
 	public static void ajaxSend(Function send)
 	{
 		EventCenter.bind("ajaxSend", send, null);
 	}
+	
+	/**
+	 * Manually invoke the Function set to be called every time a global Ajax Task sends data.
+	 * @see #ajaxSend(Function)
+	 */
 	public static void ajaxSend()
 	{
 		EventCenter.trigger("ajaxSend", null, null);
 	}
 	
+	/**
+	 * Register an event to invoke a Function every time a global Ajax Task begins, if no other
+	 * global task is running.
+	 * @param start the Function to call.
+	 */
 	public static void ajaxStart(Function start)
 	{
 		EventCenter.bind("ajaxStart", start, null);
 	}
+	
+	/**
+	 * Manually invoke the Function set to be called every time a global Ajax Task begins, if 
+	 * no other global task is running.
+	 * @see #ajaxStart(Function)
+	 */
 	public static void ajaxStart()
 	{
 		EventCenter.trigger("ajaxStart", null, null);
 	}
 	
+	/**
+	 * Register an event to invoke a Function every time a global Ajax Task stops, if it was
+	 * the last global task running
+	 * @param stop the Function to call.
+	 */
 	public static void ajaxStop(Function stop)
 	{
 		EventCenter.bind("ajaxStop", stop, null);
 	}
+
+	/**
+	 * Manually invoke the Function set to be called every time a global Ajax Task stops, if it was
+	 * the last global task running
+	 * @see #ajaxStop(Function)
+	 */
 	public static void ajaxStop()
 	{
 		EventCenter.trigger("ajaxStop", null, null);
 	}
 	
+	/**
+	 * Register an event to invoke a Function every time a global Ajax Task completes successfully.
+	 * @param start the Function to invoke.
+	 */
 	public static void ajaxSuccess(Function success)
 	{
 		EventCenter.bind("ajaxSuccess", success, null);
 	}
+
+	/**
+	 * Manually invoke the Function set to be called every time a global Ajax Task completes 
+	 * successfully.
+	 * @see #ajaxSuccess(Function)
+	 */
 	public static void ajaxSuccess()
 	{
 		EventCenter.trigger("ajaxSuccess", null, null);
@@ -3286,6 +3601,7 @@ public class $
 	}
 	
 	//// Convenience
+	
 	
 	public $ html(int resourceID)
 	{
