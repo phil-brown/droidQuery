@@ -17,6 +17,7 @@
 package self.philbrown.droidQuery;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -206,6 +207,11 @@ public class $
 	private View view;
 	/** The lowest level view registered with {@code this} droidQuery. */
 	private View rootView;
+	/** 
+	 * Optional data referenced by this droidQuery Object. Best practice is to make this a 
+	 * {@link WeakReference} to avoid memory leaks.
+	 */
+	private Object data;
 	/** Contains a mapping of {@code droidQuery} extensions. */
 	private static Map<String, Constructor<?>> extensions = new HashMap<String, Constructor<?>>();
 	/** Function to be called when this{@link #view} gains focus */
@@ -642,10 +648,10 @@ public class $
 	 * Animate the current view. Example:
 	 * <pre>
 	 * $.with(mView).animate("{
-	 *                           left: 1000;
-	 *                           top: 0;
-	 *                           width: " + ((int) $.with(myView).parent().width()/2) + ";
-	 *                           alpha: 0.5;
+	 *                           left: 1000px,
+	 *                           top: 0%,
+	 *                           width: 50%,
+	 *                           alpha: 0.5
 	 *                        }", 
 	 *                        new AnimationOptions("{ duration: 3000,
 	 *                                                easing: linear
@@ -704,11 +710,9 @@ public class $
 	 * <pre>
 	 * $.with(myView).animate(new QuickMap(QuickEntry.qe("alpha", .8f), QuickEntry.qe("width", 50%)), 400, Easing.LINEAR, null);
 	 * </pre>
-	 * @param properties
-	 * @param duration
-	 * @param easing
-	 * @param complete
-	 * @return
+	 * @param properties mapping of property names and final values to animate
+	 * @param options the options for setting the duration, easing, etc of the animation
+	 * @return this
 	 */
 	public $ animate(Map<String, Object> properties, final AnimationOptions options)
 	{
@@ -964,12 +968,21 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Shortcut method for animating the alpha attribute of this {@link #view} to 1.0.
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void fadeIn(AnimationOptions options)
 	{
 		this.animate(new QuickMap(QuickEntry.qe("alpha", new Float(1.0f))), options);
 	}
 	
+	/**
+	 * Shortcut method for animating the alpha attribute of this {@link #view} to 1.0.
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void fadeIn(long duration, final Function complete)
 	{
 		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "alpha", 1.0f);
@@ -993,12 +1006,21 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * Shortcut method for animating the alpha attribute of this {@link #view} to 0.0.
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void fadeOut(AnimationOptions options)
 	{
 		this.animate(new QuickMap(QuickEntry.qe("alpha", new Float(0.0f))), options);
 	}
 	
+	/**
+	 * Shortcut method for animating the alpha attribute of this {@link #view} to 0.0.
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void fadeOut(long duration, final Function complete)
 	{
 		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "alpha", 0.0f);
@@ -1022,12 +1044,23 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * Shortcut method for animating the alpha attribute of this {@link #view} to the given value.
+	 * @param opacity the alpha value at the end of the animation
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void fadeTo(float opacity, AnimationOptions options)
 	{
 		this.animate(new QuickMap(QuickEntry.qe("alpha", new Float(opacity))), options);
 	}
 	
+	/**
+	 * Shortcut method for animating the alpha attribute of this {@link #view} to the given value.
+	 * @param duration the length of time the animation should last
+	 * @param opacity the alpha value at the end of the animation
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void fadeTo(long duration, float opacity, final Function complete)
 	{
 		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "alpha", opacity);
@@ -1051,6 +1084,12 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * If this {@link #view} has an alpha of less than 0.5, it will fade in. Otherwise, it will
+	 * fade out.
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void fadeToggle(long duration, final Function complete)
 	{
 		if (this.view.getAlpha() < 0.5)
@@ -1059,6 +1098,11 @@ public class $
 			this.fadeIn(duration, complete);
 	}
 	
+	/**
+	 * If this {@link #view} has an alpha of less than 0.5, it will fade in. Otherwise, it will
+	 * fade out.
+	 * @param options use to modify the behavior of the animation
+	 */
 	public void fadeToggle(AnimationOptions options)
 	{
 		if (this.view.getAlpha() < 0.5)
@@ -1067,6 +1111,11 @@ public class $
 			this.fadeIn(options);
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it down, past its bottom
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void slideDown(long duration, final Function complete)
 	{
 		ViewParent parent = view.getParent();
@@ -1101,6 +1150,10 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it down, past its bottom
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void slideDown(AnimationOptions options)
 	{
@@ -1118,6 +1171,11 @@ public class $
 		this.animate(new QuickMap(QuickEntry.qe("y", new Float(y))), options);
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it up, past its top
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void slideUp(long duration, final Function complete)
 	{
 		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "y", 0);
@@ -1141,12 +1199,21 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it up, past its top
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void slideUp(AnimationOptions options)
 	{
 		this.animate(new QuickMap(QuickEntry.qe("y", new Float(0f))), options);
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it right, past its edge
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void slideRight(long duration, final Function complete)
 	{
 		ViewParent parent = view.getParent();
@@ -1181,6 +1248,10 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it right, past its edge
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void slideRight(AnimationOptions options)
 	{
@@ -1198,6 +1269,11 @@ public class $
 		this.animate(new QuickMap(QuickEntry.qe("x", new Float(x))), options);
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it left, past its edge
+	 * @param duration the length of time the animation should last
+	 * @param complete the function to call when the animation has completed
+	 */
 	public void slideLeft(long duration, final Function complete)
 	{
 		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "x", 0f);
@@ -1221,14 +1297,22 @@ public class $
 		anim.start();
 	}
 	
+	/**
+	 * Animates this {@link #view} out of its parent by sliding it left, past its edge
+	 * @param options use to modify the behavior of the animation
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void slideLeft(AnimationOptions options)
 	{
 		this.animate(new QuickMap(QuickEntry.qe("x", new Float(0f))), options);
 	}
 	
-	
-	/** get attribute */
+	/**
+	 * Gets the value for the given attribute. This is done using reflection, and as such
+	 * expects a <em>get-</em> or <em>is-</em> prefixed method name for this {@link #view}.
+	 * @param s the name of the attribute to retrieve
+	 * @return the value of the given attribute name on this {@link #view}
+	 */
 	public Object attr(String s)
 	{
 		try
@@ -1252,7 +1336,13 @@ public class $
 		}
 	}
 	
-	/** set attribute */
+	/**
+	 * Sets the value of the given attribute on this {@link #view}. This is done using reflection, 
+	 * and as such a <em>set-</em>prefixed method name for this {@link #view}.
+	 * @param s the name of the attribute to set
+	 * @param o the value to set to the given attribute
+	 * @return this
+	 */
 	public $ attr(String s, Object o)
 	{
 		try
@@ -1275,46 +1365,69 @@ public class $
 	
 	/**
 	 * Many of the modifications required for views and context on Android are not simple to manipulate.
-	 * This method hands the current context and the view to the developer to make custom changes.
+	 * This method hands the current context, the view, and any data to the developer to make custom changes.
 	 * This can be used to do many things that the methods provided by droidQuery do not. For example:
 	 * <pre>
-	 * TextView tv = new TextView(this);
-	 * $.with(tv).on("click", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		TextView mTV = (TextView) args[0];
-	 * 		$.alert(mTV.getText().toString());
-	 * 	}
-	 * }).attr("textColor", Color.BLUE).manage(new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		Context context = args[0];
-	 * 		View v = args[1];
-	 * 		TextView mTV = (TextView) v;
-	 * 			mTV.addTextChangedListener(new TextWatcher(){
-	 *
-	 *			@Override
-	 *			public void afterTextChanged(Editable s) { }
-	 *
-	 *			@Override
-	 *			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-	 *
-	 *			@Override
-	 *			public void onTextChanged(CharSequence s, int start, int before, int count) {}
-	 *			
-	 *		});
+	 * MyCustomView custom = new MyCustomView(this);
+	 * $.with(custom).attr("alpha", 0.5f).manage(new Function() {
+	 * 	public void invoke(Object... params) {
+	 * 		Context context = (Context) params[0];
+	 * 		MyCustomView view = (MyCustomView) params[1];
+	 *		Object data = params[2];
+	 * 		view.doSomething();
 	 * 	}
 	 * });
 	 * </pre>
-	 * @param function receives the current context as {@code arg0}. {@code arg1} is set to the current
-	 * view.
+	 * @param function Function to invoke. Receives two arguments: the current context, and the 
+	 * current view (respectively).
 	 * @return this droidQuery
 	 */
 	public $ manage(Function function)
 	{
-		function.invoke(context, view);
+		function.invoke(context, view, data);
 		return this;
 	}
 	
-	/** shortcut to addView */
+	/**
+	 * @return the current view
+	 */
+	public View view()
+	{
+		return this.view;
+	}
+	
+	/**
+	 * @return the current context
+	 */
+	public Context context()
+	{
+		return this.context;
+	}
+	
+	/**
+	 * @return the current data.
+	 */
+	public Object data()
+	{
+		return this.data;
+	}
+	
+	/**
+	 * Sets the data associated with this droidQuery
+	 * @param data the data to set
+	 * @return this
+	 */
+	public $ data(Object data)
+	{
+		this.data = data;
+		return this;
+	}
+	
+	/**
+	 * Adds a subview to this {@link #view}
+	 * @param v the subview to add
+	 * @return this
+	 */
 	public $ add(View v)
 	{
 		if (v == null || v.getParent() != null)
@@ -1329,7 +1442,11 @@ public class $
 		return this;
 	}
 	
-	/** add view with id */
+	/**
+	 * Adds a subview to this {@link #view}
+	 * @param v the id of the subview to add
+	 * @return this
+	 */
 	public $ add(int id)
 	{
 		View v = findViewById(id);
@@ -1345,7 +1462,11 @@ public class $
 		return this;
 	}
 	
-	/** remove view */
+	/**
+	 * Removes a subview from this {@link #view}
+	 * @param v the subview to remove
+	 * @return this
+	 */
 	public $ remove(View v)
 	{
 		if (this.view instanceof ViewGroup)
@@ -1355,7 +1476,11 @@ public class $
 		return null;
 	}
 	
-	/** remove view with id */
+	/**
+	 * Removes a subview from this {@link #view}
+	 * @param v the id of the subview to remove
+	 * @return this
+	 */
 	public $ remove(int id)
 	{
 		View v = findViewById(id);
@@ -1371,12 +1496,20 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Sets the visibility of this {@link #view} to {@link View#VISIBLE}
+	 * @return this
+	 */
 	public $ hide()
 	{
 		view.setVisibility(View.VISIBLE);
 		return this;
 	}
 	
+	/**
+	 * Sets the visibility of this {@link #view} to {@link View#INVISIBLE}
+	 * @return this
+	 */
 	public $ show()
 	{
 		view.setVisibility(View.INVISIBLE);
@@ -1392,7 +1525,7 @@ public class $
 	 * 	public void invoke(Object... args) {
 	 * 		View v = args[0];
 	 * 		Object data = args[1];
-	 * 		$.alert((String) data);
+	 * 		$.alert(v.getContext(), (String) data);
 	 * 	}
 	 * });
 	 * </pre>
@@ -1403,7 +1536,7 @@ public class $
 	 * 	public void invoke(Object... args) {
 	 * 		View v = args[0];
 	 * 		Object data = args[1];
-	 * 		$.alert((String) data);
+	 * 		$.alert(v.getContext(), (String) data);
 	 * 	}
 	 * });
 	 * 
@@ -1411,7 +1544,7 @@ public class $
 	 * 	public void invoke(Object... args) {
 	 * 		View v = args[0];
 	 * 		Object data = args[1];
-	 * 		$.alert((String) data);
+	 * 		$.alert(v.getContext(), (String) data);
 	 * 	}
 	 * });
 	 * </pre>
@@ -1421,7 +1554,7 @@ public class $
 	 * 	public void invoke(Object... args) {
 	 * 		View v = args[0];
 	 * 		Object data = args[1];
-	 * 		$.alert((String) data);
+	 * 		$.alert(v.getContext(), (String) data);
 	 * 	}
 	 * });
 	 * </pre>
@@ -1430,6 +1563,8 @@ public class $
 	 * @param handler receives two arguments: the affected view, and the {@code data} parameter
 	 * @return the current instance of {@code droidQuery}
 	 * @see #on(String, Function)
+	 * @see #one(String, Function)
+	 * @see #unbind(String)
 	 */
 	public $ bind(String eventType, Object data, Function handler)
 	{
@@ -1478,10 +1613,47 @@ public class $
 	}
 	
 	/**
-	 * Like bind, only
-	 * @param event
-	 * @param handler
-	 * @return
+	 * Binds the current view to the event. For example:
+	 * <pre>
+	 * $.with(myView).on("click", new Function() {
+	 * 	public void invoke(Object... args) {
+	 * 		View v = args[0];
+	 * 		$.alert(v.getContext(), "View Clicked!");
+	 * 	}
+	 * });
+	 * </pre>
+	 * @note that for events with multiple words, all words except the first are required to be 
+	 * capitalized. For example, to bind to a long-click event, both of the following are acceptable:
+	 * <pre>
+	 * $.with(myView).on("longClick", new Function() {
+	 * 	public void invoke(Object... args) {
+	 * 		View v = args[0];
+	 * 		$.alert(v.getContext(), "View LongClicked!");
+	 * 	}
+	 * });
+	 * 
+	 * $.with(myView).on("LongClick", new Function() {
+	 * 	public void invoke(Object... args) {
+	 * 		View v = args[0];
+	 * 		$.alert(v.getContext(), "View LongClicked!");
+	 * 	}
+	 * });
+	 * </pre>
+	 * However, this will fail:
+	 * <pre>
+	 * $.with(myView).on("longclick", new Function() {
+	 * 	public void invoke(Object... args) {
+	 * 		View v = args[0];
+	 * 		$.alert(v.getContext(), "View LongClicked!");
+	 * 	}
+	 * });
+	 * </pre>
+	 * @param event should be the verb in OnVerbListener
+	 * @param handler receives two arguments: the affected view, and the {@code data} parameter
+	 * @return the current instance of {@code droidQuery}
+	 * @see #bind(String, Object, Function)
+	 * @see #one(String, Function)
+	 * @see #unbind(String)
 	 */
 	public $ on(String event, Function handler)
 	{
@@ -1516,8 +1688,33 @@ public class $
 	}
 	
 	/**
-	 * add standard change functionality to standard views.
-	 * @return
+	 * Like {@link #on(String, Function)}, but the function will only run once for the event. Future
+	 * events will not trigger the given function
+	 * @param event the name of the event
+	 * @param handler the function to invoke the first time the event occurs
+	 * @return this
+	 */
+	public $ one(final String event, final Function handler)
+	{
+		Function function = new Function()
+		{
+
+			@Override
+			public void invoke(Object... params) {
+				handler.invoke();
+				$.with((View) params[0]).unbind(event);
+			}
+			
+		};
+		
+		return on(event, function);
+	}
+	
+	/**
+	 * Registers change listeners for TextViews, EditTexts, and CompoundButtons. For all other
+	 * view types, this will trigger a function when the view's layout has been changed.
+	 * @param function the Function to call when the change event occurs
+	 * @return this
 	 */
 	public $ change(final Function function)
 	{
@@ -1584,9 +1781,10 @@ public class $
 	}
 	
 	/**
-	 * get the value associated with the view. If the view is a Textview, returns the CharSequence text.
-	 * If button, the boolean checked state. If Image, the drawable.
-	 * @return
+	 * Get the value associated with this {@link #view}. If the view is a TextView, this method
+	 * returns the CharSequence text. If it is a Button, the boolean checked state is returned. 
+	 * If it is an ImageView, the Drawable is returned.
+	 * @return the value of this view, or <em>null</em> if not applicable.
 	 */
 	public Object val()
 	{
@@ -1606,11 +1804,12 @@ public class $
 	}
 	
 	/**
-	 * set the value associated with the view. If the view is a Textview, returns the CharSequence text.
-	 * If button, the boolean checked state. If Image, the drawable or bitmap.
-	 * @return
+	 * Set the value associated with this {@link #view}. If the view is a TextView, this method
+	 * sets the CharSequence text. If it is a Button, the boolean checked state is set. 
+	 * If it is an ImageView, the Drawable or Bitmap is set. All other view types are ignored.
+	 * @return this
 	 */
-	public void val(Object object)
+	public $ val(Object object)
 	{
 		if (this.view instanceof TextView && object instanceof CharSequence)
 		{
@@ -1632,11 +1831,12 @@ public class $
 			}
 			
 		}
+		return this;
 	}
 	
 	/**
-	 * simulate a click event on this view
-	 * @return
+	 * Triggers a click event on this view
+	 * @return this
 	 */
 	public $ click()
 	{
@@ -1645,10 +1845,10 @@ public class $
 	}
 	
 	/**
-	 * perform the given function for click events on this view. The function will receive this droidQuery
-	 * as a parameter.
-	 * @param function
-	 * @return
+	 * Invokes the given Function every time this {@link #view} is clicked. The only parameter passed 
+	 * to the given function is this droidQuery instance.
+	 * @param function the function to call when this view is clicked
+	 * @return this
 	 */
 	public $ click(final Function function)
 	{
@@ -1664,10 +1864,13 @@ public class $
 	}
 	
 	/**
-	 * perform the given function for click events on this view. The function will receive two arguments:
-	 * 1. this droidQuery, 2. {@code eventData}
-	 * @param eventData
-	 * @param function
+	 * Invokes the given Function for click events on this view. The function will receive two arguments:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>{@code eventData}
+	 * </ol>
+	 * @param eventData the second argument to pass to the {@code function}
+	 * @param function the function to invoke
 	 * @return
 	 */
 	public $ click(final Object eventData, final Function function)
@@ -1683,12 +1886,22 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Triggers a long-click event on this view
+	 * @return this
+	 */
 	public $ longclick()
 	{
 		this.view.performLongClick();
 		return this;
 	}
 	
+	/**
+	 * Invokes the given Function every time this {@link #view} is long-clicked. The only 
+	 * parameter passed to the given function is this droidQuery instance.
+	 * @param function the function to call when this view is long-clicked
+	 * @return this
+	 */
 	public $ longclick(final Function function)
 	{
 		this.view.setOnLongClickListener(new View.OnLongClickListener(){
@@ -1703,6 +1916,17 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Invokes the given Function for long-click events on this view. The function will receive two 
+	 * arguments:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>{@code eventData}
+	 * </ol>
+	 * @param eventData the second argument to pass to the {@code function}
+	 * @param function the function to invoke
+	 * @return
+	 */
 	public $ longclick(final Object eventData, final Function function)
 	{
 		this.view.setOnLongClickListener(new View.OnLongClickListener(){
@@ -1753,10 +1977,10 @@ public class $
 //	}
 	
 	/**
-	 * Handles swipes. This will override any onTouchListener added.
-	 * @param function will receive this droidQuery a {@link SwipeDetector.Direction} corresponding
+	 * Handles swipe events. This will override any onTouchListener added.
+	 * @param function will receive this droidQuery and a {@link SwipeDetector.Direction} corresponding
 	 * to the direction of the swipe.
-	 * @return
+	 * @return this
 	 */
 	public $ swipe(Function function)
 	{
@@ -1768,8 +1992,8 @@ public class $
 	/**
 	 * Sets the function that is called when the user swipes Up. This will cause any function set by
 	 * {@link #swipe(Function)} to not get called for up events.
-	 * @param function
-	 * @return
+	 * @param function the function to invoke
+	 * @return this
 	 */
 	public $ swipeUp(Function function)
 	{
@@ -1781,8 +2005,8 @@ public class $
 	/**
 	 * Sets the function that is called when the user swipes Left. This will cause any function set by
 	 * {@link #swipe(Function)} to not get called for left events.
-	 * @param function
-	 * @return
+	 * @param function the function to invoke
+	 * @return this
 	 */
 	public $ swipeLeft(Function function)
 	{
@@ -1794,8 +2018,8 @@ public class $
 	/**
 	 * Sets the function that is called when the user swipes Down. This will cause any function set by
 	 * {@link #swipe(Function)} to not get called for down events.
-	 * @param function
-	 * @return
+	 * @param function the function to invoke
+	 * @return this
 	 */
 	public $ swipeDown(Function function)
 	{
@@ -1807,8 +2031,8 @@ public class $
 	/**
 	 * Sets the function that is called when the user swipes Right. This will cause any function set by
 	 * {@link #swipe(Function)} to not get called for right events.
-	 * @param function
-	 * @return
+	 * @param function the function to invoke
+	 * @return this
 	 */
 	public $ swipeRight(Function function)
 	{
@@ -1817,6 +2041,10 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Triggers a swipe-up event on this view
+	 * @return this
+	 */
 	public $ swipeUp()
 	{
 		if (swiper != null)
@@ -1824,6 +2052,10 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Triggers a swipe-down event on this view
+	 * @return this
+	 */
 	public $ swipeDown()
 	{
 		if (swiper != null)
@@ -1831,6 +2063,10 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Triggers a swipe-left event on this view
+	 * @return this
+	 */
 	public $ swipeLeft()
 	{
 		if (swiper != null)
@@ -1838,6 +2074,10 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Triggers a swipe-right event on this view
+	 * @return this
+	 */
 	public $ swipeRight()
 	{
 		if (swiper != null)
@@ -1846,9 +2086,10 @@ public class $
 	}
 	
 	/**
-	 * will receive param $.
-	 * @param function
-	 * @return
+	 * Sets the function to call when this {@link #view} has gained focus. This function
+	 * will receive this instance of droidQuery as its only parameter
+	 * @param function the function to invoke
+	 * @return this
 	 */
 	public $ focus(Function function)
 	{
@@ -1857,6 +2098,10 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Gives focus to this {@link #view}, if it is focusable in its current state.
+	 * @return this
+	 */
 	public $ focus()
 	{
 		this.view.requestFocus();
@@ -1864,9 +2109,10 @@ public class $
 	}
 	
 	/**
-	 * will receive param $.
-	 * @param function
-	 * @return
+	 * Sets the function to call when this {@link #view} loses focus.
+	 * @param function the function to invoke. Will receive this instance of droidQuery as its 
+	 * only parameter
+	 * @return this
 	 */
 	public $ focusout(Function function)
 	{
@@ -1875,6 +2121,10 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Removes focus from this {@link #view}, if it is currently focused.
+	 * @return this
+	 */
 	public $ focusout()
 	{
 		this.view.clearFocus();
@@ -1882,9 +2132,14 @@ public class $
 	}
 	
 	/**
-	 * 
-	 * @param function receives 1. this droidQuery 2. the key code (int) 3. the event (KeyEvent)
-	 * @return
+	 * Set the function to call when a key-down event has been detected on this view.
+	 * @param function the Function to invoke. Receives three arguments:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>the Integer key code
+	 * <li>the {@link KeyEvent} Object that was produced
+	 * </ol>
+	 * @return this
 	 */
 	public $ keydown(Function function)
 	{
@@ -1894,9 +2149,14 @@ public class $
 	}
 	
 	/**
-	 * 
-	 * @param function receives 1. this droidQuery 2. the key code (int) 3. the event (KeyEvent)
-	 * @return
+	 * Set the function to call when a key-press event has been detected on this view.
+	 * @param function the Function to invoke. Receives three arguments:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>the Integer key code
+	 * <li>the {@link KeyEvent} Object that was produced
+	 * </ol>
+	 * @return this
 	 */
 	public $ keypress(Function function)
 	{
@@ -1906,9 +2166,14 @@ public class $
 	}
 	
 	/**
-	 * 
-	 * @param function receives 1. this droidQuery 2. the key code (int) 3. the event (KeyEvent)
-	 * @return
+	 * Set the function to call when a key-up event has been detected on this view.
+	 * @param function the Function to invoke. Receives three arguments:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>the Integer key code
+	 * <li>the {@link KeyEvent} Object that was produced
+	 * </ol>
+	 * @return this
 	 */
 	public $ keyup(Function function)
 	{
@@ -1918,9 +2183,15 @@ public class $
 	}
 	
 	/**
-	 * add function for if this adapter view has a selected item
-	 * @param function receives two args. 1: this droidQuery. 2. the view position, or -1 if none is selected.
-	 * @return
+	 * This function can be called when this view is a subview of an {@link AdapterView}, in order
+	 * to register an {@link AdapterView.OnItemSelectedListener OnItemSelectedListener} to invoke
+	 * the given function.
+	 * @param function function to invoke. receives two aruments:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>the view position, or -1 if none is selected
+	 * </ol>
+	 * @return this
 	 */
 	public $ select(final Function function)
 	{
@@ -1942,6 +2213,12 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * This function can be called when this view is a subview of an {@link AdapterView}, in order
+	 * to set the selected position
+	 * @param index the index of the subview to select
+	 * @return this
+	 */
 	public $ select(int index)
 	{
 		try
@@ -1957,11 +2234,12 @@ public class $
 	}
 	
 	/**
-	 * Remove a previously-attached event handler from this view
-	 * @param eventType
-	 * @param data
+	 * Remove a previously-attached event handler from this view. This can remove events registered
+	 * by {@link #bind(String, Object, Function)}, {@link #on(String, Function)}, {@link #click()}, 
+	 * etc.- or directly on the view.
+	 * @param eventType the name of the event to unbind
 	 */
-	public void unbind(String eventType, Object data)
+	public void unbind(String eventType)
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(eventType));
 		String listener = String.format(Locale.US, "%s.On%sListener", this.view.getClass().getName(), capitalize(eventType));
@@ -1971,10 +2249,7 @@ public class $
 			
 			Class<?> eventInterface = Class.forName(listener);
 			Method setEventListener = this.view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-			EventHandlerCreator proxy = new EventHandlerCreator(new Function(){
-				@Override
-				public void invoke(Object... params){}
-			}, this.view, data);
+			EventHandlerCreator proxy = new EventHandlerCreator($.noop(), this.view, null);
 			Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
 			setEventListener.invoke(this.view, eventInterface.cast(eventHandler));
 			
@@ -1988,12 +2263,35 @@ public class $
 	/////Miscellaneous
 	
 	/**
-	 * Loops through all the child views in {@link view}, and wraps each in a droidQuery object
-	 * @param function receives the droidQuery for the view, and the index for arg1
+	 * If the current view is a subclass of {@link AdapterView}, this will loop through all the 
+	 * adapter data and invoke the given function, passing the parameters:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>the item from the adapter
+	 * <li>the index
+	 * </ol>
+	 * Otherwise, if the current view is a subclass of {@link ViewGroup}, {@code each} will
+	 * loop through all the child views, and wrap each one in a droidQuery object. The invoked
+	 * function will receive these arguments:
+	 * 
+	 * <ol>
+	 * <li>the droidQuery wrapping the child view
+	 * <li>the index of the child view
+	 * </ol>
+	 * @param function Function the function to invoke
+	 * @return this
 	 */
 	public $ each(Function function)
 	{
-		if (this.view instanceof ViewGroup)
+		if (this.view instanceof AdapterView)
+		{
+			AdapterView<?> group = (AdapterView<?>) view;
+			for (int i = 0; i < (group).getCount(); i++)
+			{
+				function.invoke($.this, group.getItemAtPosition(i), i);
+			}
+		}
+		else if (this.view instanceof ViewGroup)
 		{
 			ViewGroup group = (ViewGroup) this.view;
 			for (int i = 0; i < group.getChildCount(); i++)
@@ -2005,8 +2303,23 @@ public class $
 	}
 	
 	/**
-	 * Loops through all the child views in {@link view}, and wraps each in a droidQuery object
-	 * @param function receives the droidQuery for the view, and the index for arg1
+	 * If the current view is a subclass of {@link AdapterView}, this will loop through all the 
+	 * adapter data and invoke the given function, passing the parameters:
+	 * <ol>
+	 * <li>this droidQuery
+	 * <li>the item from the adapter
+	 * <li>the index
+	 * </ol>
+	 * Otherwise, if the current view is a subclass of {@link ViewGroup}, {@code each} will
+	 * loop through all the child views, and wrap each one in a droidQuery object. The invoked
+	 * function will receive these arguments:
+	 * 
+	 * <ol>
+	 * <li>the droidQuery wrapping the child view
+	 * <li>the index of the child view
+	 * </ol>
+	 * @param function Function the function to invoke
+	 * @return this
 	 */
 	public $ children(Function function)
 	{
@@ -2014,7 +2327,12 @@ public class $
 	}
 	
 	/**
-	 * Loops through all the sibling views in {@link view}, and wraps each in a droidQuery object
+	 * Loops through all the sibling views of the current {@link #view}, and wraps each in a 
+	 * droidQuery object. When invoked, the given function will receive two parameters:
+	 * <ol>
+	 * <li>the droidQuery for the view
+	 * <li>the child index of the sibling
+	 * </ol>
 	 * @param function receives the droidQuery for the view, and the index for arg1
 	 */
 	public $ siblings(Function function)
@@ -2031,9 +2349,32 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * If this view is a subclass of {@link AdapterView}, {@code slice} gets all Objects associated
+	 * with the data for positions {@code start} until the end of the list or array. The Objects are
+	 * then wrapped into the {@link #data} Object, and a list of droidQueries is returned.
+	 * Otherwise, if this view is a subclass of {@link ViewGroup}, {@code slice} gets all subviews
+	 * from the {@code start} position to the last child, and wraps them into each droidQuery view in
+	 * the list that is returned.
+	 * @param start the starting index
+	 * @return a list of droidQuery Objects.
+	 */
 	public List<$> slice(int start)
 	{
-		if (this.view instanceof ViewGroup)
+		if (this.view instanceof AdapterView)
+		{
+			AdapterView<?> group = (AdapterView<?>) view;
+			if (group.getCount() <= start)
+			{
+				return null;
+			}
+			List<$> list = new ArrayList<$>();
+			for (int i = start+1; i < group.getCount(); i++)
+			{
+				list.add($.with(context).data(group.getItemAtPosition(i)));
+			}
+		}
+		else if (this.view instanceof ViewGroup)
 		{
 			ViewGroup group = (ViewGroup) view;
 			if (group.getChildCount() <= start)
@@ -2048,9 +2389,32 @@ public class $
 		return null;
 	}
 	
+	/**
+	 * If this view is a subclass of {@link AdapterView}, {@code slice} gets all Objects associated
+	 * with the data for positions {@code start} to {@code end}. The Objects are
+	 * then wrapped into the {@link #data} Object, and a list of droidQueries is returned.
+	 * Otherwise, if this view is a subclass of {@link ViewGroup}, {@code slice} gets all subviews
+	 * from the {@code start} to {@code end}, and wraps them into each droidQuery view in
+	 * the list that is returned.
+	 * @param start the starting index
+	 * @return a list of droidQuery Objects.
+	 */
 	public List<$> slice(int start, int end)
 	{
-		if (this.view instanceof ViewGroup)
+		if (this.view instanceof AdapterView)
+		{
+			AdapterView<?> group = (AdapterView<?>) view;
+			if (group.getCount() <= start)
+			{
+				return null;
+			}
+			List<$> list = new ArrayList<$>();
+			for (int i = start+1; i < Math.min(group.getCount(), end); i++)
+			{
+				list.add($.with(context).data(group.getItemAtPosition(i)));
+			}
+		}
+		else if (this.view instanceof ViewGroup)
 		{
 			ViewGroup group = (ViewGroup) view;
 			if (group.getChildCount() <= start)
@@ -2065,9 +2429,13 @@ public class $
 		return null;
 	}
 	
-	/** returns number of children in current view */
+	/** @return the number of subviews or adapter cells in the current view */
 	public int length()
 	{
+		if (view instanceof AdapterView)
+		{
+			return ((AdapterView<?>) view).getCount();
+		}
 		if (view instanceof ViewGroup)
 		{
 			return ((ViewGroup) view).getChildCount();
@@ -2075,15 +2443,17 @@ public class $
 		return 0;
 	}
 	
+	/** @return the number of subviews or adapter cells in the current view */
 	public int size()
 	{
 		return length();
 	}
 	
 	/**
-	 * performs a {@code instanceof} check of the current View Object
-	 * @param className
-	 * @return
+	 * Checks to see if the current view is a subclass of the given class name
+	 * @param className the name of the superclass to check
+	 * @return {@code true} if this {@link #view} is a subclass of the given class name. 
+	 * Otherwise, {@code false}.
 	 */
 	public boolean is(String className)
 	{
@@ -2100,7 +2470,9 @@ public class $
 		}
 	}
 	
-	//remove the current view from the layout
+	/**
+	 * Removes the current view from the layout
+	 */
 	public void remove()
 	{
 		ViewParent parent = this.view.getParent();
@@ -2110,6 +2482,14 @@ public class $
 		}
 	}
 	
+	/////Selectors
+	
+	/**
+	 * Recursively selects all subviews of the given view
+	 * @param v the parent view of all the suclasses to select
+	 * @return a list of all views (wrapped in a droidQuery) that are subviews in the 
+	 * view hierarchy with the given view as the root
+	 */
 	private List<$> recursivelySelectAllSubViews(View v)
 	{
 		List<$> list = new ArrayList<$>();
@@ -2124,6 +2504,12 @@ public class $
 		return list;
 	}
 	
+	/**
+	 * Recursively selects all subviews of the given view that are subclasses of the given Object type
+	 * @param v the parent view of all the suclasses to select
+	 * @return a list of all views (wrapped in a droidQuery) that are subviews in the 
+	 * view hierarchy with the given view as the root
+	 */
 	private List<$> recursivelySelectByType(View v, Class<?> clazz)
 	{
 		List<$> list = new ArrayList<$>();
@@ -2139,11 +2525,9 @@ public class $
 		return list;
 	}
 	
-	/////Selectors
-	
 	/**
 	 * Select all views and return them in a droidQuery wrapper.
-	 * @return
+	 * @return a list of droidQuery Objects with the view set to each subview
 	 */
 	public List<$> selectAll()
 	{
@@ -2169,13 +2553,22 @@ public class $
 	}
 	
 	/**
-	 * Selects the current view's children
-	 * @return
+	 * Selects the child views of the current view
+	 * @return a list of droidQuery Objects that wrap each returned subview. If the current
+	 * view is a subclass of {@link AdapterView}, the data at each position is set to the {@link #data}
+	 * attribute of the droidQuery instance
 	 */
 	public List<$> selectChildren()
 	{
 		List<$> list = new ArrayList<$>();
-		if (view instanceof ViewGroup)
+		if (view instanceof AdapterView)
+		{
+			for (int i = 0; i < ((AdapterView<?>) view).getCount(); i++)
+			{
+				list.add($.with(context).data(((AdapterView<?>) view).getItemAtPosition(i)));
+			}
+		}
+		else if (view instanceof ViewGroup)
 		{
 			for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++)
 			{
@@ -2185,6 +2578,11 @@ public class $
 		return list;
 	}
 	
+	/**
+	 * Selects all subviews of the given view that do not contain subviews
+	 * @param v the view whose subviews will be retrieved
+	 * @return a list of droidQuery objects that wrap the empty views
+	 */
 	private List<$> recursivelySelectEmpties(View v)
 	{
 		List<$> list = new ArrayList<$>();
@@ -2195,7 +2593,7 @@ public class $
 				list.addAll(recursivelySelectEmpties(((ViewGroup) v).getChildAt(i)));
 			}
 		}
-		else
+		else if (!(v instanceof AdapterView && ((AdapterView<?>) v).getCount() > 0))
 		{
 			list.add($.with(v));
 		}
@@ -2204,13 +2602,19 @@ public class $
 	
 	/**
 	 * Select all non-ViewGroups, or ViewGroups with no children
-	 * @return
+	 * @return a list of droidQuery objects that wrap the returned views
 	 */
 	public List<$> selectEmpties()
 	{
 		return recursivelySelectEmpties(this.view);
 	}
 	
+	/**
+	 * Searches the view hierarchy rooted at the given view in order to find the currently
+	 * selected view
+	 * @param view the view to search whithin
+	 * @return the selected view, or null if no view in the given hierarchy was found.
+	 */
 	private View recursivelyFindSelectedSubView(View view)
 	{
 		if (view.isFocused())
@@ -2230,6 +2634,10 @@ public class $
 			return null;
 	}
 	
+	/**
+	 * Selects the currently-focused view.
+	 * @return a droidQuery Object created with the currently-selected View
+	 */
 	public $ selectFocused()
 	{
 		if (this.view.isFocused())
@@ -2237,6 +2645,12 @@ public class $
 		return $.with(recursivelyFindSelectedSubView(view));
 	}
 	
+	/**
+	 * Select all {@link View#INVISIBLE invisible}, {@link View#GONE gone}, and 0-alpha views within the 
+	 * view hierarchy rooted at the given view
+	 * @param v the view hierarchy in which to search
+	 * @return a list of droidQuery Objects that wrap the found views
+	 */
 	private List<$> recursivelySelectHidden(View v)
 	{
 		List<$> list = new ArrayList<$>();
@@ -2252,6 +2666,11 @@ public class $
 		return list;
 	}
 	
+	/**
+	 * Select all {@link View#VISIBLE visible} and 1-alpha views within the given view hierarchy
+	 * @param v the view to search in
+	 * @return a list of droidQuery Objects that wrap the found views
+	 */
 	private List<$> recursivelySelectVisible(View v)
 	{
 		List<$> list = new ArrayList<$>();
@@ -2267,6 +2686,10 @@ public class $
 		return list;
 	}
 	
+	/**
+	 * Selects the 
+	 * @return
+	 */
 	public List<$> selectHidden()
 	{
 		return recursivelySelectHidden(view);
