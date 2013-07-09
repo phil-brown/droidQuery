@@ -275,8 +275,10 @@ public class AnimationOptions
 	public Function progress() { return progress; }
 	/**
 	 * Set the function called after each step of the animation. The invoked function will receive
-	 * two arguments:
+	 * three arguments:
 	 * <ol>
+	 * <li><b>View</b> the view that is animating
+	 * <li><b>String</b> the name of the animated value
 	 * <li><b>Object</b> current value
 	 * <li><b>long</b> remaining milliseconds
 	 * </ol>

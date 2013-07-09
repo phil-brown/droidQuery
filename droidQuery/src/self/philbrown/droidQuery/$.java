@@ -22,6 +22,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -202,8 +203,8 @@ public class $
 	 * Provides access to the system and the layout
 	 */
 	private Context context;
-	/** The current view that will be manipulated */
-	private View view;
+	/** The current views that will be manipulated */
+	private List<View> views;
 	/** The lowest level view registered with {@code this} droidQuery. */
 	private View rootView;
 	/** 
@@ -248,20 +249,26 @@ public class $
 	public $(Context context)
 	{
 		this.context = context;
+		this.views = new ArrayList<View>();
 		if (context instanceof Activity)//if an activity is used, and a contentView is set, use this as the view
 		{
-			this.view = this.findViewById(android.R.id.content).getRootView();
-			if (this.view != null)
+			View view = this.findViewById(android.R.id.content).getRootView();
+			if (view != null)
+			{
 				this.rootView = view;
+				this.views.add(view);
+			}
 			else
 			{
 				//if no view is set, make sure not to get null pointers from view references.
-				this.view = new View(context);
+				view = new View(context);
 				this.rootView = view;
+				this.views.add(view);
 			}
 		}
-		this.view = new View(context);//if view operations are attempted without the view set, this prevents null pointer exceptions
+		View view = new View(context);//if view operations are attempted without the view set, this prevents null pointer exceptions
 		this.rootView = view;
+		this.views.add(view);
 		setup();
 	}
 	
@@ -276,8 +283,51 @@ public class $
 	public $(View view)
 	{
 		this.rootView = view;
-		this.view = view;
+		this.views = new ArrayList<View>();
+		this.views.add(view);
 		this.context = view.getContext();
+		setup();
+	}
+	
+	/**
+	 * Constructor. Accepts a <em>List&lt;View&gt;</em> Object.
+	 * @param view
+	 * @see #with(View)
+	 */
+	public $(List<View> views)
+	{
+		if (views == null)
+		{
+			throw new NullPointerException("Cannot create droidQuery Instance with null List.");
+		}
+		else if (views.isEmpty())
+		{
+			throw new NullPointerException("Cannot create droidQuery Instance with empty List.");
+		}
+		this.rootView = views.get(0);
+		this.context = this.rootView.getContext();
+		this.views = views;
+		setup();
+	}
+	
+	/**
+	 * Constructor. Accepts a {@code View[]} Object.
+	 * @param view
+	 * @see #with(View)
+	 */
+	public $(View[] views)
+	{
+		if (views == null)
+		{
+			throw new NullPointerException("Cannot create droidQuery Instance with null Array.");
+		}
+		else if (views.length == 0)
+		{
+			throw new NullPointerException("Cannot create droidQuery Instance with empty Array.");
+		}
+		this.rootView = views[0];
+		this.context = this.rootView.getContext();
+		this.views = Arrays.asList(views);
 		setup();
 	}
 	
@@ -296,21 +346,24 @@ public class $
 	 */
 	private void setupFocusListener()
 	{
-		this.view.setOnFocusChangeListener(new View.OnFocusChangeListener(){
+		for (View view : views)
+		{
+			view.setOnFocusChangeListener(new View.OnFocusChangeListener(){
 
-			@Override
-			public void onFocusChange(View v, boolean hasFocus) {
-				if (hasFocus && onFocus != null)
-				{
-					onFocus.invoke($.this);
+				@Override
+				public void onFocusChange(View v, boolean hasFocus) {
+					if (hasFocus && onFocus != null)
+					{
+						onFocus.invoke($.with(v));
+					}
+					else if (!hasFocus && offFocus != null)
+					{
+						offFocus.invoke($.with(v));
+					}
 				}
-				else if (!hasFocus && offFocus != null)
-				{
-					offFocus.invoke($.this);
-				}
-			}
-			
-		});
+				
+			});
+		}
 	}
 	
 	/**
@@ -318,39 +371,42 @@ public class $
 	 */
 	private void setupKeyListener()
 	{
-		this.view.setOnKeyListener(new View.OnKeyListener() {
-			
-			@Override
-			public boolean onKey(View v, int keyCode, KeyEvent event) {
-				boolean retVal = false;
-				switch(event.getKeyCode())
-				{
-					case KeyEvent.ACTION_DOWN : {
-						if (keyDown != null)
-						{
-							keyDown.invoke($.this, keyCode, event);
-							retVal = true;
-						}
-						break;
-					}
-					case KeyEvent.ACTION_UP : {
-						if (keyUp != null)
-						{
-							keyUp.invoke($.this, keyCode, event);
-							retVal = true;
-						}
-						break;
-					}
-				}
-				if (keyPress != null)
-				{
-					keyPress.invoke($.this, keyCode, event);
-					retVal = true;
-				}
+		for (View view : views)
+		{
+			view.setOnKeyListener(new View.OnKeyListener() {
 				
-				return retVal;
-			}
-		});
+				@Override
+				public boolean onKey(View v, int keyCode, KeyEvent event) {
+					boolean retVal = false;
+					switch(event.getKeyCode())
+					{
+						case KeyEvent.ACTION_DOWN : {
+							if (keyDown != null)
+							{
+								keyDown.invoke($.with(v), keyCode, event);
+								retVal = true;
+							}
+							break;
+						}
+						case KeyEvent.ACTION_UP : {
+							if (keyUp != null)
+							{
+								keyUp.invoke($.with(v), keyCode, event);
+								retVal = true;
+							}
+							break;
+						}
+					}
+					if (keyPress != null)
+					{
+						keyPress.invoke($.with(v), keyCode, event);
+						retVal = true;
+					}
+					
+					return retVal;
+				}
+			});
+		}
 	}
 	
 	/**
@@ -364,11 +420,11 @@ public class $
 			public void onUpSwipe(View v) {
 				if (swipeUp != null)
 				{
-					swipeUp.invoke($.this);
+					swipeUp.invoke($.with(v));
 				}
 				else if (swipe != null)
 				{
-					swipe.invoke($.this, SwipeDetector.Direction.UP);
+					swipe.invoke($.with(v), SwipeDetector.Direction.UP);
 				}
 			}
 
@@ -376,11 +432,11 @@ public class $
 			public void onRightSwipe(View v) {
 				if (swipeRight != null)
 				{
-					swipeRight.invoke($.this);
+					swipeRight.invoke($.with(v));
 				}
 				else if (swipe != null)
 				{
-					swipe.invoke($.this, SwipeDetector.Direction.RIGHT);
+					swipe.invoke($.with(v), SwipeDetector.Direction.RIGHT);
 				}
 			}
 
@@ -388,11 +444,11 @@ public class $
 			public void onLeftSwipe(View v) {
 				if (swipeLeft != null)
 				{
-					swipeLeft.invoke($.this);
+					swipeLeft.invoke($.with(v));
 				}
 				else if (swipe != null)
 				{
-					swipe.invoke($.this, SwipeDetector.Direction.LEFT);
+					swipe.invoke($.with(v), SwipeDetector.Direction.LEFT);
 				}
 			}
 
@@ -400,11 +456,11 @@ public class $
 			public void onDownSwipe(View v) {
 				if (swipeDown != null)
 				{
-					swipeDown.invoke($.this);
+					swipeDown.invoke($.with(v));
 				}
 				else if (swipe != null)
 				{
-					swipe.invoke($.this, SwipeDetector.Direction.DOWN);
+					swipe.invoke($.with(v), SwipeDetector.Direction.DOWN);
 				}
 			}
 
@@ -416,13 +472,16 @@ public class $
 			
 		});
 		
-		this.view.setOnTouchListener(new View.OnTouchListener() {
-			
-			@Override
-			public boolean onTouch(View v, MotionEvent e) {
-				return swiper.onTouch(v, e);
-			}
-		});
+		for (View view : views)
+		{
+			view.setOnTouchListener(new View.OnTouchListener() {
+				
+				@Override
+				public boolean onTouch(View v, MotionEvent e) {
+					return swiper.onTouch(v, e);
+				}
+			});
+		}
 	}
 	
 	/** 
@@ -452,6 +511,36 @@ public class $
 	}
 	
 	/**
+	 * Convenience method for initializing a droidQuery Object. For example:
+	 * <pre>
+	 *	List&lt;View&gt; list = new ArrayList&lt;View&gt;();
+	 *	//manipute the list
+	 *	$.with(list);
+	 * </pre>
+	 * @param views
+	 * @return a new droidQuery instance
+	 */
+	public static $ with(List<View> views)
+	{
+		return new $(views);
+	}
+	
+	/**
+	 * Convenience method for initializing a droidQuery Object. For example:
+	 * <pre>
+	 *	View[] views = new View[10];
+	 *	//manipute the array
+	 *	$.with(views);
+	 * </pre>
+	 * @param views
+	 * @return a new droidQuery instance
+	 */
+	public static $ with(View[] views)
+	{
+		return new $(views);
+	}
+	
+	/**
 	 * Shortcut method for initializing a droidQuery Object and setting the view to manipulate.
 	 * For example:<pre>
 	 * $.with(this).id(R.id.main)
@@ -477,161 +566,63 @@ public class $
 			v = ((Activity) context).findViewById(id);
 		else	
 			v = rootView.findViewById(id);
-		return v;
-	}
-
-	/** 
-	 * Creates a new View of the given String type, and sets this droidQuery instance to manipulate
-	 * that new instance. For example:
-	 * <pre>
-	 * $.with(this, R.id.myView).fadeIn().attr("alpha", 0.5f).push("android.widget.Button").click(new Function() {
-	 * 	public void invoke(Object... params) {
-	 *   	$.alert(MyActivity.this, "button clicked");
-	 * 	}
-	 * }).manage(new Function() {
-	 * 	public void invoke(Object... params) {
-	 * 		Context context = (Context) params[0];
-	 * 		View view = (View) params[1];
-	 * 		findViewById(R.id.mainView).addView(view);
-	 * 	}
-	 * });
-	 * </pre>
-	 */
-	public $ push(String className)
-	{
-		try
-		{
-			Class<?> clazz = Class.forName(className);
-			Constructor<?> constructor = clazz.getConstructor(new Class<?>[]{Context.class});
-			View v = (View) constructor.newInstance(context);
-			if (v == null || v.getParent() != null)
-			{
-				Log.w("droidQuery", "Cannot add View");
-				return this;
-			}
-			add(v);
-		}
-		catch (Throwable t) 
-		{
-			throw new NullPointerException("Invalid view class!");
-		}
-		return this;
-	}
-
-	/** 
-	 * Gets a new View by the given id, and sets this droidQuery instance to manipulate
-	 * that view. For example:
-	 * <pre>
-	 * $.with(this, R.id.myView).fadeIn().attr("alpha", 0.5f).push(R.id.myButton).click(new Function() {
-	 * 	public void invoke(Object... params) {
-	 *   	$.alert(MyActivity.this, "button clicked");
-	 * 	}
-	 * });
-	 * </pre>
-	 */
-	public $ push(int id)
-	{
-		View v = findViewById(id);
-		if (v == null || v.getParent() != null)
-		{
-			Log.w("droidQuery", "Cannot add View");
-			return this;
-		}
-		return add(v);
-	}
-	
-	/** 
-	 * Sets this droidQuery instance to manipulate the given view. For example:
-	 * <pre>
-	 * $.with(this, R.id.myView).fadeIn().attr("alpha", 0.5f).push(myButton).click(new Function() {
-	 * 	public void invoke(Object... params) {
-	 *   	$.alert(MyActivity.this, "button clicked");
-	 * 	}
-	 * });
-	 * </pre>
-	 */
-	public $ push(View v)
-	{
-		return add(v);
-	}
-	
-	/**
-	 * Pops up an entire generation in the view hierarchy - meaning any siblings will also be removed.
-	 * This will only pop views if views have been pushed, and then only down to the originally loaded
-	 * view.
-	 * @return this
-	 * @see #push(int)
-	 * @see #push(String)
-	 * @see #push(View)
-	 */
-	public $ pop()
-	{
-		if (this.view == this.rootView)
-		{
-			Log.w("droidQuery", "Cannot pop root");
-			return this;
-		}
-		this.view = (View) this.view.getParent();
-		((ViewGroup) this.view).removeAllViews();
-		return this;
-	}
-	
-	/**
-	 * Pops all generation in the view hierarchy above the original view.
-	 * This will only pop views if views have been pushed, and then only down to the originally loaded
-	 * view.
-	 * @return this
-	 * @see #push(int)
-	 * @see #push(String)
-	 * @see #push(View)
-	 */
-	public $ popAll()
-	{
-		if (this.view == this.rootView)
-		{
-			Log.w("droidQuery", "Cannot pop root");
-			return this;
-		}
-		while(this.view != this.rootView)
-		{
-			this.view = (View) this.view.getParent();
-			((ViewGroup) this.view).removeAllViews();
-		}
-		return this;
-	}
-	
-	/** Sets this droidQuery instance to manipulate the parent view. Does not remove any view. */
-	public $ parent()
-	{
-		if (this.view == this.rootView)
-		{
-			Log.w("droidQuery", "No parent to root exists");
-			return this;
-		}
-		this.view = (View) this.view.getParent();
-		return this;
-	}
-	
-	/** Sets this droidQuery instance to manipulate the child view at the given index. */
-	public $ child(int index)
-	{
-		View v = ((ViewGroup) this.view).getChildAt(index);
 		if (v == null)
 		{
-			Log.w("droidQuery", "No such child exists");
-			return this;
+			for (View view : views)
+			{
+				if (view.getId() == id) 
+				{
+					v = view;
+					break;
+				}
+			}
 		}
-		this.view = v;
+		return v;
+	}
+	
+	/** Sets the set of views to the parents of all currently-selected views */
+	public $ parent()
+	{
+		List<View> _views = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			ViewParent parent = view.getParent();
+			if (parent != null && !_views.contains(parent) && parent instanceof View)
+			{
+				_views.add((View) parent);
+			}
+		}
+		this.views.clear();
+		this.views = _views;
+		return this;
+	}
+	
+	/** Sets the set of views to the children of the current set of views with the given child index */
+	public $ child(int index)
+	{
+		List<View> _views = new ArrayList<View>();
+		for (View view : views)
+		{
+			if (view instanceof ViewGroup)
+			{
+				View v = ((ViewGroup) view).getChildAt(index);
+				if (v != null)
+					_views.add(v);
+			}
+		}
+		views.clear();
+		views = _views;
+		
 		return this;
 	}
 	
 	/**
-	 * Animates the {@link #view} using the JSON properties, the given duration, the easing function,
+	 * Animates the selected views using the JSON properties, the given duration, the easing function,
 	 * and with the onComplete callback
 	 * @param properties JSON String of an {@link AnimationOptions} Object
 	 * @param duration the duration of the animation, in milliseconds
 	 * @param easing the Easing function to use
-	 * @param complete the Function to invoke once the animation has completed
+	 * @param complete the Function to invoke once the animation has completed for all views
 	 * @return this
 	 * @see Easing
 	 * @see #animate(Map, long, Easing, Function)
@@ -644,7 +635,7 @@ public class $
 	}
 	
 	/**
-	 * Animate the current view. Example:
+	 * Animate the current views. Example:
 	 * <pre>
 	 * $.with(mView).animate("{
 	 *                           left: 1000px,
@@ -691,7 +682,7 @@ public class $
 	}
 	
 	/**
-	 * Animate the current {@link #view}
+	 * Animate the currently selected views
 	 * @param properties mapping of {@link AnimationOptions} attributes
 	 * @param duration the length of time for the animation to last
 	 * @param easing the Easing to use to interpolate the animation
@@ -705,17 +696,12 @@ public class $
 	}
 	
 	/**
-	 * Animate multiple view properties at the same time. Example:
-	 * <pre>
-	 * $.with(myView).animate(new QuickMap(QuickEntry.qe("alpha", .8f), QuickEntry.qe("width", 50%)), 400, Easing.LINEAR, null);
-	 * </pre>
-	 * @param properties mapping of property names and final values to animate
-	 * @param options the options for setting the duration, easing, etc of the animation
-	 * @return this
+	 * This reusable chunk of code can set up the given animation using the given animation options
+	 * @param animation the set of animated views and attributes whose options will be initialized
+	 * @param options the options used to manipulate how the animation behaves
 	 */
-	public $ animate(Map<String, Object> properties, final AnimationOptions options)
+	private void handleAnimationOptions(AnimatorSet animation, final AnimationOptions options)
 	{
-		AnimatorSet animation = new AnimatorSet();
 		animation.setDuration(options.duration());
 		animation.addListener(new AnimatorListener(){
 
@@ -788,178 +774,214 @@ public class $
 			interpolator = options.specialEasing();
 		
 		animation.setInterpolator(interpolator);
-		
-		List<Animator> animations = new ArrayList<Animator>();
-		for (Entry<String, Object> entry : properties.entrySet())
+	}
+	
+	/**
+	 * Interprets the CSS-style String and sets the value
+	 * @param view the view that will change.
+	 * @param key the name of the attribute
+	 * @param _value the end animation value
+	 * @return the computed value
+	 */
+	private Object getAnimationValue(View view, String key, String _value)
+	{
+		Object value = null;
+		String[] split = (_value).split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)");
+		if (split.length == 1)
 		{
-			String key = entry.getKey();
-			Object value = entry.getValue();
-			ObjectAnimator anim = null;
-			if (value instanceof String)
+			if (split[0].contains("."))
 			{
-				String[] split = ((String) value).split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)");
-				if (split.length == 1)
+				value = Float.parseFloat(split[0]);
+			}
+			else
+			{
+				value = Integer.parseInt(split[0]);
+			}
+		}
+		else
+		{
+			if (split.length > 2)
+			{
+				Log.w("droidQuery", "parsererror for key " + key);
+				return null;
+			}
+			if (split[1].equalsIgnoreCase("px"))
+			{
+				//this is the default. Just determine if float or int
+				if (split[0].contains("."))
 				{
-					if (split[0].contains("."))
+					value = Float.parseFloat(split[0]);
+				}
+				else
+				{
+					value = Integer.parseInt(split[0]);
+				}
+			}
+			else if (split[1].equalsIgnoreCase("dip"))
+			{
+				float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
+				if (split[0].contains("."))
+				{
+					value = px;
+				}
+				else
+				{
+					value = (int) px;
+				}
+			}
+			else if (split[1].equalsIgnoreCase("dp"))
+			{
+				DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+			    float px = Float.parseFloat(split[0]) * (metrics.density/160f);
+			    if (split[0].contains("."))
+				{
+					value = px;
+				}
+				else
+				{
+					value = (int) px;
+				}
+			}
+			else if (split[1].equalsIgnoreCase("in"))
+			{
+				float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_IN, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
+				if (split[0].contains("."))
+				{
+					value = px;
+				}
+				else
+				{
+					value = (int) px;
+				}
+			}
+			else if (split[1].equalsIgnoreCase("mm"))
+			{
+				float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
+				if (split[0].contains("."))
+				{
+					value = px;
+				}
+				else
+				{
+					value = (int) px;
+				}
+			}
+			else if (split[1].equalsIgnoreCase("pt"))
+			{
+				float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PT, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
+				if (split[0].contains("."))
+				{
+					value = px;
+				}
+				else
+				{
+					value = (int) px;
+				}
+			}
+			else if (split[1].equalsIgnoreCase("sp"))
+			{
+				float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
+				if (split[0].contains("."))
+				{
+					value = px;
+				}
+				else
+				{
+					value = (int) px;
+				}
+			}
+			else if (split[1].equals("%"))
+			{
+				ViewParent parent = view.getParent();
+				float pixels = 0;
+				if (parent == null || !(parent instanceof View))
+				{
+					pixels = context.getResources().getDisplayMetrics().widthPixels;
+					//use best guess for width or height dpi
+					if (split[0].equalsIgnoreCase("y") || split[0].equalsIgnoreCase("top") || split[0].equalsIgnoreCase("bottom"))
 					{
-						value = Float.parseFloat(split[0]);
-					}
-					else
-					{
-						value = Integer.parseInt(split[0]);
+						pixels = context.getResources().getDisplayMetrics().heightPixels;
 					}
 				}
 				else
 				{
-					if (split.length > 2)
+					pixels = ((View) parent).getWidth();
+					if (split[0].equalsIgnoreCase("y") || split[0].equalsIgnoreCase("top") || split[0].equalsIgnoreCase("bottom"))
 					{
-						Log.w("droidQuery", "parsererror for key " + key);
-						continue;
-					}
-					if (split[1].equalsIgnoreCase("px"))
-					{
-						//this is the default. Just determine if float or int
-						if (split[0].contains("."))
-						{
-							value = Float.parseFloat(split[0]);
-						}
-						else
-						{
-							value = Integer.parseInt(split[0]);
-						}
-					}
-					else if (split[1].equalsIgnoreCase("dip"))
-					{
-						float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
-						if (split[0].contains("."))
-						{
-							value = px;
-						}
-						else
-						{
-							value = (int) px;
-						}
-					}
-					else if (split[1].equalsIgnoreCase("dp"))
-					{
-						DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-					    float px = Float.parseFloat(split[0]) * (metrics.density/160f);
-					    if (split[0].contains("."))
-						{
-							value = px;
-						}
-						else
-						{
-							value = (int) px;
-						}
-					}
-					else if (split[1].equalsIgnoreCase("in"))
-					{
-						float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_IN, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
-						if (split[0].contains("."))
-						{
-							value = px;
-						}
-						else
-						{
-							value = (int) px;
-						}
-					}
-					else if (split[1].equalsIgnoreCase("mm"))
-					{
-						float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
-						if (split[0].contains("."))
-						{
-							value = px;
-						}
-						else
-						{
-							value = (int) px;
-						}
-					}
-					else if (split[1].equalsIgnoreCase("pt"))
-					{
-						float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PT, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
-						if (split[0].contains("."))
-						{
-							value = px;
-						}
-						else
-						{
-							value = (int) px;
-						}
-					}
-					else if (split[1].equalsIgnoreCase("sp"))
-					{
-//						float pixels = context.getResources().getDisplayMetrics().widthPixels;
-//						//use best guess for width or height dpi
-//						if (split[0].equalsIgnoreCase("y") || split[0].equalsIgnoreCase("top") || split[0].equalsIgnoreCase("bottom"))
-//						{
-//							pixels = context.getResources().getDisplayMetrics().heightPixels;
-//						}
-//						float sp = Float.parseFloat(split[0])/pixels;
-//						if (split[0].contains("."))
-//						{
-//							value = sp;
-//						}
-//						else
-//						{
-//							value = (int) sp;
-//						}
-						float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
-						if (split[0].contains("."))
-						{
-							value = px;
-						}
-						else
-						{
-							value = (int) px;
-						}
-					}
-					else if (split[1].equals("%"))
-					{
-						float pixels = context.getResources().getDisplayMetrics().widthPixels;
-						//use best guess for width or height dpi
-						if (split[0].equalsIgnoreCase("y") || split[0].equalsIgnoreCase("top") || split[0].equalsIgnoreCase("bottom"))
-						{
-							pixels = context.getResources().getDisplayMetrics().heightPixels;
-						}
-						float percent = Float.parseFloat(split[0])/100*pixels;
-						if (split[0].contains("."))
-						{
-							value = percent;
-						}
-						else
-						{
-							value = (int) percent;
-						}
-					}
-					else
-					{
-						Log.w("droidQuery", "invalid units for Object with key " + key);
-						continue;
+						pixels = ((View) parent).getHeight();
 					}
 				}
+				float percent = 0;
+				if (pixels != 0)
+					percent = Float.parseFloat(split[0])/100*pixels;
+				if (split[0].contains("."))
+				{
+					value = percent;
+				}
+				else
+				{
+					value = (int) percent;
+				}
 			}
-			
-			if (value instanceof Integer)
-				anim = ObjectAnimator.ofInt(this.view, key, (Integer) value);
-			else if (value instanceof Float)
-				anim = ObjectAnimator.ofFloat(this.view, key, (Float) value);
-			
-			if (options.progress() != null)
+			else
 			{
-				anim.addUpdateListener(new AnimatorUpdateListener(){
+				Log.w("droidQuery", "invalid units for Object with key " + key);
+				return null;
+			}
+		}
+		return value;
+	}
+	
+	/**
+	 * Animate multiple view properties at the same time. Example:
+	 * <pre>
+	 * $.with(myView).animate(new QuickMap(QuickEntry.qe("alpha", .8f), QuickEntry.qe("width", 50%)), 400, Easing.LINEAR, null);
+	 * </pre>
+	 * @param properties mapping of property names and final values to animate
+	 * @param options the options for setting the duration, easing, etc of the animation
+	 * @return this
+	 */
+	public $ animate(Map<String, Object> properties, final AnimationOptions options)
+	{
+		AnimatorSet animation = new AnimatorSet();
+		handleAnimationOptions(animation, options);
+		List<Animator> animations = new ArrayList<Animator>();
+		for (Entry<String, Object> entry : properties.entrySet())
+		{
+			final String key = entry.getKey();
+			Object value = entry.getValue();
+			ObjectAnimator anim = null;
+			
+			if (value instanceof String)
+			{
+				for (final View view : this.views)
+				{
+					value = getAnimationValue(view, key, (String) value);
+					if (value != null)
+					{
+						if (value instanceof Integer)
+							anim = ObjectAnimator.ofInt(view, key, (Integer) value);
+						else if (value instanceof Float)
+							anim = ObjectAnimator.ofFloat(view, key, (Float) value);
+						
+						if (options.progress() != null)
+						{
+							anim.addUpdateListener(new AnimatorUpdateListener(){
 
-					@Override
-					public void onAnimationUpdate(ValueAnimator animation) {
-						options.progress().invoke(animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+								@Override
+								public void onAnimationUpdate(ValueAnimator animation) {
+									options.progress().invoke(view, key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+								}
+								
+							});
+						}
+						
+						animations.add(anim);
 					}
 					
-				});
+				}
+				
 			}
-			
-			animations.add(anim);
 		}
 		animation.playTogether(animations);
 		animation.start();
@@ -978,13 +1000,13 @@ public class $
 	}
 	
 	/**
-	 * Shortcut method for animating the alpha attribute of this {@link #view} to 1.0.
+	 * Shortcut method for animating the alpha attribute of the selected views to 1.0.
 	 * @param duration the length of time the animation should last
 	 * @param complete the function to call when the animation has completed
 	 */
 	public void fadeIn(long duration, final Function complete)
 	{
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "alpha", 1.0f);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1002,11 +1024,24 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 1.0f);
+			if (builder == null) 
+			{
+				builder = anim.play(animator);
+			}
+			else
+			{
+				builder.with(animator);
+			}
+		}
 		anim.start();
 	}
 	
 	/**
-	 * Shortcut method for animating the alpha attribute of this {@link #view} to 0.0.
+	 * Shortcut method for animating the alpha attribute of the selected views to 0.0.
 	 * @param options use to modify the behavior of the animation
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1022,7 +1057,7 @@ public class $
 	 */
 	public void fadeOut(long duration, final Function complete)
 	{
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "alpha", 0.0f);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1040,11 +1075,24 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 0.0f);
+			if (builder == null) 
+			{
+				builder = anim.play(animator);
+			}
+			else
+			{
+				builder.with(animator);
+			}
+		}
 		anim.start();
 	}
 	
 	/**
-	 * Shortcut method for animating the alpha attribute of this {@link #view} to the given value.
+	 * Shortcut method for animating the alpha attribute of the selected views to the given value.
 	 * @param opacity the alpha value at the end of the animation
 	 * @param options use to modify the behavior of the animation
 	 */
@@ -1062,7 +1110,7 @@ public class $
 	 */
 	public void fadeTo(long duration, float opacity, final Function complete)
 	{
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "alpha", opacity);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1080,21 +1128,41 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", opacity);
+			if (builder == null) 
+			{
+				builder = anim.play(animator);
+			}
+			else
+			{
+				builder.with(animator);
+			}
+		}
 		anim.start();
 	}
 	
 	/**
-	 * If this {@link #view} has an alpha of less than 0.5, it will fade in. Otherwise, it will
+	 * For each selected view, if its alpha is less than 0.5, it will fade in. Otherwise, it will
 	 * fade out.
 	 * @param duration the length of time the animation should last
 	 * @param complete the function to call when the animation has completed
 	 */
 	public void fadeToggle(long duration, final Function complete)
 	{
-		if (this.view.getAlpha() < 0.5)
-			this.fadeIn(duration, complete);
-		else
-			this.fadeIn(duration, complete);
+		List<View> zeros = new ArrayList<View>();
+		List<View> ones = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			if (view.getAlpha() < 0.5)
+				zeros.add(view);
+			else
+				ones.add(view);
+		}
+		$.with(zeros).fadeIn(duration, complete);
+		$.with(ones).fadeOut(duration, complete);
 	}
 	
 	/**
@@ -1104,31 +1172,27 @@ public class $
 	 */
 	public void fadeToggle(AnimationOptions options)
 	{
-		if (this.view.getAlpha() < 0.5)
-			this.fadeIn(options);
-		else
-			this.fadeIn(options);
+		List<View> zeros = new ArrayList<View>();
+		List<View> ones = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			if (view.getAlpha() < 0.5)
+				zeros.add(view);
+			else
+				ones.add(view);
+		}
+		$.with(zeros).fadeIn(options);
+		$.with(ones).fadeOut(options);
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it down, past its bottom
+	 * Animates the selected views out of their parent views by sliding it down, past its bottom
 	 * @param duration the length of time the animation should last
 	 * @param complete the function to call when the animation has completed
 	 */
 	public void slideDown(long duration, final Function complete)
 	{
-		ViewParent parent = view.getParent();
-		float y = 0;
-		if (parent != null && parent instanceof View)
-		{
-			y = ((View) parent).getHeight();
-		}
-		else
-		{
-			Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
-			y = display.getHeight();
-		}
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "y", y);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1146,38 +1210,80 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			ViewParent parent = view.getParent();
+			float y = 0;
+			if (parent != null && parent instanceof View)
+			{
+				y = ((View) parent).getHeight();
+			}
+			else
+			{
+				Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
+				y = display.getHeight();
+			}
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "y", y);
+			if (builder == null)
+				builder = anim.play(animator);
+			else
+				builder.with(animator);
+		}
 		anim.start();
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it down, past its bottom
+	 * Animates the selected views out of its parent by sliding it down, past its bottom
 	 * @param options use to modify the behavior of the animation
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void slideDown(AnimationOptions options)
+	public void slideDown(final AnimationOptions options)
 	{
-		ViewParent parent = view.getParent();
-		float y = 0;
-		if (parent != null && parent instanceof View)
+		AnimatorSet animation = new AnimatorSet();
+		handleAnimationOptions(animation, options);
+		
+		List<Animator> animations = new ArrayList<Animator>();
+		for (final View view : this.views)
 		{
-			y = ((View) parent).getHeight();
+			ViewParent parent = view.getParent();
+			float y = 0;
+			if (parent != null && parent instanceof View)
+			{
+				y = ((View) parent).getHeight();
+			}
+			else
+			{
+				Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
+				y = display.getHeight();
+			}
+			ObjectAnimator anim = ObjectAnimator.ofFloat(view, "y", new Float(y));
+			if (options.progress() != null)
+			{
+				anim.addUpdateListener(new AnimatorUpdateListener(){
+
+					@Override
+					public void onAnimationUpdate(ValueAnimator animation) {
+						options.progress().invoke(view, "y", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+					}
+					
+				});
+			}
+			animations.add(anim);
 		}
-		else
-		{
-			Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
-			y = display.getHeight();
-		}
-		this.animate(new QuickMap(QuickEntry.qe("y", new Float(y))), options);
+		
+		animation.playTogether(animations);
+		animation.start();
+		
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it up, past its top
+	 * Animates the selected views out of its parent by sliding it up, past its top
 	 * @param duration the length of time the animation should last
 	 * @param complete the function to call when the animation has completed
 	 */
 	public void slideUp(long duration, final Function complete)
 	{
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "y", 0);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1195,38 +1301,58 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "y", 0);
+			if (builder == null)
+				builder = anim.play(animator);
+			else
+				builder.with(animator);
+		}
 		anim.start();
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it up, past its top
+	 * Animates the selected views out of its parent by sliding it up, past its top
 	 * @param options use to modify the behavior of the animation
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void slideUp(AnimationOptions options)
+	public void slideUp(final AnimationOptions options)
 	{
-		this.animate(new QuickMap(QuickEntry.qe("y", new Float(0f))), options);
+		AnimatorSet animation = new AnimatorSet();
+		handleAnimationOptions(animation, options);
+		
+		List<Animator> animations = new ArrayList<Animator>();
+		for (final View view : this.views)
+		{
+			ObjectAnimator anim = ObjectAnimator.ofFloat(view, "y", new Float(0));
+			if (options.progress() != null)
+			{
+				anim.addUpdateListener(new AnimatorUpdateListener(){
+
+					@Override
+					public void onAnimationUpdate(ValueAnimator animation) {
+						options.progress().invoke(view, "y", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+					}
+					
+				});
+			}
+			animations.add(anim);
+		}
+		
+		animation.playTogether(animations);
+		animation.start();
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it right, past its edge
+	 * Animates the selected views out of its parent by sliding it right, past its edge
 	 * @param duration the length of time the animation should last
 	 * @param complete the function to call when the animation has completed
 	 */
 	public void slideRight(long duration, final Function complete)
 	{
-		ViewParent parent = view.getParent();
-		float x = 0;
-		if (parent != null && parent instanceof View)
-		{
-			x = ((View) parent).getWidth();
-		}
-		else
-		{
-			Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
-			x = display.getHeight();
-		}
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "x", x);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1244,38 +1370,79 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			ViewParent parent = view.getParent();
+			float x = 0;
+			if (parent != null && parent instanceof View)
+			{
+				x = ((View) parent).getWidth();
+			}
+			else
+			{
+				Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
+				x = display.getHeight();
+			}
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "x", x);
+			if (builder == null)
+				builder = anim.play(animator);
+			else
+				builder.with(animator);
+		}
 		anim.start();
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it right, past its edge
+	 * Animates the selected views out of its parent by sliding it right, past its edge
 	 * @param options use to modify the behavior of the animation
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void slideRight(AnimationOptions options)
+	public void slideRight(final AnimationOptions options)
 	{
-		ViewParent parent = view.getParent();
-		float x = 0;
-		if (parent != null && parent instanceof View)
+		AnimatorSet animation = new AnimatorSet();
+		handleAnimationOptions(animation, options);
+		
+		List<Animator> animations = new ArrayList<Animator>();
+		for (final View view : this.views)
 		{
-			x = ((View) parent).getWidth();
+			ViewParent parent = view.getParent();
+			float x = 0;
+			if (parent != null && parent instanceof View)
+			{
+				x = ((View) parent).getWidth();
+			}
+			else
+			{
+				Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
+				x = display.getHeight();
+			}
+			ObjectAnimator anim = ObjectAnimator.ofFloat(view, "x", x);
+			if (options.progress() != null)
+			{
+				anim.addUpdateListener(new AnimatorUpdateListener(){
+
+					@Override
+					public void onAnimationUpdate(ValueAnimator animation) {
+						options.progress().invoke(view, "x", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+					}
+					
+				});
+			}
+			animations.add(anim);
 		}
-		else
-		{
-			Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();  
-			x = display.getHeight();
-		}
-		this.animate(new QuickMap(QuickEntry.qe("x", new Float(x))), options);
+		
+		animation.playTogether(animations);
+		animation.start();
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it left, past its edge
+	 * Animates the selected views out of its parent by sliding it left, past its edge
 	 * @param duration the length of time the animation should last
 	 * @param complete the function to call when the animation has completed
 	 */
 	public void slideLeft(long duration, final Function complete)
 	{
-		ObjectAnimator anim = ObjectAnimator.ofFloat(this.view, "x", 0f);
+		AnimatorSet anim = new AnimatorSet();
 		anim.addListener(new AnimatorListener() {
 			@Override
 			public void onAnimationCancel(Animator animation) {}
@@ -1293,106 +1460,115 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		anim.setDuration(duration);
+		AnimatorSet.Builder builder = null;
+		for (View view : this.views)
+		{
+			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "x", 0);
+			if (builder == null)
+				builder = anim.play(animator);
+			else
+				builder.with(animator);
+		}
 		anim.start();
 	}
 	
 	/**
-	 * Animates this {@link #view} out of its parent by sliding it left, past its edge
+	 * Animates the selected views out of its parent by sliding it left, past its edge
 	 * @param options use to modify the behavior of the animation
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void slideLeft(AnimationOptions options)
+	public void slideLeft(final AnimationOptions options)
 	{
-		this.animate(new QuickMap(QuickEntry.qe("x", new Float(0f))), options);
+		AnimatorSet animation = new AnimatorSet();
+		handleAnimationOptions(animation, options);
+		
+		List<Animator> animations = new ArrayList<Animator>();
+		for (final View view : this.views)
+		{
+			ObjectAnimator anim = ObjectAnimator.ofFloat(view, "x", 0);
+			if (options.progress() != null)
+			{
+				anim.addUpdateListener(new AnimatorUpdateListener(){
+
+					@Override
+					public void onAnimationUpdate(ValueAnimator animation) {
+						options.progress().invoke(view, "x", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+					}
+					
+				});
+			}
+			animations.add(anim);
+		}
+		
+		animation.playTogether(animations);
+		animation.start();
 	}
 	
 	/**
-	 * Gets the value for the given attribute. This is done using reflection, and as such
-	 * expects a <em>get-</em> or <em>is-</em> prefixed method name for this {@link #view}.
+	 * Gets the value for the given attribute of the first view in the current selection. 
+	 * This is done using reflection, and as such
+	 * expects a <em>get-</em> or <em>is-</em> prefixed method name for the view.
 	 * @param s the name of the attribute to retrieve
-	 * @return the value of the given attribute name on this {@link #view}
+	 * @return the value of the given attribute name on the first view in the current selection
 	 */
 	public Object attr(String s)
 	{
 		try
 		{
-			Method m = view.getClass().getMethod("get" + capitalize(s));
-			return m.invoke(this.view);
+			Method m = view(0).getClass().getMethod("get" + capitalize(s));
+			return m.invoke(view(0));
 		}
 		catch (Throwable t)
 		{
 			try
 			{
-				Method m = view.getClass().getMethod("is" + capitalize(s));
-				return m.invoke(this.view);
+				Method m = view(0).getClass().getMethod("is" + capitalize(s));
+				return m.invoke(view(0));
 			}
 			catch (Throwable t2)
 			{
-				Log.w("droidQuery", this.view.getClass().getSimpleName() + ".get" + capitalize(s) + "() is not a method!");
-				Log.w("droidQuery", this.view.getClass().getSimpleName() + ".is" + capitalize(s) + "() is not a method!");
+				Log.w("droidQuery", view(0).getClass().getSimpleName() + ".get" + capitalize(s) + "() is not a method!");
+				Log.w("droidQuery", view(0).getClass().getSimpleName() + ".is" + capitalize(s) + "() is not a method!");
 				return null;
 			}
 		}
 	}
 	
 	/**
-	 * Sets the value of the given attribute on this {@link #view}. This is done using reflection, 
-	 * and as such a <em>set-</em>prefixed method name for this {@link #view}.
+	 * Sets the value of the given attribute on each view in the current selection. This is done 
+	 * using reflection, and as such a <em>set-</em>prefixed method name for each view.
 	 * @param s the name of the attribute to set
 	 * @param o the value to set to the given attribute
 	 * @return this
 	 */
 	public $ attr(String s, Object o)
 	{
-		try
+		for (View view : this.views)
 		{
-			Class<?> objClass = o.getClass();
-			Class<?> simpleClass = PRIMITIVE_TYPE_MAP.get(objClass);
-			if (simpleClass != null)
+			try
 			{
-				objClass = simpleClass;
+				Class<?> objClass = o.getClass();
+				Class<?> simpleClass = PRIMITIVE_TYPE_MAP.get(objClass);
+				if (simpleClass != null)
+				{
+					objClass = simpleClass;
+				}
+				Method m = view.getClass().getMethod("set" + capitalize(s), new Class<?>[]{objClass});
+				m.invoke(view, o);
 			}
-			Method m = view.getClass().getMethod("set" + capitalize(s), new Class<?>[]{objClass});
-			m.invoke(this.view, o);
-		}
-		catch (Throwable t)
-		{
-			Log.w("droidQuery", this.view.getClass().getSimpleName() + ".set" + capitalize(s) + "(" + o.getClass().getSimpleName() + ") is not a method!");
+			catch (Throwable t)
+			{
+				Log.w("droidQuery", view.getClass().getSimpleName() + ".set" + capitalize(s) + "(" + o.getClass().getSimpleName() + ") is not a method!");
+			}
 		}
 		return this;
 	}
 	
 	/**
-	 * Many of the modifications required for views and context on Android are not simple to manipulate.
-	 * This method hands the current context, the view, and any data to the developer to make custom changes.
-	 * This can be used to do many things that the methods provided by droidQuery do not. For example:
-	 * <pre>
-	 * MyCustomView custom = new MyCustomView(this);
-	 * $.with(custom).attr("alpha", 0.5f).manage(new Function() {
-	 * 	public void invoke(Object... params) {
-	 * 		Context context = (Context) params[0];
-	 * 		MyCustomView view = (MyCustomView) params[1];
-	 *		Object data = params[2];
-	 * 		view.doSomething();
-	 * 	}
-	 * });
-	 * </pre>
-	 * @param function Function to invoke. Receives two arguments: the current context, and the 
-	 * current view (respectively).
-	 * @return this droidQuery
+	 * @return the view at the given index of the current selection
 	 */
-	public $ manage(Function function)
+	public View view(int index)
 	{
-		function.invoke(context, view, data);
-		return this;
-	}
-	
-	/**
-	 * @return the current view
-	 */
-	public View view()
-	{
-		return this.view;
+		return this.views.get(index);
 	}
 	
 	/**
@@ -1423,7 +1599,7 @@ public class $
 	}
 	
 	/**
-	 * Adds a subview to this {@link #view}
+	 * Adds a subview to the first view in the selection
 	 * @param v the subview to add
 	 * @return this
 	 */
@@ -1434,15 +1610,15 @@ public class $
 			Log.w("droidQuery", "Cannot add View");
 			return this;
 		}
-		if (this.view instanceof ViewGroup)
+		if (view(0) instanceof ViewGroup)
 		{
-			((ViewGroup) this.view).addView(v);
+			((ViewGroup) view(0)).addView(v);
 		}
 		return this;
 	}
 	
 	/**
-	 * Adds a subview to this {@link #view}
+	 * Adds a subview to the first view in the current selection
 	 * @param v the id of the subview to add
 	 * @return this
 	 */
@@ -1454,29 +1630,29 @@ public class $
 			Log.w("droidQuery", "Cannot add View");
 			return this;
 		}
-		if (this.view instanceof ViewGroup)
+		if (view(0) instanceof ViewGroup)
 		{
-			((ViewGroup) this.view).addView(v);
+			((ViewGroup) view(0)).addView(v);
 		}
 		return this;
 	}
 	
 	/**
-	 * Removes a subview from this {@link #view}
+	 * Removes a subview from the first view in the current selection
 	 * @param v the subview to remove
 	 * @return this
 	 */
 	public $ remove(View v)
 	{
-		if (this.view instanceof ViewGroup)
+		if (view(0) instanceof ViewGroup)
 		{
-			((ViewGroup) this.view).removeView(v);
+			((ViewGroup) view(0)).removeView(v);
 		}
 		return null;
 	}
 	
 	/**
-	 * Removes a subview from this {@link #view}
+	 * Removes a subview from the first view in the current selection
 	 * @param v the id of the subview to remove
 	 * @return this
 	 */
@@ -1488,20 +1664,23 @@ public class $
 			Log.w("droidQuery", "Cannot remove View");
 			return this;
 		}
-		if (this.view instanceof ViewGroup)
+		if (view(0) instanceof ViewGroup)
 		{
-			((ViewGroup) this.view).removeView(v);
+			((ViewGroup) view(0)).removeView(v);
 		}
 		return this;
 	}
 	
 	/**
-	 * Sets the visibility of this {@link #view} to {@link View#VISIBLE}
+	 * Sets the visibility of the current selection to {@link View#VISIBLE}
 	 * @return this
 	 */
 	public $ hide()
 	{
-		view.setVisibility(View.VISIBLE);
+		for (View view : views)
+		{
+			view.setVisibility(View.VISIBLE);
+		}
 		return this;
 	}
 	
@@ -1511,14 +1690,17 @@ public class $
 	 */
 	public $ show()
 	{
-		view.setVisibility(View.INVISIBLE);
+		for (View view : views)
+		{
+			view.setVisibility(View.INVISIBLE);
+		}
 		return this;
 	}
 	
 	///Event Handler Attachment
 	
 	/**
-	 * Binds the current view to the event. For example:
+	 * Binds the views in the current selection to the event. For example:
 	 * <pre>
 	 * $.with(myView).bind("click", "Hello World!", new Function() {
 	 * 	public void invoke(Object... args) {
@@ -1568,51 +1750,41 @@ public class $
 	public $ bind(String eventType, Object data, Function handler)
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(eventType));
-		Class<?>[] classes = this.view.getClass().getClasses();
 		String listener = String.format(Locale.US, "On%sListener", capitalize(eventType));
-		try
+		for (View view : this.views)
 		{
-			//dynamically create instance of the listener interface
-			
-			Class<?> eventInterface = null;
-			
-			for (Class<?> clazz : classes)
+			Class<?>[] classes = view.getClass().getClasses();
+			try
 			{
-				if (clazz.getSimpleName().equalsIgnoreCase(listener))
+				//dynamically create instance of the listener interface
+				
+				Class<?> eventInterface = null;
+				
+				for (Class<?> clazz : classes)
 				{
-					eventInterface = clazz;
-					break;
+					if (clazz.getSimpleName().equalsIgnoreCase(listener))
+					{
+						eventInterface = clazz;
+						break;
+					}
 				}
+				Method setEventListener = view.getClass().getMethod(method, new Class<?>[]{eventInterface});
+				EventHandlerCreator proxy = new EventHandlerCreator(handler, view, data);
+				Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
+				setEventListener.invoke(view, eventInterface.cast(eventHandler));
+				
 			}
-//			Method setEventListener = null;
-//			for (Method m : this.view.getClass().getMethods())
-//			{
-//				if (m.getName().equalsIgnoreCase(method))
-//				{
-//					Class<?>[] mParams =  m.getParameterTypes();
-//					if (mParams.length == 1 && mParams[0] == eventInterface)
-//					{
-//						setEventListener = m;
-//						break;
-//					}
-//				}
-//			}
-			//Class<?> eventInterface = Class.forName(listener);
-			Method setEventListener = this.view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-			EventHandlerCreator proxy = new EventHandlerCreator(handler, this.view, data);
-			Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
-			setEventListener.invoke(this.view, eventInterface.cast(eventHandler));
-			
+			catch (Throwable t)
+			{
+				Log.w("droidQuery", String.format(Locale.US, "Could not bind to event %s.\n%s", eventType, t.getMessage()));
+			}
 		}
-		catch (Throwable t)
-		{
-			Log.w("droidQuery", String.format(Locale.US, "Could not bind to event %s.\n%s", eventType, t.getMessage()));
-		}
+		
 		return this;
 	}
 	
 	/**
-	 * Binds the current view to the event. For example:
+	 * Binds the views in the current selection to the event. For example:
 	 * <pre>
 	 * $.with(myView).on("click", new Function() {
 	 * 	public void invoke(Object... args) {
@@ -1657,32 +1829,36 @@ public class $
 	public $ on(String event, Function handler)
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(event));
-		Class<?>[] classes = this.view.getClass().getClasses();
 		String listener = String.format(Locale.US, "On%sListener", capitalize(event));
-		
-		try
+		for (View view : this.views)
 		{
-
-			Class<?> eventInterface = null;
+			Class<?>[] classes = view.getClass().getClasses();
 			
-			for (Class<?> clazz : classes)
+			try
 			{
-				if (clazz.getSimpleName().equalsIgnoreCase(listener))
-				{
-					eventInterface = clazz;
-					break;
-				}
-			}
 
-			Method setEventListener = this.view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-			EventHandlerCreator proxy = new EventHandlerCreator(handler, this.view);
-			Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
-			setEventListener.invoke(this.view, eventInterface.cast(eventHandler));
+				Class<?> eventInterface = null;
+				
+				for (Class<?> clazz : classes)
+				{
+					if (clazz.getSimpleName().equalsIgnoreCase(listener))
+					{
+						eventInterface = clazz;
+						break;
+					}
+				}
+
+				Method setEventListener = view.getClass().getMethod(method, new Class<?>[]{eventInterface});
+				EventHandlerCreator proxy = new EventHandlerCreator(handler, view);
+				Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
+				setEventListener.invoke(view, eventInterface.cast(eventHandler));
+			}
+			catch (Throwable t)
+			{
+				Log.w("droidQuery", String.format(Locale.US, "Could not bind to event %s.", event));
+			}
 		}
-		catch (Throwable t)
-		{
-			Log.w("droidQuery", String.format(Locale.US, "Could not bind to event %s.", event));
-		}
+		
 		return this;
 	}
 	
@@ -1712,160 +1888,178 @@ public class $
 	/**
 	 * Registers change listeners for TextViews, EditTexts, and CompoundButtons. For all other
 	 * view types, this will trigger a function when the view's layout has been changed.
-	 * @param function the Function to call when the change event occurs
+	 * @param function the Function to call when the change event occurs. This will receive a
+	 * droidQuery instance for the changed view
 	 * @return this
 	 */
 	public $ change(final Function function)
 	{
-		if (this.view instanceof TextView)
+		for (int i = 0; i < this.views.size(); i++)
 		{
-			((TextView) this.view).addTextChangedListener(new TextWatcher(){
+			View view = this.views.get(i);
+			final int index = i;
+			if (view instanceof TextView)
+			{
+				((TextView) view).addTextChangedListener(new TextWatcher(){
 
-				@Override
-				public void afterTextChanged(Editable arg0) {
-					function.invoke($.this);
-				}
+					@Override
+					public void afterTextChanged(Editable arg0) {
+						function.invoke($.with($.this.views.get(index)));
+					}
 
-				@Override
-				public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
+					@Override
+					public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
 
-				@Override
-				public void onTextChanged(CharSequence s, int start, int before, int count) {}
-				
-			});
+					@Override
+					public void onTextChanged(CharSequence s, int start, int before, int count) {}
+					
+				});
+			}
+			else if (view instanceof EditText)
+			{//this is overkill, but what the hey
+				((EditText) view).addTextChangedListener(new TextWatcher(){
+
+					@Override
+					public void afterTextChanged(Editable arg0) {
+						function.invoke($.with($.this.views.get(index)));
+					}
+
+					@Override
+					public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
+
+					@Override
+					public void onTextChanged(CharSequence s, int start, int before, int count) {}
+					
+				});
+			}
+			else if (view instanceof CompoundButton)
+			{
+				((CompoundButton) view).setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+						function.invoke($.with($.this.views.get(index)));
+					}
+					
+				});
+			}
+			else
+			{
+				//default to size
+				view.addOnLayoutChangeListener(new View.OnLayoutChangeListener(){
+
+					@Override
+					public void onLayoutChange(View v, int left, int top,
+							int right, int bottom, int oldLeft, int oldTop,
+							int oldRight, int oldBottom) {
+						function.invoke($.with($.this.views.get(index)));
+					}
+					
+				});
+			}
 		}
-		else if (this.view instanceof EditText)
-		{//this is overkill, but what the hey
-			((EditText) this.view).addTextChangedListener(new TextWatcher(){
-
-				@Override
-				public void afterTextChanged(Editable arg0) {
-					function.invoke($.this);
-				}
-
-				@Override
-				public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-
-				@Override
-				public void onTextChanged(CharSequence s, int start, int before, int count) {}
-				
-			});
-		}
-		else if (this.view instanceof CompoundButton)
-		{
-			((CompoundButton) this.view).setOnCheckedChangeListener(new OnCheckedChangeListener(){
-
-				@Override
-				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-					function.invoke($.this);
-				}
-				
-			});
-		}
-		else
-		{
-			//default to size
-			this.view.addOnLayoutChangeListener(new View.OnLayoutChangeListener(){
-
-				@Override
-				public void onLayoutChange(View v, int left, int top,
-						int right, int bottom, int oldLeft, int oldTop,
-						int oldRight, int oldBottom) {
-					function.invoke($.this);
-				}
-				
-			});
-		}
+		
 		return this;
 	}
 	
 	/**
-	 * Get the value associated with this {@link #view}. If the view is a TextView, this method
-	 * returns the CharSequence text. If it is a Button, the boolean checked state is returned. 
-	 * If it is an ImageView, the Drawable is returned.
+	 * Get the value associated with the first view in the current selection. If the view is a 
+	 * TextView, this method returns the CharSequence text. If it is a Button, the boolean checked 
+	 * state is returned. If it is an ImageView, the Drawable is returned.
 	 * @return the value of this view, or <em>null</em> if not applicable.
 	 */
 	public Object val()
 	{
-		if (this.view instanceof TextView)
+		if (view(0) instanceof TextView)
 		{
-			return ((TextView) this.view).getText();
+			return ((TextView) view(0)).getText();
 		}
-		else if (this.view instanceof CompoundButton)
+		else if (view(0) instanceof CompoundButton)
 		{
-			return ((CompoundButton) this.view).isChecked();
+			return ((CompoundButton) view(0)).isChecked();
 		}
-		else if (this.view instanceof ImageView)
+		else if (view(0) instanceof ImageView)
 		{
-			return ((ImageView) this.view).getDrawable();
+			return ((ImageView) view(0)).getDrawable();
 		}
 		return null;
 	}
 	
 	/**
-	 * Set the value associated with this {@link #view}. If the view is a TextView, this method
-	 * sets the CharSequence text. If it is a Button, the boolean checked state is set. 
+	 * Set the value associated with the views in the current selection. If the view is a TextView, 
+	 * this method sets the CharSequence text. If it is a Button, the boolean checked state is set. 
 	 * If it is an ImageView, the Drawable or Bitmap is set. All other view types are ignored.
 	 * @return this
 	 */
 	public $ val(Object object)
 	{
-		if (this.view instanceof TextView && object instanceof CharSequence)
+		for (View view : this.views)
 		{
-			((TextView) this.view).setText((CharSequence) object);
-		}
-		else if (this.view instanceof CompoundButton && object instanceof Boolean)
-		{
-			((CompoundButton) this.view).setChecked((Boolean) object);
-		}
-		else if (this.view instanceof ImageView)
-		{
-			if (object instanceof Bitmap)
+			if (view instanceof TextView && object instanceof CharSequence)
 			{
-				((ImageView) this.view).setImageBitmap((Bitmap) object);
+				((TextView) view).setText((CharSequence) object);
 			}
-			else if (object instanceof Drawable)
+			else if (view instanceof CompoundButton && object instanceof Boolean)
 			{
-				((ImageView) this.view).setImageDrawable((Drawable) object);
+				((CompoundButton) view).setChecked((Boolean) object);
 			}
-			
+			else if (view instanceof ImageView)
+			{
+				if (object instanceof Bitmap)
+				{
+					((ImageView) view).setImageBitmap((Bitmap) object);
+				}
+				else if (object instanceof Drawable)
+				{
+					((ImageView) view).setImageDrawable((Drawable) object);
+				}
+				
+			}
 		}
+		
 		return this;
 	}
 	
 	/**
-	 * Triggers a click event on this view
+	 * Triggers a click event on the views in the current selection
 	 * @return this
 	 */
 	public $ click()
 	{
-		this.view.performClick();
+		for (View view : this.views)
+		{
+			view.performClick();
+		}
 		return this;
 	}
 	
 	/**
-	 * Invokes the given Function every time this {@link #view} is clicked. The only parameter passed 
-	 * to the given function is this droidQuery instance.
+	 * Invokes the given Function every time each view in the current selection is clicked. The only 
+	 * parameter passed to the given function is a droidQuery instance containing the clicked view
 	 * @param function the function to call when this view is clicked
 	 * @return this
 	 */
 	public $ click(final Function function)
 	{
-		this.view.setOnClickListener(new View.OnClickListener(){
+		for (View view : this.views)
+		{
+			view.setOnClickListener(new View.OnClickListener(){
 
-			@Override
-			public void onClick(View v) {
-				function.invoke($.this);
-			}
-			
-		});
+				@Override
+				public void onClick(View v) {
+					function.invoke($.with(v));
+				}
+				
+			});
+		}
 		return this;
 	}
 	
 	/**
-	 * Invokes the given Function for click events on this view. The function will receive two arguments:
+	 * Invokes the given Function for click events on each view in the current selection. 
+	 * The function will receive two arguments:
 	 * <ol>
-	 * <li>this droidQuery
+	 * <li>a droidQuery containing the clicked view
 	 * <li>{@code eventData}
 	 * </ol>
 	 * @param eventData the second argument to pass to the {@code function}
@@ -1874,52 +2068,61 @@ public class $
 	 */
 	public $ click(final Object eventData, final Function function)
 	{
-		this.view.setOnClickListener(new View.OnClickListener(){
+		for (View view : this.views)
+		{
+			view.setOnClickListener(new View.OnClickListener(){
 
-			@Override
-			public void onClick(View v) {
-				function.invoke($.this, eventData);
-			}
-			
-		});
+				@Override
+				public void onClick(View v) {
+					function.invoke($.with(v), eventData);
+				}
+				
+			});
+		}
 		return this;
 	}
 	
 	/**
-	 * Triggers a long-click event on this view
+	 * Triggers a long-click event on this each view in the current selection
 	 * @return this
 	 */
 	public $ longclick()
 	{
-		this.view.performLongClick();
+		for (View view : this.views)
+		{
+			view.performLongClick();
+		}
 		return this;
 	}
 	
 	/**
-	 * Invokes the given Function every time this {@link #view} is long-clicked. The only 
-	 * parameter passed to the given function is this droidQuery instance.
+	 * Invokes the given Function every time each view in the current selection is long-clicked. 
+	 * The only parameter passed to the given function a droidQuery instance with the long-clicked view.
 	 * @param function the function to call when this view is long-clicked
 	 * @return this
 	 */
 	public $ longclick(final Function function)
 	{
-		this.view.setOnLongClickListener(new View.OnLongClickListener(){
+		for (View view : this.views)
+		{
+			view.setOnLongClickListener(new View.OnLongClickListener(){
 
-			@Override
-			public boolean onLongClick(View v) {
-				function.invoke($.this);
-				return true;
-			}
-			
-		});
+				@Override
+				public boolean onLongClick(View v) {
+					function.invoke($.with(v));
+					return true;
+				}
+				
+			});
+		}
 		return this;
 	}
 	
 	/**
-	 * Invokes the given Function for long-click events on this view. The function will receive two 
-	 * arguments:
+	 * Invokes the given Function for long-click events on the views in the current selection. 
+	 * The function will receive two arguments:
 	 * <ol>
-	 * <li>this droidQuery
+	 * <li>a droidQuery containing the long-clicked view
 	 * <li>{@code eventData}
 	 * </ol>
 	 * @param eventData the second argument to pass to the {@code function}
@@ -1928,52 +2131,20 @@ public class $
 	 */
 	public $ longclick(final Object eventData, final Function function)
 	{
-		this.view.setOnLongClickListener(new View.OnLongClickListener(){
+		for (View view : this.views)
+		{
+			view.setOnLongClickListener(new View.OnLongClickListener(){
 
-			@Override
-			public boolean onLongClick(View v) {
-				function.invoke($.this, eventData);
-				return true;
-			}
-			
-		});
+				@Override
+				public boolean onLongClick(View v) {
+					function.invoke($.with(v), eventData);
+					return true;
+				}
+				
+			});
+		}
 		return this;
 	}
-	
-//	public $ dblclick(Function function)
-//	{
-//		final DoubleClickHandler handler = new DoubleClickHandler(function, null);
-//		
-//		this.view.setOnTouchListener(new View.OnTouchListener() {
-//			
-//			@Override
-//			public boolean onTouch(View v, MotionEvent event) {
-//				return handler.onDoubleTap(event);
-//			}
-//		});
-//		return this;
-//	}
-//	
-//	public $ dblclick(Object eventData, Function function)
-//	{
-//		final DoubleClickHandler handler = new DoubleClickHandler(function, eventData);
-//		
-//		this.view.setOnTouchListener(new View.OnTouchListener() {
-//			
-//			@Override
-//			public boolean onTouch(View v, MotionEvent event) {
-//				return handler.onDoubleTap(event);
-//			}
-//		});
-//		return this;
-//	}
-//	
-//	public $ dblclick()
-//	{
-//		this.view.performClick();
-//		this.view.performClick();
-//		return this;
-//	}
 	
 	/**
 	 * Handles swipe events. This will override any onTouchListener added.
@@ -2041,7 +2212,7 @@ public class $
 	}
 	
 	/**
-	 * Triggers a swipe-up event on this view
+	 * Triggers a swipe-up event on the current selection
 	 * @return this
 	 */
 	public $ swipeUp()
@@ -2052,7 +2223,7 @@ public class $
 	}
 	
 	/**
-	 * Triggers a swipe-down event on this view
+	 * Triggers a swipe-down event on the current selection
 	 * @return this
 	 */
 	public $ swipeDown()
@@ -2063,7 +2234,7 @@ public class $
 	}
 	
 	/**
-	 * Triggers a swipe-left event on this view
+	 * Triggers a swipe-left event on the current selection
 	 * @return this
 	 */
 	public $ swipeLeft()
@@ -2074,7 +2245,7 @@ public class $
 	}
 	
 	/**
-	 * Triggers a swipe-right event on this view
+	 * Triggers a swipe-right event on the current selection
 	 * @return this
 	 */
 	public $ swipeRight()
@@ -2085,8 +2256,8 @@ public class $
 	}
 	
 	/**
-	 * Sets the function to call when this {@link #view} has gained focus. This function
-	 * will receive this instance of droidQuery as its only parameter
+	 * Sets the function to call when a view in the current selection has gained focus. This function
+	 * will receive an instance of droidQuery for this view as its only parameter
 	 * @param function the function to invoke
 	 * @return this
 	 */
@@ -2098,35 +2269,43 @@ public class $
 	}
 	
 	/**
-	 * Gives focus to this {@link #view}, if it is focusable in its current state.
+	 * Gives focus to the first focusable view in the current selection.
 	 * @return this
 	 */
 	public $ focus()
 	{
-		this.view.requestFocus();
+		for (View view : this.views)
+		{
+			if (view.requestFocus()) {
+				break;
+			}
+		}
 		return this;
 	}
 	
 	/**
 	 * Sets the function to call when this {@link #view} loses focus.
-	 * @param function the function to invoke. Will receive this instance of droidQuery as its 
-	 * only parameter
+	 * @param function the function to invoke. Will receive a droidQuery instance containing
+	 * the view as its only parameter
 	 * @return this
 	 */
 	public $ focusout(Function function)
 	{
 		offFocus = function;
-		setupFocusListener();//fixes any changes to the onfocuschanged listener
+		setupFocusListener();
 		return this;
 	}
 	
 	/**
-	 * Removes focus from this {@link #view}, if it is currently focused.
+	 * Removes focus from all views in the current selection.
 	 * @return this
 	 */
 	public $ focusout()
 	{
-		this.view.clearFocus();
+		for (View view : this.views)
+		{
+			view.clearFocus();
+		}
 		return this;
 	}
 	
@@ -2134,7 +2313,7 @@ public class $
 	 * Set the function to call when a key-down event has been detected on this view.
 	 * @param function the Function to invoke. Receives three arguments:
 	 * <ol>
-	 * <li>this droidQuery
+	 * <li>a droidQuery containing the responding view
 	 * <li>the Integer key code
 	 * <li>the {@link KeyEvent} Object that was produced
 	 * </ol>
@@ -2151,7 +2330,7 @@ public class $
 	 * Set the function to call when a key-press event has been detected on this view.
 	 * @param function the Function to invoke. Receives three arguments:
 	 * <ol>
-	 * <li>this droidQuery
+	 * <li>a droidQuery containing the responding view
 	 * <li>the Integer key code
 	 * <li>the {@link KeyEvent} Object that was produced
 	 * </ol>
@@ -2168,7 +2347,7 @@ public class $
 	 * Set the function to call when a key-up event has been detected on this view.
 	 * @param function the Function to invoke. Receives three arguments:
 	 * <ol>
-	 * <li>this droidQuery
+	 * <li>a droidQuery containing the responding view
 	 * <li>the Integer key code
 	 * <li>the {@link KeyEvent} Object that was produced
 	 * </ol>
@@ -2182,58 +2361,64 @@ public class $
 	}
 	
 	/**
-	 * This function can be called when this view is a subview of an {@link AdapterView}, in order
-	 * to register an {@link AdapterView.OnItemSelectedListener OnItemSelectedListener} to invoke
+	 * For each subclass on an {@link AdapterView} in the current selection, {@code select(Function)}
+	 * will register an {@link AdapterView.OnItemSelectedListener OnItemSelectedListener} to invoke
 	 * the given function.
 	 * @param function function to invoke. receives two aruments:
 	 * <ol>
-	 * <li>this droidQuery
-	 * <li>the view position, or -1 if none is selected
+	 * <li>a droidQuery with the parent selected view
+	 * <li>the view position (int)
 	 * </ol>
 	 * @return this
 	 */
 	public $ select(final Function function)
 	{
-		if (view instanceof AdapterView)
+		for (View view : this.views)
 		{
-			((AdapterView<?>) view).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			if (view instanceof AdapterView)
+			{
+				((AdapterView<?>) view).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
-				@Override
-				public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-					function.invoke($.this, position);
-				}
+					@Override
+					public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+						function.invoke($.with(view), position);
+					}
 
-				@Override
-				public void onNothingSelected(AdapterView<?> parent) {
-					function.invoke($.this, -1);
-				}
-			});
+					@Override
+					public void onNothingSelected(AdapterView<?> parent) {}
+				});
+			}
 		}
+		
 		return this;
 	}
 	
 	/**
-	 * This function can be called when this view is a subview of an {@link AdapterView}, in order
-	 * to set the selected position
-	 * @param index the index of the subview to select
+	 * For each subclass of an {@link AdapterView} in the current selection, this will set the item
+	 * selection to the given position.
+	 * @param index the index of the child view to select
 	 * @return this
 	 */
 	public $ select(int index)
 	{
-		try
+		for (View view : this.views)
 		{
-			Method m = view.getClass().getMethod("setSelection", new Class<?>[]{Integer.class});
-			m.invoke(view, index);
-		}
-		catch (Throwable t)
-		{
-			//not available
+			try
+			{
+				Method m = view.getClass().getMethod("setSelection", new Class<?>[]{Integer.class});
+				m.invoke(view, index);
+			}
+			catch (Throwable t)
+			{
+				//not available
+			}
 		}
 		return this;
 	}
 	
 	/**
-	 * Remove a previously-attached event handler from this view. This can remove events registered
+	 * Remove a previously-attached event handler from the views in the current selection. 
+	 * This can remove events registered
 	 * by {@link #bind(String, Object, Function)}, {@link #on(String, Function)}, {@link #click()}, 
 	 * etc.- or directly on the view.
 	 * @param eventType the name of the event to unbind
@@ -2241,75 +2426,54 @@ public class $
 	public void unbind(String eventType)
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(eventType));
-		String listener = String.format(Locale.US, "%s.On%sListener", this.view.getClass().getName(), capitalize(eventType));
-		try
+		for (View view : this.views)
 		{
-			//dynamically create instance of the listener interface
-			
-			Class<?> eventInterface = Class.forName(listener);
-			Method setEventListener = this.view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-			EventHandlerCreator proxy = new EventHandlerCreator($.noop(), this.view, null);
-			Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
-			setEventListener.invoke(this.view, eventInterface.cast(eventHandler));
-			
+			String listener = String.format(Locale.US, "%s.On%sListener", view.getClass().getName(), capitalize(eventType));
+			try
+			{
+				//dynamically create instance of the listener interface
+				
+				Class<?> eventInterface = Class.forName(listener);
+				Method setEventListener = view.getClass().getMethod(method, new Class<?>[]{eventInterface});
+				EventHandlerCreator proxy = new EventHandlerCreator($.noop(), view, null);
+				Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
+				setEventListener.invoke(view, eventInterface.cast(eventHandler));
+				
+			}
+			catch (Throwable t)
+			{
+				Log.w("droidQuery", String.format(Locale.US, "Could not unbind from event %s.", eventType));
+			}
 		}
-		catch (Throwable t)
-		{
-			Log.w("droidQuery", String.format(Locale.US, "Could not unbind from event %s.", eventType));
-		}
+		
 	}
 	
 	/////Miscellaneous
 	
 	/**
-	 * If the current view is a subclass of {@link AdapterView}, this will loop through all the 
-	 * adapter data and invoke the given function, passing the parameters:
-	 * <ol>
-	 * <li>this droidQuery
-	 * <li>the item from the adapter
-	 * <li>the index
-	 * </ol>
-	 * Otherwise, if the current view is a subclass of {@link ViewGroup}, {@code each} will
-	 * loop through all the child views, and wrap each one in a droidQuery object. The invoked
-	 * function will receive these arguments:
-	 * 
-	 * <ol>
-	 * <li>the droidQuery wrapping the child view
-	 * <li>the index of the child view
-	 * </ol>
-	 * @param function Function the function to invoke
+	 * Invokes the given function for each view in the current selection. Function receives a single
+	 * parameter - a droidQuery instance containing the single view.
+	 * @param function the function to invoke
 	 * @return this
 	 */
 	public $ each(Function function)
 	{
-		if (this.view instanceof AdapterView)
+		for (View view : this.views)
 		{
-			AdapterView<?> group = (AdapterView<?>) view;
-			for (int i = 0; i < (group).getCount(); i++)
-			{
-				function.invoke($.this, group.getItemAtPosition(i), i);
-			}
-		}
-		else if (this.view instanceof ViewGroup)
-		{
-			ViewGroup group = (ViewGroup) this.view;
-			for (int i = 0; i < group.getChildCount(); i++)
-			{
-				function.invoke($.with(group.getChildAt(i)), i);
-			}
+			function.invoke($.with(view));
 		}
 		return this;
 	}
 	
 	/**
-	 * If the current view is a subclass of {@link AdapterView}, this will loop through all the 
+	 * If the first view of the current selection is a subclass of {@link AdapterView}, this will loop through all the 
 	 * adapter data and invoke the given function, passing the parameters:
 	 * <ol>
 	 * <li>this droidQuery
 	 * <li>the item from the adapter
 	 * <li>the index
 	 * </ol>
-	 * Otherwise, if the current view is a subclass of {@link ViewGroup}, {@code each} will
+	 * Otherwise, if the first view in the current selection is a subclass of {@link ViewGroup}, {@code each} will
 	 * loop through all the child views, and wrap each one in a droidQuery object. The invoked
 	 * function will receive these arguments:
 	 * 
@@ -2322,12 +2486,28 @@ public class $
 	 */
 	public $ children(Function function)
 	{
-		return each(function);
+		if (view(0) instanceof AdapterView)
+		{
+			AdapterView<?> group = (AdapterView<?>) view(0);
+			for (int i = 0; i < (group).getCount(); i++)
+			{
+				function.invoke($.this, group.getItemAtPosition(i), i);
+			}
+		}
+		else if (view(0) instanceof ViewGroup)
+		{
+			ViewGroup group = (ViewGroup) view(0);
+			for (int i = 0; i < group.getChildCount(); i++)
+			{
+				function.invoke($.with(group.getChildAt(i)), i);
+			}
+		}
+		return this;
 	}
 	
 	/**
-	 * Loops through all the sibling views of the current {@link #view}, and wraps each in a 
-	 * droidQuery object. When invoked, the given function will receive two parameters:
+	 * Loops through all the sibling views of the first view in the current selection, and wraps 
+	 * each in a droidQuery object. When invoked, the given function will receive two parameters:
 	 * <ol>
 	 * <li>the droidQuery for the view
 	 * <li>the child index of the sibling
@@ -2336,7 +2516,7 @@ public class $
 	 */
 	public $ siblings(Function function)
 	{
-		ViewParent parent = this.view.getParent();
+		ViewParent parent = view(0).getParent();
 		if (parent != null && parent instanceof ViewGroup)
 		{
 			ViewGroup group = (ViewGroup) parent;
@@ -2349,109 +2529,42 @@ public class $
 	}
 	
 	/**
-	 * If this view is a subclass of {@link AdapterView}, {@code slice} gets all Objects associated
-	 * with the data for positions {@code start} until the end of the list or array. The Objects are
-	 * then wrapped into the {@link #data} Object, and a list of droidQueries is returned.
-	 * Otherwise, if this view is a subclass of {@link ViewGroup}, {@code slice} gets all subviews
-	 * from the {@code start} position to the last child, and wraps them into each droidQuery view in
-	 * the list that is returned.
-	 * @param start the starting index
-	 * @return a list of droidQuery Objects.
+	 * Gets all the views in the current selection after the given start index
+	 * @param start the starting position of the views to pass to the new instance of droidQuery.
+	 * @return a droidQuery object containing the views from {@code start} to the end of the list.
 	 */
-	public List<$> slice(int start)
+	public $ slice(int start)
 	{
-		if (this.view instanceof AdapterView)
-		{
-			AdapterView<?> group = (AdapterView<?>) view;
-			if (group.getCount() <= start)
-			{
-				return null;
-			}
-			List<$> list = new ArrayList<$>();
-			for (int i = start+1; i < group.getCount(); i++)
-			{
-				list.add($.with(context).data(group.getItemAtPosition(i)));
-			}
-		}
-		else if (this.view instanceof ViewGroup)
-		{
-			ViewGroup group = (ViewGroup) view;
-			if (group.getChildCount() <= start)
-				return null;
-			List<$> list = new ArrayList<$>();
-			for (int i = start+1; i < group.getChildCount(); i++)
-			{
-				list.add($.with(group.getChildAt(i)));
-			}
-			return list;
-		}
-		return null;
+		return $.with(this.views.subList(start, this.views.size()));
 	}
 	
 	/**
-	 * If this view is a subclass of {@link AdapterView}, {@code slice} gets all Objects associated
-	 * with the data for positions {@code start} to {@code end}. The Objects are
-	 * then wrapped into the {@link #data} Object, and a list of droidQueries is returned.
-	 * Otherwise, if this view is a subclass of {@link ViewGroup}, {@code slice} gets all subviews
-	 * from the {@code start} to {@code end}, and wraps them into each droidQuery view in
-	 * the list that is returned.
-	 * @param start the starting index
-	 * @return a list of droidQuery Objects.
+	 * Gets all the views in the current selection after the given start index and before the given
+	 * end index
+	 * @param start the starting position of the views to pass to the new instance of droidQuery.
+	 * @return a droidQuery object containing the views from {@code start} to {@code end}.
 	 */
-	public List<$> slice(int start, int end)
+	public $ slice(int start, int end)
 	{
-		if (this.view instanceof AdapterView)
-		{
-			AdapterView<?> group = (AdapterView<?>) view;
-			if (group.getCount() <= start)
-			{
-				return null;
-			}
-			List<$> list = new ArrayList<$>();
-			for (int i = start+1; i < Math.min(group.getCount(), end); i++)
-			{
-				list.add($.with(context).data(group.getItemAtPosition(i)));
-			}
-		}
-		else if (this.view instanceof ViewGroup)
-		{
-			ViewGroup group = (ViewGroup) view;
-			if (group.getChildCount() <= start)
-				return null;
-			List<$> list = new ArrayList<$>();
-			for (int i = start+1; i < Math.min(group.getChildCount(), end); i++)
-			{
-				list.add($.with(group.getChildAt(i)));
-			}
-			return list;
-		}
-		return null;
+		return $.with(this.views.subList(start, end));
 	}
 	
-	/** @return the number of subviews or adapter cells in the current view */
+	/** @return the number of views that are currently selected */
 	public int length()
 	{
-		if (view instanceof AdapterView)
-		{
-			return ((AdapterView<?>) view).getCount();
-		}
-		if (view instanceof ViewGroup)
-		{
-			return ((ViewGroup) view).getChildCount();
-		}
-		return 0;
+		return this.views.size();
 	}
 	
-	/** @return the number of subviews or adapter cells in the current view */
+	/** @return the number of views that are currently selected */
 	public int size()
 	{
 		return length();
 	}
 	
 	/**
-	 * Checks to see if the current view is a subclass of the given class name
+	 * Checks to see if the first view in the current selection is a subclass of the given class name
 	 * @param className the name of the superclass to check
-	 * @return {@code true} if this {@link #view} is a subclass of the given class name. 
+	 * @return {@code true} if the view is a subclass of the given class name. 
 	 * Otherwise, {@code false}.
 	 */
 	public boolean is(String className)
@@ -2459,7 +2572,7 @@ public class $
 		try
 		{
 			Class<?> clazz = Class.forName(className);
-			if (clazz.isInstance(this.view))
+			if (clazz.isInstance(view(0)))
 				return true;
 			return false;
 		}
@@ -2470,15 +2583,41 @@ public class $
 	}
 	
 	/**
-	 * Removes the current view from the layout
+	 * Checks to see if the given Object is a subclass of the given class name
+	 * @param obj the Object to check
+	 * @param className the name of the superclass to check
+	 * @return {@code true} if the view is a subclass of the given class name. 
+	 * Otherwise, {@code false}.
+	 */
+	public static boolean is(Object obj, String className)
+	{
+		try
+		{
+			Class<?> clazz = Class.forName(className);
+			if (clazz.isInstance(obj))
+				return true;
+			return false;
+		}
+		catch (Throwable t)
+		{
+			return false;
+		}
+	}
+	
+	/**
+	 * Removes each view in the current selection from the layout
 	 */
 	public void remove()
 	{
-		ViewParent parent = this.view.getParent();
-		if (parent != null && parent instanceof ViewGroup)
+		for (View view : this.views)
 		{
-			((ViewGroup) parent).removeView(view);
+			ViewParent parent = view.getParent();
+			if (parent != null && parent instanceof ViewGroup)
+			{
+				((ViewGroup) parent).removeView(view);
+			}
 		}
+		
 	}
 	
 	/////Selectors
@@ -2486,12 +2625,12 @@ public class $
 	/**
 	 * Recursively selects all subviews of the given view
 	 * @param v the parent view of all the suclasses to select
-	 * @return a list of all views (wrapped in a droidQuery) that are subviews in the 
+	 * @return a list of all views that are subviews in the 
 	 * view hierarchy with the given view as the root
 	 */
-	private List<$> recursivelySelectAllSubViews(View v)
+	private List<View> recursivelySelectAllSubViews(View v)
 	{
-		List<$> list = new ArrayList<$>();
+		List<View> list = new ArrayList<View>();
 		if (v instanceof ViewGroup)
 		{
 			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
@@ -2499,19 +2638,19 @@ public class $
 				list.addAll(recursivelySelectAllSubViews(((ViewGroup) v).getChildAt(i)));
 			}
 		}
-		list.add($.with(v));
+		list.add(v);
 		return list;
 	}
 	
 	/**
 	 * Recursively selects all subviews of the given view that are subclasses of the given Object type
 	 * @param v the parent view of all the suclasses to select
-	 * @return a list of all views (wrapped in a droidQuery) that are subviews in the 
+	 * @return a list of all views that are subviews in the 
 	 * view hierarchy with the given view as the root
 	 */
-	private List<$> recursivelySelectByType(View v, Class<?> clazz)
+	private List<View> recursivelySelectByType(View v, Class<?> clazz)
 	{
-		List<$> list = new ArrayList<$>();
+		List<View> list = new ArrayList<View>();
 		if (v instanceof ViewGroup)
 		{
 			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
@@ -2520,71 +2659,87 @@ public class $
 			}
 		}
 		if (clazz.isInstance(v))
-			list.add($.with(v));
+			list.add(v);
 		return list;
 	}
 	
 	/**
-	 * Select all views and return them in a droidQuery wrapper.
-	 * @return a list of droidQuery Objects with the view set to each subview
+	 * Select all subviews of the currently-selected views
+	 * @return a droidQuery Object with all the views
 	 */
-	public List<$> selectAll()
+	public $ selectAll()
 	{
-		return recursivelySelectAllSubViews(view);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectAllSubViews(view));
+		}
+		return $.with(subviews);
 	}
 	
 	/**
-	 * Select all views that are subclasses of the given {@code className}. 
+	 * Select all subviews of the currently-selected views that are subclasses of the given {@code className}. 
 	 * @param className
 	 * @return all the selected views in a droidQuery wrapper
 	 */
-	public List<$> selectByType(String className)
+	public $ selectByType(String className)
 	{
+		Class<?> clazz = null;
 		try
 		{
-			return recursivelySelectByType(this.view, Class.forName(className));
+			clazz = Class.forName(className);
 		}
 		catch (Throwable t)
 		{
 			return null;
 		}
 		
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectByType(view, clazz));
+		}
+		return $.with(subviews);
+		
 	}
 	
 	/**
-	 * Selects the child views of the current view
-	 * @return a list of droidQuery Objects that wrap each returned subview. If the current
-	 * view is a subclass of {@link AdapterView}, the data at each position is set to the {@link #data}
-	 * attribute of the droidQuery instance
+	 * Selects the child views of the first view in the current selection
+	 * @return a droidQuery Objects containing the child views. If the view is a subclass of 
+	 * {@link AdapterView}, the {@link #data() data} of the droidQuery will be set to an Object[]
+	 * of adapter items.
 	 */
-	public List<$> selectChildren()
+	public $ selectChildren()
 	{
-		List<$> list = new ArrayList<$>();
-		if (view instanceof AdapterView)
+		List<View> list = new ArrayList<View>();
+		if (view(0) instanceof AdapterView)
 		{
-			for (int i = 0; i < ((AdapterView<?>) view).getCount(); i++)
+			AdapterView<?> adapter = (AdapterView<?>) view(0);
+			Object[] data = new Object[adapter.getCount()];
+			for (int i = 0; i < adapter.getCount(); i++)
 			{
-				list.add($.with(context).data(((AdapterView<?>) view).getItemAtPosition(i)));
+				data[i] = adapter.getItemAtPosition(i);
+			}
+			return $.with(view(0)).data(data);
+		}
+		else if (view(0) instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) view(0)).getChildCount(); i++)
+			{
+				list.add(((ViewGroup) view(0)).getChildAt(i));
 			}
 		}
-		else if (view instanceof ViewGroup)
-		{
-			for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++)
-			{
-				list.add($.with(((ViewGroup) view).getChildAt(i)));
-			}
-		}
-		return list;
+		return $.with(list);
 	}
 	
 	/**
 	 * Selects all subviews of the given view that do not contain subviews
 	 * @param v the view whose subviews will be retrieved
-	 * @return a list of droidQuery objects that wrap the empty views
+	 * @return a list empty views
 	 */
-	private List<$> recursivelySelectEmpties(View v)
+	private List<View> recursivelySelectEmpties(View v)
 	{
-		List<$> list = new ArrayList<$>();
+		List<View> list = new ArrayList<View>();
 		if (v instanceof ViewGroup && ((ViewGroup) v).getChildCount() > 0)
 		{
 			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
@@ -2594,24 +2749,30 @@ public class $
 		}
 		else if (!(v instanceof AdapterView && ((AdapterView<?>) v).getCount() > 0))
 		{
-			list.add($.with(v));
+			list.add(v);
 		}
 		return list;
 	}
 	
 	/**
-	 * Select all non-ViewGroups, or ViewGroups with no children
-	 * @return a list of droidQuery objects that wrap the returned views
+	 * Select all non-ViewGroups, or ViewGroups with no children, that lay within the view
+	 * hierarchy of the current selection
+	 * @return a droidQuery object containing the selection
 	 */
-	public List<$> selectEmpties()
+	public $ selectEmpties()
 	{
-		return recursivelySelectEmpties(this.view);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectEmpties(view));
+		}
+		return $.with(subviews);
 	}
 	
 	/**
 	 * Searches the view hierarchy rooted at the given view in order to find the currently
 	 * selected view
-	 * @param view the view to search whithin
+	 * @param view the view to search within
 	 * @return the selected view, or null if no view in the given hierarchy was found.
 	 */
 	private View recursivelyFindSelectedSubView(View view)
@@ -2635,24 +2796,32 @@ public class $
 	
 	/**
 	 * Selects the currently-focused view.
-	 * @return a droidQuery Object created with the currently-selected View
+	 * @return a droidQuery Object created with the currently-selected View, if there is one
 	 */
 	public $ selectFocused()
 	{
-		if (this.view.isFocused())
-			return $.with(view);
-		return $.with(recursivelyFindSelectedSubView(view));
+		View focused = recursivelyFindSelectedSubView(rootView);
+		if (focused != null)
+			return $.with(focused);
+		for (View view : this.views)
+		{
+			focused = recursivelyFindSelectedSubView(view);
+			if (focused != null)
+				return $.with(focused);
+		}
+		
+		return $.with(view(0).getContext());
 	}
 	
 	/**
 	 * Select all {@link View#INVISIBLE invisible}, {@link View#GONE gone}, and 0-alpha views within the 
 	 * view hierarchy rooted at the given view
 	 * @param v the view hierarchy in which to search
-	 * @return a list of droidQuery Objects that wrap the found views
+	 * @return a list the found views
 	 */
-	private List<$> recursivelySelectHidden(View v)
+	private List<View> recursivelySelectHidden(View v)
 	{
-		List<$> list = new ArrayList<$>();
+		List<View> list = new ArrayList<View>();
 		if (v instanceof ViewGroup)
 		{
 			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
@@ -2661,18 +2830,18 @@ public class $
 			}
 		}
 		if (v.getVisibility() == View.INVISIBLE || v.getVisibility() == View.GONE || v.getAlpha() == 0)
-			list.add($.with(v));
+			list.add(v);
 		return list;
 	}
 	
 	/**
 	 * Select all {@link View#VISIBLE visible} and 1-alpha views within the given view hierarchy
 	 * @param v the view to search in
-	 * @return a list of droidQuery Objects that wrap the found views
+	 * @return a list the found views
 	 */
-	private List<$> recursivelySelectVisible(View v)
+	private List<View> recursivelySelectVisible(View v)
 	{
-		List<$> list = new ArrayList<$>();
+		List<View> list = new ArrayList<View>();
 		if (v instanceof ViewGroup)
 		{
 			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
@@ -2681,58 +2850,80 @@ public class $
 			}
 		}
 		if (v.getVisibility() == View.VISIBLE || v.getAlpha() == 1)
-			list.add($.with(v));
+			list.add(v);
 		return list;
 	}
 	
 	/**
-	 * Select all {@link View#INVISIBLE invisible}, {@link View#GONE gone}, and 0-alpha views within the 
-	 * view hierarchy rooted at the current view
-	 * @return a list of droidQuery Objects that wrap the found views
+	 * Select all {@link View#INVISIBLE invisible}, {@link View#GONE gone}, and 0-alpha views within 
+	 * the view hierarchy of the currently selected views
+	 * @return a droidQuery Object containing the found views
 	 */
-	public List<$> selectHidden()
+	public $ selectHidden()
 	{
-		return recursivelySelectHidden(view);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectHidden(view));
+		}
+		return $.with(subviews);
 	}
 	
 	/**
-	 * Select all {@link View#VISIBLE visible} and 1-alpha views within the current view hierarchy
-	 * @return a list of droidQuery Objects that wrap the found views
+	 * Select all {@link View#VISIBLE visible} and 1-alpha views within the view hierarchy
+	 * of the currenly selected views
+	 * @return a droidQuery Object containing the found views
 	 */
-	public List<$> selectVisible()
+	public $ selectVisible()
 	{
-		return recursivelySelectVisible(view);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectVisible(view));
+		}
+		return $.with(subviews);
 	}
 	
 	/**
-	 * Set the current view to the view with the given id
+	 * Set the current selection to the view with the given id
 	 * @param id the id of the view to manipulate
 	 * @return this
 	 */
 	public $ id(int id)
 	{
-		this.view = this.findViewById(id);
+		View view = this.findViewById(id);
+		if (view != null)
+		{
+			this.views.clear();
+			this.rootView = view;
+			this.views.add(view);
+		}
 		return this;
 	}
 	
 	/**
-	 * Selects all {@link ImageView}s within the current view hierarchy
-	 * @return a list of droidQuery Objects that wrap the found {@code ImageView}s
+	 * Selects all {@link ImageView}s within the currently selected view hierarchies
+	 * @return a droidQuery Object containing the found {@code ImageView}s
 	 */
-	public List<$> selectImages()
+	public $ selectImages()
 	{
-		return recursivelySelectByType(view, ImageView.class);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectByType(view, ImageView.class));
+		}
+		return $.with(subviews);
 	}
 
 	/**
-	 * Selects all views within the given view hierarchy that are the single children of their 
-	 * parent views
+	 * Selects all views within the given current selection that are the single 
+	 * children of their parent views
 	 * @param v the view whose hierarchy will be checked
-	 * @return a list of droidQuery Objects that wrap the found views.
+	 * @return a list of the found views.
 	 */
-	private List<$> recursivelySelectOnlyChilds(View v)
+	private List<View> recursivelySelectOnlyChilds(View v)
 	{
-		List<$> list = new ArrayList<$>();
+		List<View> list = new ArrayList<View>();
 		if (v instanceof ViewGroup)
 		{
 			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
@@ -2741,27 +2932,37 @@ public class $
 			}
 		}
 		if (v.getParent() instanceof ViewGroup && ((ViewGroup) v.getParent()).getChildCount() == 1)
-			list.add($.with(v));
+			list.add(v);
 		return list;
 	}
 	
 	/**
-	 * Selects all views within the current view hierarchy that are the single children of their 
+	 * Selects all views within the current selection that are the single children of their 
 	 * parent views
-	 * @return a list of droidQuery Objects that wrap the found views.
+	 * @return a droidQuery Object containing the found views.
 	 */
-	public List<$> selectOnlyChilds()
+	public $ selectOnlyChilds()
 	{
-		return recursivelySelectOnlyChilds(view);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectOnlyChilds(view));
+		}
+		return $.with(subviews);
 	}
 	
 	/**
-	 * Selects all views in the current hierarchy that can contain other child views
-	 * @return a list of droidQuery Objects that wrap the found ViewGroups
+	 * Selects all views in the current selection that can contain other child views
+	 * @return a droidQuery Object containing the found ViewGroups
 	 */
-	public List<$> selectParents()
+	public $ selectParents()
 	{
-		return recursivelySelectByType(view, ViewGroup.class);
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectByType(view, ViewGroup.class));
+		}
+		return $.with(subviews);
 	}
 	
 	
@@ -3602,7 +3803,7 @@ public class $
 	//// Convenience
 	
 	/**
-	 * Include the html string in this view. If this view has a setText method, it is used. Otherwise,
+	 * Include the html string in the selected views. If a view has a setText method, it is used. Otherwise,
 	 * a new TextView is created. This html can also handle image tags for both urls and local files.
 	 * Local files should be the name (for example, for R.id.ic_launcher, just use ic_launcher).
 	 * @param resourceID the ID of the String resource
@@ -3613,48 +3814,52 @@ public class $
 	}
 	
 	/**
-	 * Include the html string in this view. If this view has a setText method, it is used. Otherwise,
+	 * Include the html string the selected views. If a view has a setText method, it is used. Otherwise,
 	 * a new TextView is created. This html can also handle image tags for both urls and local files.
 	 * Local files should be the name (for example, for R.id.ic_launcher, just use ic_launcher).
 	 * @param html the HTML String to include
 	 */
 	public $ html(String html)
 	{
-		try
+		for (View view : this.views)
 		{
-			Method m = this.view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
-			m.invoke(this.view, (CharSequence) Html.fromHtml(html));
-		}
-		catch (Throwable t)
-		{
-			if (this.view instanceof ViewGroup)
+			try
 			{
-				try
+				Method m = view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
+				m.invoke(view, (CharSequence) Html.fromHtml(html));
+			}
+			catch (Throwable t)
+			{
+				if (view instanceof ViewGroup)
 				{
-					//no setText method. Try a TextView
-					TextView tv = new TextView(this.context);
-					tv.setBackgroundColor(android.R.color.transparent);
-					tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
-					((ViewGroup) this.view).addView(tv);
-					tv.setText(Html.fromHtml(html, new AsyncImageGetter(tv), null));
+					try
+					{
+						//no setText method. Try a TextView
+						TextView tv = new TextView(this.context);
+						tv.setBackgroundColor(android.R.color.transparent);
+						tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
+						((ViewGroup) view).addView(tv);
+						tv.setText(Html.fromHtml(html, new AsyncImageGetter(tv), null));
+					}
+					catch (Throwable t2)
+					{
+						//unable to set content
+						Log.w("droidQuery", "unable to set HTML content");
+					}
 				}
-				catch (Throwable t2)
+				else
 				{
 					//unable to set content
-					Log.w("droidQuery", "unable to set HTML content");
+					Log.w("droidQuery", "unable to set textual content");
 				}
 			}
-			else
-			{
-				//unable to set content
-				Log.w("droidQuery", "unable to set textual content");
-			}
 		}
+		
 		return this;
 	}
 	
 	/**
-	 * Includes the given text string inside of this view. If this view has a setText method, it is used
+	 * Includes the given text string inside of the selected views. If a view has a setText method, it is used
 	 * otherwise, if possible, a textview is added as a child to display the text.
 	 * @param text resource ID of the text to include
 	 */
@@ -3664,42 +3869,46 @@ public class $
 	}
 	
 	/**
-	 * Includes the given text string inside of this view. If this view has a setText method, it is used
+	 * Includes the given text string inside of the selected views. If a view has a setText method, it is used
 	 * otherwise, if possible, a textview is added as a child to display the text.
 	 * @param text the text to include
 	 */
 	public $ text(CharSequence text)
 	{
-		try
+		for (View view : this.views)
 		{
-			Method m = this.view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
-			m.invoke(this.view, text);
-		}
-		catch (Throwable t)
-		{
-			if (this.view instanceof ViewGroup)
+			try
 			{
-				try
+				Method m = view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
+				m.invoke(view, text);
+			}
+			catch (Throwable t)
+			{
+				if (view instanceof ViewGroup)
 				{
-					//no setText method. Try a TextView
-					TextView tv = new TextView(this.context);
-					tv.setBackgroundColor(android.R.color.transparent);
-					tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
-					tv.setText(text);
-					((ViewGroup) this.view).addView(tv);
+					try
+					{
+						//no setText method. Try a TextView
+						TextView tv = new TextView(this.context);
+						tv.setBackgroundColor(android.R.color.transparent);
+						tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
+						tv.setText(text);
+						((ViewGroup) view).addView(tv);
+					}
+					catch (Throwable t2)
+					{
+						//unable to set content
+						Log.w("droidQuery", "unable to set textual content");
+					}
 				}
-				catch (Throwable t2)
+				else
 				{
 					//unable to set content
 					Log.w("droidQuery", "unable to set textual content");
 				}
 			}
-			else
-			{
-				//unable to set content
-				Log.w("droidQuery", "unable to set textual content");
-			}
 		}
+		
 		return this;
 	}
 	
@@ -3796,73 +4005,79 @@ public class $
 	//////CSS-based
 	
 	/**
-	 * @return the computed height for the current view 
+	 * @return the computed height for the first view in the current selection
 	 */
 	public int height()
 	{
-		return Math.abs(view.getBottom() - view.getTop());
+		return Math.abs(view(0).getBottom() - view(0).getTop());
 	}
 	
 	/**
-	 * Set the height of the current view
+	 * Set the height of the selected views
 	 * @param height the new height
 	 * @return this
 	 */
 	public $ height(int height)
 	{
-		ViewGroup.LayoutParams params = view.getLayoutParams();
-		params.height = height;
-		view.setLayoutParams(params);
+		for (View view : this.views)
+		{
+			ViewGroup.LayoutParams params = view.getLayoutParams();
+			params.height = height;
+			view.setLayoutParams(params);
+		}
 		return this;
 	}
 	
 	/**
-	 * @return the computed width for the current view
+	 * @return the computed width for the first view in the current selection
 	 */
 	public int width()
 	{
-		return Math.abs(view.getRight() - view.getLeft());
+		return Math.abs(view(0).getRight() - view(0).getLeft());
 	}
 	
 	/**
-	 * Set the width of the current view
+	 * Set the width of the views in the current selection
 	 * @param width the new width
 	 * @return this
 	 */
 	public $ width(int width)
 	{
-		ViewGroup.LayoutParams params = view.getLayoutParams();
-		params.width = width;
-		view.setLayoutParams(params);
+		for (View view : this.views)
+		{
+			ViewGroup.LayoutParams params = view.getLayoutParams();
+			params.width = width;
+			view.setLayoutParams(params);
+		}
 		return this;
 	}
 	
 	/**
-	 * Get the computed height for the current view, 
+	 * Get the computed height for the first view in the selection, 
 	 * including padding but not margin.
 	 * @return
 	 */
 	public int innerHeight()
 	{
-		return height() - (view.getPaddingTop() + view.getPaddingBottom());
+		return height() - (view(0).getPaddingTop() + view(0).getPaddingBottom());
 	}
 
 	/**
-	 * @return the computed width for the current view, 
+	 * @return the computed width for the first view in the current selection, 
 	 * including padding but not margin.
 	 */
 	public int innerWidth()
 	{
-		return width() - (view.getPaddingLeft() + view.getPaddingRight());
+		return width() - (view(0).getPaddingLeft() + view(0).getPaddingRight());
 	}
 	
 	/**
-	 * @return the computed height for the current view, 
+	 * @return the computed height for the first view in the current selection, 
 	 * including padding and margin.
 	 */
 	public int outerHeight()
 	{
-		Object params = view.getLayoutParams();
+		Object params = view(0).getLayoutParams();
 		int margin = 0;
 		try
 		{
@@ -3873,16 +4088,16 @@ public class $
 		{
 			//cannot get margin values
 		}
-		return height() - (view.getPaddingTop() + view.getPaddingBottom() + margin);
+		return height() - (view(0).getPaddingTop() + view(0).getPaddingBottom() + margin);
 	}
 	
 	/**
-	 * @return the computed width for the current view, 
+	 * @return the computed width for the first view in the current selection, 
 	 * including padding and margin.
 	 */
 	public int outerWidth()
 	{
-		Object params = view.getLayoutParams();
+		Object params = view(0).getLayoutParams();
 		int margin = 0;
 		try
 		{
@@ -3893,93 +4108,128 @@ public class $
 		{
 			//cannot get margin values
 		}
-		return width() - (view.getPaddingLeft() + view.getPaddingRight() + margin);
+		return width() - (view(0).getPaddingLeft() + view(0).getPaddingRight() + margin);
 	}
 	
 	/**
-	 * @return the current coordinates the current view.
+	 * @return the coordinates of the first view in the current selection.
 	 */
 	public Point offset()
 	{
 		int[] loc = new int[2];
-		view.getLocationOnScreen(loc);
+		view(0).getLocationOnScreen(loc);
 		return new Point(loc[0], loc[1]);
 	}
 	
 	/**
-	 * Set the coordinates of the current view, relative to the document.
+	 * Gets the coordinates of {@code v}
+	 * @param v
+	 * @return the coordinates of the given view
+	 */
+	private Point offset(View v)
+	{
+		int[] loc = new int[2];
+		v.getLocationOnScreen(loc);
+		return new Point(loc[0], loc[1]);
+	}
+	
+	/**
+	 * Set the coordinates of each selected view, relative to the document.
 	 * @param x the x-coordinate, in pixels
 	 * @param y the y-coordinate, in pixels
 	 * @return this
 	 */
 	public $ offset(int x, int y)
 	{
-		Point offset = offset();
-		int offsetX = x - offset.x;
-		int offsetY = y - offset.y;
-		Point position = position();
-		view.setX(position.x + offsetX);
-		view.setY(position.y + offsetY);
+		for (View view : this.views)
+		{
+			Point offset = offset(view);
+			int offsetX = x - offset.x;
+			int offsetY = y - offset.y;
+			Point position = position(view);
+			view.setX(position.x + offsetX);
+			view.setY(position.y + offsetY);
+		}
+		
 		return this;
 	}
 	
 	/**
-	 * @return the coordinates of the current view, 
+	 * @return the coordinates of the first view in the current selection, 
 	 * relative to the offset parent.
 	 */
 	public Point position()
+	{
+		return new Point(view(0).getLeft(), view(0).getTop());
+	}
+	
+	/**
+	 * Get the coordinates of the {@code view}, relative to the offset parent
+	 * @param view
+	 * @return the coordinates of the given view, relative to the offset parent
+	 */
+	private Point position(View view)
 	{
 		return new Point(view.getLeft(), view.getTop());
 	}
 	
 	/**
-	 * Sets the coordinates of the current view, relative to the offset parent
+	 * Sets the coordinates of each selected view, relative to its offset parent
 	 * @param x the x-coordinate
 	 * @param y the y-coordinate
 	 * @return 
 	 */
 	public $ position(int x, int y)
 	{
-		view.setLeft(x);
-		view.setTop(y);
+		for (View view : this.views)
+		{
+			view.setLeft(x);
+			view.setTop(y);
+		}
 		return this;
 	}
 	
 	/**
-	 * @return the current horizontal position of the scroll bar this view.
+	 * @return the current horizontal position of the scroll bar the first view of the current selection.
 	 */
 	public int scrollLeft()
 	{
-		return view.getScrollX();
+		return view(0).getScrollX();
 	}
 	
 	/**
-	 * Set the horizontal position of the scroll bar for the current view
+	 * Set the horizontal position of the scroll bar for each view in the current selection
 	 * @param position the x position to which to scroll
 	 * @return this
 	 */
 	public $ scrollLeft(int position)
 	{
-		view.scrollTo(position, view.getScrollY());
+		for (View view : this.views)
+		{
+			view.scrollTo(position, view.getScrollY());
+		}
 		return this;
 	}
 	
 	/**
-	 * @return the current vertical position of the scroll bar for this view
+	 * @return the current vertical position of the scroll bar for the first view of the current selection
 	 */
 	public int scrollTop()
 	{
-		return view.getScrollY();
+		return view(0).getScrollY();
 	}
 	
 	/**
-	 * Set the vertical position of the scroll bar for this view
+	 * Set the vertical position of the scroll bar for the currently selected views
 	 * @param position the scroll position
 	 * @return this
 	 */
 	public $ scrollTop(int position)
 	{
-		view.scrollTo(view.getScrollX(), position);
+		for (View view : this.views)
+		{
+			view.scrollTo(view.getScrollX(), position);
+		}
 		return this;
 	}
 	
