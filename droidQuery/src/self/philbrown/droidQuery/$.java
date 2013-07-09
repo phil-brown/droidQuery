@@ -67,7 +67,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
-import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -3602,7 +3601,12 @@ public class $
 	
 	//// Convenience
 	
-	
+	/**
+	 * Include the html string in this view. If this view has a setText method, it is used. Otherwise,
+	 * a new TextView is created. This html can also handle image tags for both urls and local files.
+	 * Local files should be the name (for example, for R.id.ic_launcher, just use ic_launcher).
+	 * @param resourceID the ID of the String resource
+	 */
 	public $ html(int resourceID)
 	{
 		return html(context.getResources().getText(resourceID).toString());
@@ -3612,7 +3616,7 @@ public class $
 	 * Include the html string in this view. If this view has a setText method, it is used. Otherwise,
 	 * a new TextView is created. This html can also handle image tags for both urls and local files.
 	 * Local files should be the name (for example, for R.id.ic_launcher, just use ic_launcher).
-	 * @param html
+	 * @param html the HTML String to include
 	 */
 	public $ html(String html)
 	{
@@ -3649,6 +3653,11 @@ public class $
 		return this;
 	}
 	
+	/**
+	 * Includes the given text string inside of this view. If this view has a setText method, it is used
+	 * otherwise, if possible, a textview is added as a child to display the text.
+	 * @param text resource ID of the text to include
+	 */
 	public $ text(int resourceID)
 	{
 		return text(context.getResources().getText(resourceID).toString());
@@ -3657,14 +3666,14 @@ public class $
 	/**
 	 * Includes the given text string inside of this view. If this view has a setText method, it is used
 	 * otherwise, if possible, a textview is added as a child to display the text.
-	 * @param text
+	 * @param text the text to include
 	 */
-	public $ text(String text)
+	public $ text(CharSequence text)
 	{
 		try
 		{
 			Method m = this.view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
-			m.invoke(this.view, (CharSequence) text);
+			m.invoke(this.view, text);
 		}
 		catch (Throwable t)
 		{
@@ -3694,16 +3703,37 @@ public class $
 		return this;
 	}
 	
-	public static void toast(Context context, String text, int duration)
+	/**
+	 * Shortcut to show a Toast Message
+	 * @param context used to show the toast
+	 * @param text the text to display
+	 * @param duration the Toast Duration
+	 * @see Toast#LENGTH_LONG
+	 * @see Toast#LENGTH_SHORT
+	 */
+	public static void toast(Context context, CharSequence text, int duration)
 	{
 		Toast.makeText(context, text, duration).show();
 	}
 	
+	/**
+	 * Show an alert. The title will be set to the name of the application.
+	 * @param context used to display the alert window
+	 * @param text the message to display.
+	 * @see #alert(Context, String, String)
+	 */
 	public static void alert(Context context, String text)
 	{
 		alert(context, context.getString(context.getResources().getIdentifier("app_name", "string", context.getPackageName())), text);
 	}
 	
+	/**
+	 * Show an alert
+	 * @param context used to display the alert window
+	 * @param title the title of the alert window. Use {@code null} to show no title
+	 * @param text the alert message
+	 * @see #alert(Context, String)
+	 */
 	public static void alert(Context context, String title, String text)
 	{
 		AlertDialog alert = new AlertDialog.Builder(context).create();
@@ -3720,11 +3750,22 @@ public class $
 		alert.show();
 	}
 	
+	/**
+	 * Uses the current context to show an alert dialog. The title will be set to the name of the application.
+	 * @param text the alert message.
+	 * @see #alert(String, String)
+	 */
 	public void alert(String text)
 	{
 		alert(context.getString(context.getResources().getIdentifier("app_name", "string", context.getPackageName())), text);
 	}
 	
+	/**
+	 * Uses the current context to show an alert dialog.
+	 * @param title the alert title
+	 * @param text the alert message.
+	 * @see #alert(String)
+	 */
 	public void alert(String title, String text)
 	{
 		AlertDialog alert = new AlertDialog.Builder(context).create();
@@ -3755,9 +3796,7 @@ public class $
 	//////CSS-based
 	
 	/**
-	 * Get the current computed height for the first element in the set of matched 
-	 * elements or set the height of every matched element.
-	 * @return
+	 * @return the computed height for the current view 
 	 */
 	public int height()
 	{
@@ -3765,9 +3804,20 @@ public class $
 	}
 	
 	/**
-	 * Get the current computed width for the first element in the set of matched elements 
-	 * or set the width of every matched element.
-	 * @return
+	 * Set the height of the current view
+	 * @param height the new height
+	 * @return this
+	 */
+	public $ height(int height)
+	{
+		ViewGroup.LayoutParams params = view.getLayoutParams();
+		params.height = height;
+		view.setLayoutParams(params);
+		return this;
+	}
+	
+	/**
+	 * @return the computed width for the current view
 	 */
 	public int width()
 	{
@@ -3775,7 +3825,20 @@ public class $
 	}
 	
 	/**
-	 * Get the current computed height for the first element in the set of matched elements, 
+	 * Set the width of the current view
+	 * @param width the new width
+	 * @return this
+	 */
+	public $ width(int width)
+	{
+		ViewGroup.LayoutParams params = view.getLayoutParams();
+		params.width = width;
+		view.setLayoutParams(params);
+		return this;
+	}
+	
+	/**
+	 * Get the computed height for the current view, 
 	 * including padding but not margin.
 	 * @return
 	 */
@@ -3785,9 +3848,8 @@ public class $
 	}
 
 	/**
-	 * Get the current computed width for the first element in the set of matched elements, 
+	 * @return the computed width for the current view, 
 	 * including padding but not margin.
-	 * @return
 	 */
 	public int innerWidth()
 	{
@@ -3795,9 +3857,8 @@ public class $
 	}
 	
 	/**
-	 * Get the current computed height for the first element in the set of matched elements, 
+	 * @return the computed height for the current view, 
 	 * including padding and margin.
-	 * @return
 	 */
 	public int outerHeight()
 	{
@@ -3816,9 +3877,8 @@ public class $
 	}
 	
 	/**
-	 * Get the current computed width for the first element in the set of matched elements, 
+	 * @return the computed width for the current view, 
 	 * including padding and margin.
-	 * @return
 	 */
 	public int outerWidth()
 	{
@@ -3837,9 +3897,7 @@ public class $
 	}
 	
 	/**
-	 * Get the current coordinates of the first element, or set the coordinates of every element, 
-	 * in the set of matched elements, relative to the document.
-	 * @return
+	 * @return the current coordinates the current view.
 	 */
 	public Point offset()
 	{
@@ -3849,9 +3907,25 @@ public class $
 	}
 	
 	/**
-	 * Get the current coordinates of the first element in the set of matched elements, 
+	 * Set the coordinates of the current view, relative to the document.
+	 * @param x the x-coordinate, in pixels
+	 * @param y the y-coordinate, in pixels
+	 * @return this
+	 */
+	public $ offset(int x, int y)
+	{
+		Point offset = offset();
+		int offsetX = x - offset.x;
+		int offsetY = y - offset.y;
+		Point position = position();
+		view.setX(position.x + offsetX);
+		view.setY(position.y + offsetY);
+		return this;
+	}
+	
+	/**
+	 * @return the coordinates of the current view, 
 	 * relative to the offset parent.
-	 * @return
 	 */
 	public Point position()
 	{
@@ -3859,9 +3933,20 @@ public class $
 	}
 	
 	/**
-	 * Get the current horizontal position of the scroll bar for the first element in the set of 
-	 * matched elements or set the horizontal position of the scroll bar for every matched element.
-	 * @return
+	 * Sets the coordinates of the current view, relative to the offset parent
+	 * @param x the x-coordinate
+	 * @param y the y-coordinate
+	 * @return 
+	 */
+	public $ position(int x, int y)
+	{
+		view.setLeft(x);
+		view.setTop(y);
+		return this;
+	}
+	
+	/**
+	 * @return the current horizontal position of the scroll bar this view.
 	 */
 	public int scrollLeft()
 	{
@@ -3869,12 +3954,33 @@ public class $
 	}
 	
 	/**
-	 * Get the current vertical position of the scroll bar for the first element in the set of 
-	 * matched elements or set the vertical position of the scroll bar for every matched element.
+	 * Set the horizontal position of the scroll bar for the current view
+	 * @param position the x position to which to scroll
+	 * @return this
+	 */
+	public $ scrollLeft(int position)
+	{
+		view.scrollTo(position, view.getScrollY());
+		return this;
+	}
+	
+	/**
+	 * @return the current vertical position of the scroll bar for this view
 	 */
 	public int scrollTop()
 	{
 		return view.getScrollY();
+	}
+	
+	/**
+	 * Set the vertical position of the scroll bar for this view
+	 * @param position the scroll position
+	 * @return this
+	 */
+	public $ scrollTop(int position)
+	{
+		view.scrollTo(view.getScrollX(), position);
+		return this;
 	}
 	
 	//////ignoring jQuery data. Doesn't come off as important here.
@@ -3984,34 +4090,34 @@ public class $
 		
 	}
 	
-	/**
-	 * Sets a function for double click events registered with dblclick.
-	 * Receives this droidQuery instance and the motionEvent as params.
-	 * Third param if set in constructor.
-	 */
-	class DoubleClickHandler extends GestureDetector.SimpleOnGestureListener
-	{
-		private Function function;
-		private Object data;
-		
-		public DoubleClickHandler(Function function, Object eventData)
-		{
-			this.function = function;
-			this.data = eventData;
-		}
-		
-		@Override
-		public boolean onDoubleTap (MotionEvent e)
-		{
-			if (function != null)
-			{
-				if (data != null)
-					function.invoke($.this, e, data);
-				else
-					function.invoke($.this, e);
-				return true;
-			}
-			return false;
-		}
-	}
+//	/**
+//	 * Sets a function for double click events registered with dblclick.
+//	 * Receives this droidQuery instance and the motionEvent as params.
+//	 * Third param if set in constructor.
+//	 */
+//	class DoubleClickHandler extends GestureDetector.SimpleOnGestureListener
+//	{
+//		private Function function;
+//		private Object data;
+//		
+//		public DoubleClickHandler(Function function, Object eventData)
+//		{
+//			this.function = function;
+//			this.data = eventData;
+//		}
+//		
+//		@Override
+//		public boolean onDoubleTap (MotionEvent e)
+//		{
+//			if (function != null)
+//			{
+//				if (data != null)
+//					function.invoke($.this, e, data);
+//				else
+//					function.invoke($.this, e);
+//				return true;
+//			}
+//			return false;
+//		}
+//	}
 }
