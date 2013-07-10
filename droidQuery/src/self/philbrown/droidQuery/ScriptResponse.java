@@ -20,11 +20,14 @@ package self.philbrown.droidQuery;
  * Object used with ScriptResponseHandler to return the resulting output of running the script,
  * as well as the text of the script itself.
  * @author Phil Brown
- *
+ * @see ScriptResponseHandler
  */
 public class ScriptResponse 
 {
+	/** Script Output after it is run in the Android shell */
 	public String output;
+	/** The raw Script Object */
 	public Script script;
+	/** The textual representation of the Script Object */
 	public String text;
 }

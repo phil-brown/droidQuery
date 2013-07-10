@@ -21,10 +21,13 @@ import org.apache.http.HttpEntity;
 /**
  * Subclasses should be used to process raw data that is sent through an ajax request.
  * @author Phil Brown
- *
  */
 public abstract class DataProcessor implements HttpEntity
 {
+	/**
+	 * Constructor
+	 * @param data raw data retrieved through an Ajax Request
+	 */
 	protected DataProcessor(Object data)
 	{
 		

@@ -3443,6 +3443,31 @@ public class $
 		return map;
 	}
 	
+	/**
+	 * Shortcut method for creating a Map of Key-Value pairings. For example:<br>
+	 * $.map($.entry(0, "Zero"), $.entry(1, "One"), $.entry(2, "Two"));
+	 * @param entries the MapEntry Objects used to populate the map.
+	 * @return a new map with the given entries
+	 * @see #entry(Object, Object)
+	 */
+	public static Map<?, ?> map(Entry<?, ?>... entries)
+	{
+		return QuickMap.qm(entries);
+	}
+	
+	/**
+	 * Shortcut method for creating a Key-Value pairing. For example:<br>
+	 * $.map($.entry(0, "Zero"), $.entry(1, "One"), $.entry(2, "Two"));
+	 * @param key the key
+	 * @param value the value
+	 * @return the Key-Value pairing Object
+	 * @see #map(Entry...)
+	 */
+	public static Entry<?, ?> entry(Object key, Object value)
+	{
+		return QuickEntry.qe(key, value);
+	}
+	
 	/** 
 	 * Merges the contents of two arrays together into the first array. 
 	 */

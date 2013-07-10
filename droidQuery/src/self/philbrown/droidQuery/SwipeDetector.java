@@ -28,6 +28,7 @@ import android.view.ViewConfiguration;
  */
 public class SwipeDetector implements View.OnTouchListener
 {
+	/** Swipe Direction */
 	public static enum Direction
 	{
 		RIGHT, DOWN, UP, LEFT
@@ -44,6 +45,7 @@ public class SwipeDetector implements View.OnTouchListener
     /** Maintains a reference to the first detected up touch event. */
     private float upX, upY;
     
+    /** The View on which the swipe action is registered */
     private View view;
     
     /** provides access to size and dimension contants */
@@ -150,24 +152,36 @@ public class SwipeDetector implements View.OnTouchListener
         return false;
     }
     
+    /**
+     * Simulate a swipe up event
+     */
     public void performSwipeUp()
     {
     	if (listener != null)
     		listener.onUpSwipe(view);
     }
     
+    /**
+     * Simulate a swipe right event
+     */
     public void performSwipeRight()
     {
     	if (listener != null)
     		listener.onRightSwipe(view);
     }
     
+    /**
+     * Simulate a swipe left event
+     */
     public void performSwipeLeft()
     {
     	if (listener != null)
     		listener.onLeftSwipe(view);
     }
     
+    /**
+     * Simulate a swipe down event
+     */
     public void performSwipeDown()
     {
     	if (listener != null)
@@ -188,9 +202,9 @@ public class SwipeDetector implements View.OnTouchListener
 	    public void onLeftSwipe(View v);
 	    /** Callback for registering a new swipe motion from the top of the view toward its bottom. */
 	    public void onDownSwipe(View v);
-	    
+	    /** Callback for registering that a new swipe motion has begun */
 	    public void onStartSwipe(View v);
-	    
+	    /** Callback for registering that a swipe motion has ended */
 	    public void onStopSwipe(View v);
 	}
 }

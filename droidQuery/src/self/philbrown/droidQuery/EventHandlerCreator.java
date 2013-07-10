@@ -25,11 +25,19 @@ import java.lang.reflect.Method;
  * @author Phil Brown
  *
  */
-public class EventHandlerCreator implements InvocationHandler {
+public class EventHandlerCreator implements InvocationHandler 
+{
 
+	/** The arguments to pass to the Function */
 	private Object[] args;
+	/** The function to call when the interface's method is invoked. */
 	private Function function;
 	
+	/**
+	 * Constructor
+	 * @param function the function to call instead of the interface's main method
+	 * @param args the arguments to pass to the function
+	 */
 	public EventHandlerCreator(Function function, Object... args)
 	{
 		this.function = function;

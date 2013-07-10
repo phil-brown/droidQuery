@@ -59,13 +59,14 @@ import android.util.Log;
 import com.commonsware.cwac.task.AsyncTaskEx;
 
 /**
- * Main driver behind droidQuery/Ajax.
+ * Asynchronously performs HTTP Requests
  * @author Phil Brown
- *
  */
 public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 {
+	/** Options used to configure this task */
 	private AjaxOptions options;
+	/** The HTTP Request to perform */
 	private HttpUriRequest request = null;
 	
 	/** Used for synchronous operations. */
@@ -75,11 +76,20 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	/** Contains the current global tasks */
 	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
 	
+	/**
+	 * Constructor
+	 * @param options JSON representation of the Ajax Options
+	 * @throws Exception if the JSON is malformed
+	 */
 	public AjaxTask(JSONObject options) throws Exception
 	{
 		this(new AjaxOptions(options));
 	}
 	
+	/**
+	 * Constructor
+	 * @param options used to configure this task
+	 */
 	public AjaxTask(AjaxOptions options)
 	{
 		this.options = options;
@@ -90,6 +100,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		
 	}
 	
+	/**
+	 * Stops all currently running Ajax Tasks
+	 */
 	public static void killTasks()
 	{
 		for (AjaxTask task : globalTasks) {
@@ -431,9 +444,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	}
 	
 	/**
-	 * Parses and returns the JSONObject
-	 * @param response
-	 * @return
+	 * Parses the HTTP response as JSON representation
+	 * @param response the response to parse
+	 * @return a JSONObject response
 	 */
 	private JSONObject parseJSON(HttpResponse response) throws ClientProtocolException, IOException
 	{
@@ -442,9 +455,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	}
 	
 	/**
-	 * parses and returns a Document Object
-	 * @param response
-	 * @return
+	 * Parses the HTTP response as XML representation
+	 * @param response the response to parse
+	 * @return an XML Document response
 	 */
 	private Document parseXML(HttpResponse response) throws ClientProtocolException, IOException
 	{
@@ -453,9 +466,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	}
 	
 	/**
-	 * Parses and returns a String Object (Default)
-	 * @param response
-	 * @return
+	 * Parses the HTTP response as Text
+	 * @param response the response to parse
+	 * @return a String response
 	 */
 	private String parseText(HttpResponse response) throws ClientProtocolException, IOException
 	{
@@ -464,11 +477,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	}
 	
 	/**
-	 * Parses a Script, and runs it. Then returns the output String, if any.
-	 * @param response
-	 * @return
-	 * @throws IOException 
-	 * @throws ClientProtocolException 
+	 * Parses the HTTP response as a Script, then runs it.
+	 * @param response the response to parse
+	 * @return a ScriptResponse Object containing the output String, if any, as well as the original
+	 * Script
 	 */
 	private ScriptResponse parseScript(HttpResponse response) throws ClientProtocolException, IOException
 	{
@@ -483,6 +495,11 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		}
 	}
 	
+	/**
+	 * Parses the HTTP response as a Bitmap
+	 * @param response the response to parse
+	 * @return a Bitmap response
+	 */
 	private Bitmap parseImage(HttpResponse response) throws IllegalStateException, IOException
 	{
 		InputStream is = response.getEntity().getContent();
@@ -510,17 +527,31 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
         return bitmap.get();
 	}
 	
+	/**
+	 * Defines a response to a Task
+	 * @see Error
+	 * @see Success
+	 */
 	class TaskResponse {
+		/** The reason text */
 		public String reason;
+		/** The status ID */
 		public int status;
+		/** The response Object */
 		public Object obj;
 	}
 	
+	/**
+	 * Response for tasks that run into an error or exception
+	 */
 	class Error extends TaskResponse
 	{
 		
 	}
 	
+	/**
+	 * Response for tasks that complete successfully
+	 */
 	class Success extends TaskResponse
 	{
 		

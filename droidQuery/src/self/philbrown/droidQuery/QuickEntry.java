@@ -21,15 +21,20 @@ import java.util.Map.Entry;
 /**
  * Allows the quick insertion of Map Entries
  * @author Phil Brown
- *
- * @param <K>
- * @param <V>
+ * @see $#entry(Object, Object)
  */
-public class QuickEntry<K extends Object, V extends Object> implements Entry<K,V> {
-
+public class QuickEntry<K extends Object, V extends Object> implements Entry<K,V> 
+{
+	/** Entry Key */
 	protected K key;
+	/** Entry Value */
 	protected V value;
 	
+	/**
+	 * Constructs a new QuickEntry
+	 * @param key the Entry key
+	 * @param value the Value key
+	 */
 	public QuickEntry(K key, V value)
 	{
 		this.key = key;
@@ -37,10 +42,10 @@ public class QuickEntry<K extends Object, V extends Object> implements Entry<K,V
 	}
 	
 	/**
-	 * Shortcut to constructor
-	 * @param key
-	 * @param value
-	 * @return
+	 * Shortcut to the constructor
+	 * @param key the Entry key
+	 * @param value the Entry value
+	 * @return the new QuickEntry instance
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static QuickEntry qe(Object key, Object value)

@@ -21,10 +21,13 @@ import org.apache.http.client.methods.HttpUriRequest;
 /**
  * Used to create custom HTTP Requests for Ajax
  * @author Phil Brown
- *
  */
 public abstract class CustomHttpUriRequest implements HttpUriRequest {
 
+	/**
+	 * Constructor
+	 * @param url the URL of the page to request
+	 */
 	protected CustomHttpUriRequest(String url)
 	{
 		

@@ -28,20 +28,30 @@ import java.util.Map;
  */
 public class EventCenter 
 {
+	/**
+	 * Mapping of Scope to a Mapping of Event Names and a List of functions that respond to events
+	 * with the name for the scope.
+	 */
 	private static Map<Object, Map<String, List<Function>>> receivers = new HashMap<Object, Map<String, List<Function>>>();
 
+	/**
+	 * Global Scope
+	 */
 	private static Object global = new Object();
 	
+	/**
+	 * Constructor
+	 */
 	private EventCenter()
 	{
 		
 	}
 	
 	/**
-	 * Functions receive name of trigger and a mapping of objects
-	 * @param trigger
-	 * @param function
-	 * @param scope
+	 * Bind a function to the name of a trigger for the given scope
+	 * @param trigger the event name
+	 * @param function the function to invoke
+	 * @param scope the scope. Use {@code null} for global scope.
 	 */
 	public static void bind(String trigger, Function function, Object scope)
 	{
@@ -58,6 +68,12 @@ public class EventCenter
 		
 	}
 	
+	/**
+	 * Unbind a function for the given event trigger and scope
+	 * @param trigger the name of the event
+	 * @param function the function to remove
+	 * @param scope the scope of the bound event
+	 */
 	public static void unbind(String trigger, Function function, Object scope)
 	{
 		if (scope == null) scope = global;
@@ -72,6 +88,12 @@ public class EventCenter
 		receivers.put(scope, triggers);
 	}
 	
+	/**
+	 * Trigger an event
+	 * @param text the name of the event
+	 * @param args the arguments to pass to the registered functions
+	 * @param scope the scope of the event
+	 */
 	public static void trigger(String text, Map<String, Object> args, Object scope)
 	{
 		if (scope == null) scope = global;

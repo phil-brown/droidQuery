@@ -21,9 +21,7 @@ import java.util.HashMap;
 /**
  * Allows for quicker Map creation
  * @author Phil Brown
- *
- * @param <K>
- * @param <V>
+ * @see $#map(java.util.Map.Entry...)
  */
 public class QuickMap<K extends Object, V extends Object> extends HashMap<K,V>
 {
@@ -33,11 +31,19 @@ public class QuickMap<K extends Object, V extends Object> extends HashMap<K,V>
 	 */
 	private static final long serialVersionUID = 4189306358484466596L;
 
+	/**
+	 * Default Constructor
+	 */
 	public QuickMap()
 	{
 		super();
 	}
 	
+	/**
+	 * Constructor<br>
+	 * Creates a new Mapping of the given entries
+	 * @param entries the key-value pairings used to populate the map
+	 */
 	public QuickMap(Entry<K,V>... entries)
 	{
 		this();
@@ -48,9 +54,9 @@ public class QuickMap<K extends Object, V extends Object> extends HashMap<K,V>
 	}
 	
 	/**
-	 * Shortcut to constructor
-	 * @param entries
-	 * @return
+	 * Shortcut to the constructor
+	 * @param entries the key-value pairings used to populate the map
+	 * @return a new instance of a QuickMap
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static QuickMap qm(Entry<?,?>... entries)
@@ -58,6 +64,12 @@ public class QuickMap<K extends Object, V extends Object> extends HashMap<K,V>
 		return new QuickMap(entries);
 	}
 	
+	/**
+	 * Include a Key-Value pairing in this QuickMap
+	 * @param entry the entry to include
+	 * @return the value of any previous mapping with the specified key or {@code null} if there was 
+	 * no such mapping.
+	 */
 	public V put(Entry<K,V> entry)
 	{
 		return this.put(entry.getKey(), entry.getValue());

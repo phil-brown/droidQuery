@@ -17,16 +17,26 @@
 package self.philbrown.droidQuery;
 
 /**
- * Superclass for all droidQuery extensions. 
+ * Superclass for all droidQuery extensions. For examples of working extensions, see 
+ * <a href="https://github.com/phil-brown/droidProgress">droidProgress</a> and 
+ * <a href="https://github.com/phil-brown/droidMail">droidMail</a>.
  * @author Phil Brown
  *
  */
 public abstract class $Extension 
 {
+	/**
+	 * Constructor
+	 * @param droidQuery
+	 */
 	public $Extension($ droidQuery)
 	{
 		
 	}
 	
+	/**
+	 * Called when the extension is loaded.
+	 * @param args
+	 */
 	protected abstract void invoke(Object... args);
 }

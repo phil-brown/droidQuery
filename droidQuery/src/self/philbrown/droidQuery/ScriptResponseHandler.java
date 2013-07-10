@@ -31,12 +31,18 @@ import android.util.Log;
 /**
  * Handles a Script by executing it, and returning the result
  * @author Phil Brown
- *
+ * @see ScriptResponse
+ * @see Script
  */
 public class ScriptResponseHandler implements ResponseHandler<ScriptResponse>
 {
+	/** Used to execute the Script */
 	private Context context;
 	
+	/**
+	 * Constructor
+	 * @param context
+	 */
 	public ScriptResponseHandler(Context context)
 	{
 		this.context = context;

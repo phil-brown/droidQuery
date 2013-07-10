@@ -22,38 +22,50 @@ import java.util.List;
 /**
  * A multi-purpose callbacks list object that provides a powerful way to manage callback lists.
  * @author Phil Brown
- *
  */
 public class Callbacks 
 {
-	/** Callback options */
-	public static enum Options
-	{
-		/** saves the argument after locking. */
-		MEMORY
-	}
-	
 	/** Callback functions for this instance of {@code Callbacks}. */
 	private List<Function> functions;
-	
+	/** {@code true} if the Callbacks are enabled. {@code false} if it is disabled. */
 	private boolean isEnabled;
+	/** {@code true} if the Callbacks Object has fired. {@code false} otherwise. */
 	private boolean hasFired;
+	/** {@code true} if the Callbacks Object is locked. {@code false} otherwise. */
 	private boolean isLocked;
+	/** {@code true} if the Callbacks Object should save the arguments after locking. Otherwise {@code false}. */
 	private boolean memory = false;
+	/** saved arguments */
 	private Object[] memArgs;
+	/** {@code true} if {@link #memArgs} has been set. */
 	private boolean memArgsExists = false;
+	/** {@code true} if the {@link Options#ONCE} flag is set. */
+	private boolean once = false;
+	/** {@code true} if a callback can only be added once */
+	private boolean unique = false;
 
-	/** Constructor */
+	/** 
+	 * Constructor 
+	 * @see Callbacks#Callbacks(CallbacksOptions)
+	 */
 	public Callbacks()
 	{
 		functions = new ArrayList<Function>();
 	}
 	
-	public Callbacks(Options opt)
+	/**
+	 * Constructor. Accepts options to configure this instance.
+	 * @param opt the Callbacks Options
+	 */
+	public Callbacks(CallbacksOptions opt)
 	{
 		this();
-		if (opt == Options.MEMORY)
+		if (opt.memory())
 			this.memory = true;
+		if (opt.once())
+			this.once = true;
+		if (opt.unique())
+			this.unique = true;
 	}
 	
 	/**
@@ -63,7 +75,10 @@ public class Callbacks
 	public void add(Function function)
 	{
 		if (isEnabled)
-			functions.add(function);
+		{
+			if (unique && !functions.contains(function))
+				functions.add(function);
+		}
 	}
 	
 	/**
@@ -76,7 +91,8 @@ public class Callbacks
 			return;
 		for (Function f : _functions)
 		{
-			functions.add(f);
+			if (unique && !functions.contains(f))
+				functions.add(f);
 		}
 	}
 	
@@ -87,7 +103,20 @@ public class Callbacks
 	public void add(List<Function> _functions)
 	{
 		if (isEnabled)
-			functions.addAll(_functions);
+		{
+			if (unique)
+			{
+				for (Function f : _functions)
+				{
+					if (!functions.contains(f))
+						functions.add(f);
+				}
+			}
+			else
+			{
+				functions.addAll(_functions);
+			}
+		}
 	}
 	
 	/**
@@ -147,6 +176,8 @@ public class Callbacks
 	public void fire(Object... args)
 	{
 		if (disabled())
+			return;
+		if (once && hasFired)
 			return;
 		if (isLocked)
 		{
@@ -241,4 +272,76 @@ public class Callbacks
 		isLocked = false;
 	}
 	
+	/** Callback options */
+	public static class CallbacksOptions
+	{
+		/** Saves the argument after locking */
+		private boolean memory;
+		/** Ensures the callback list can only be fired once */
+		private boolean once;
+		/**  Ensures a callback can only be added once (so there are no duplicates in the list). */
+		private boolean unique;
+		
+		/**
+		 * Set the {@code memory} option. If {@code true}, the Callbacks will save the arguments after locking
+		 * @param mem
+		 * @return this
+		 */
+		public CallbacksOptions memory(boolean mem)
+		{
+			memory = mem;
+			return this;
+		}
+		
+		/**
+		 * @return {@code true} if {@code memory} is set to true
+		 * @see #memory(boolean)
+		 */
+		public boolean memory()
+		{
+			return memory;
+		}
+		
+		/**
+		 * Set the {@code once} option. If {@code true}, the Callbacks will only be fired once.
+		 * @param once
+		 * @return this
+		 */
+		public CallbacksOptions once(boolean once)
+		{
+			this.once = once;
+			return this;
+		}
+		
+		/**
+		 * @return {@code true} if {@code once} is set to true
+		 * @see #once(boolean)
+		 */
+		public boolean once()
+		{
+			return once;
+		}
+		
+		/**
+		 * Set the {@code unique} option. If {@code true}, the Callbacks will not allow multiple
+		 * copies of the same Function to be called
+		 * @param unique
+		 * @return this
+		 */
+		public CallbacksOptions unique(boolean unique)
+		{
+			this.unique = unique;
+			return this;
+		}
+		
+		/**
+		 * @return {@code true} if {@code unique} is set to true
+		 * @see #unique(boolean)
+		 */
+		public boolean unique()
+		{
+			return unique;
+		}
+		
+	}
 }

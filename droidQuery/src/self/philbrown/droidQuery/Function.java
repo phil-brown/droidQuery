@@ -17,11 +17,14 @@
 package self.philbrown.droidQuery;
 
 /**
- * Used in place of a Runnable or Callable. Accepts parameters
+ * Represents a command that can be executed.
  * @author Phil Brown
- *
  */
 public interface Function 
 {
+	/**
+	 * Variable arguments method that can be called on a Function
+	 * @param params optional arguments
+	 */
 	public void invoke(Object... params);
 }

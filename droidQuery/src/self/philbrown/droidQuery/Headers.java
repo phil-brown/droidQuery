@@ -26,22 +26,34 @@ import org.json.JSONObject;
 /**
  * HTTPClient Headers
  * @author Phil Brown
- *
  */
 public class Headers 
 {
+	/** Key-Value Mapping of Header values */
 	protected Map<String, String> headers;
 	
+	/**
+	 * Default constructor
+	 */
 	public Headers()
 	{
 		headers = new HashMap<String, String>();
 	}
 	
+	/**
+	 * Construct a new Headers Object with the given attributes
+	 * @param headers a Key-Value pairing of the header attributes to set
+	 */
 	public Headers(Map<String, String> headers)
 	{
 		this.headers = headers;
 	}
 	
+	/**
+	 * Construct a new Headers Object with the given JSON String
+	 * @param jsonString contains header attributes to set
+	 * @throws JSONException if the JSON string is malformed
+	 */
 	public Headers(String jsonString) throws JSONException
 	{
 		this();
@@ -57,13 +69,22 @@ public class Headers
 		unpackJSON(json);
 	}
 	
+	/**
+	 * Construct a new Headers Object with the given JSON Object
+	 * @param json contains header attributes to set
+	 * @throws JSONException if the JSON string is malformed
+	 */
 	public Headers(JSONObject json) throws JSONException
 	{
 		this();
 		unpackJSON(json);
 	}
 
-	//unpack JSON into map
+	/**
+	 * Unpack a JSONObject into a Key-Value Mapping
+	 * @param json the JSONObject to parse
+	 * @throws JSONException if the JSON string is malformed
+	 */
 	private void unpackJSON(JSONObject json) throws JSONException
 	{
 		
@@ -80,21 +101,35 @@ public class Headers
 	    }
 	}
 	
+	/**
+	 * Get the Headers information in a Key-Value Mapping
+	 * @return the Headers in a Key-Value pairing
+	 */
 	public Map<String, String> map()
 	{
 		return headers;
 	}
 	
-	/** add any header by string */
+	/**
+	 * Add another Header to this Headers Object using the String key and the String value
+	 * @param key the attribute name
+	 * @param value the attribute value
+	 */
 	public void add(String key, String value)
 	{
 		headers.put(key, value);
 	}
 	
-	/** OR add a header using the below: */
-	
 	//Accept
+	/**
+	 * Get the content type sent in the request header that tells the server what kind of response
+	 * it will accept in return.
+	 */
 	public String accept(){return headers.get("Accept");}
+	/**
+	 * Set the content type sent in the request header that tells the server what kind of response
+	 * it will accept in return.
+	 */
 	public Headers accept(String accept){headers.put("Accept", accept); return this;}
 
 	//Accept-Charset
@@ -138,7 +173,18 @@ public class Headers
 	public Headers content_md5(String content_md5){headers.put("Content-MD5", content_md5); return this;}
 
 	//Content-Type
+	/**
+	 * Get the content type of the data sent to the server.
+	 * Default is "application/x-www-form-urlencoded; charset=UTF-8", which is fine for most cases. 
+	 * @return the content type
+	 */
 	public String content_type(){return headers.get("Content-Type");}
+	/**
+	 * Set the content type of the data sent to the server.
+	 * Default is "application/x-www-form-urlencoded; charset=UTF-8", which is fine for most cases.
+	 * @param content_type
+	 * @return this
+	 */
 	public Headers content_type(String content_type){headers.put("Content-Type", content_type); return this;}
 
 	//Date
@@ -224,9 +270,5 @@ public class Headers
 	//X-Requested-With
 	public String x_requested_with(){return headers.get("X-Requested-With");}
 	public Headers x_requested_with(String x_requested_with){headers.put("X-Requested-With", x_requested_with); return this;}
-
-
-
-
 
 }

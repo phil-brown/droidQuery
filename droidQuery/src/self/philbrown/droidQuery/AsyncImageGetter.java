@@ -32,28 +32,29 @@ import android.view.View;
 import android.webkit.URLUtil;
 
 /**
- * Based on the original source for <a href="URLImageParser">http://stackoverflow.com/questions/7424512/android-html-imagegetter-as-asynctask</a>
- * <br>
- * Modified to include retrieval of local drawable files, and a fallback TextDrawable if that fails.
- * 
- * Also modified Constructor to only take one argument.
+ * Based on the original source for <a href="http://stackoverflow.com/questions/7424512/android-html-imagegetter-as-asynctask">URLImageParser</a>,
+ * this class allow for the Asynchronous retrieval of Bitmap images, and provides a fallback image to
+ * display if the retrieval fails.
  * @author Phil Brown
- *
+ * @see TextDrawable
  */
 public class AsyncImageGetter implements ImageGetter {
-    Context c;
-    View container;
+    private Context c;
+    private View container;
 
     /***
-     * Construct the URLImageParser which will execute AsyncTask and refresh the container
-     * @param t
-     * @param c
+     * Construct the URLImageParser which will execute the AsyncTask and refresh the parent container
+     * @param t the parent container that will gain a child ImageView
      */
     public AsyncImageGetter(View t) {
         this.c = t.getContext();
         this.container = t;
     }
 
+    /**
+     * Gets the drawable from the given URL resource, or from the local file path.
+     * @param source the URL of the drawable, or the local file path to the image.
+     */
     public Drawable getDrawable(String source) {
     	
     	if (URLUtil.isValidUrl(source))
@@ -89,6 +90,10 @@ public class AsyncImageGetter implements ImageGetter {
         
     }
 
+    /**
+     * Asynchronously retrieves an Image from a URL and sets it as the background of
+     * the parent view.
+     */
     public class ImageGetterAsyncTask extends AsyncTask<String, Void, Drawable>  {
         URLDrawable urlDrawable;
 
@@ -133,6 +138,13 @@ public class AsyncImageGetter implements ImageGetter {
             } 
         }
 
+        /**
+         * This method does the actual retrieval of the image data stream
+         * @param urlString
+         * @return
+         * @throws MalformedURLException
+         * @throws IOException
+         */
         private InputStream fetch(String urlString) throws MalformedURLException, IOException {
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpGet request = new HttpGet(urlString);

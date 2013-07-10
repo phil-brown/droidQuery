@@ -23,31 +23,50 @@ import android.view.MotionEvent;
 import android.widget.RelativeLayout;
 
 /**
- * This View catches both swipe events and normal view events, and is a drop-in replacement for 
- * RelativeLayout.
+ * This drop-in replacement for {@link RelativeLayout} provides a way to catch all touch and swipe
+ * events.
  * @author Phil Brown
- *
  */
 public class SwipeInterceptorView extends RelativeLayout
 {
-
-
+	/**
+	 * Used to detect swipe events on the view
+	 */
 	private SwipeDetector swiper = null;
 	
+	/**
+	 * Set the callback that receives the swipe events
+	 * @param listener
+	 */
 	public void setSwipeListener(SwipeListener listener)
 	{
 		if (swiper == null)
 			swiper = new SwipeDetector(listener);
 	}
 	
+	/**
+	 * Constructor
+	 * @param context
+	 */
 	public SwipeInterceptorView(Context context) {
 		super(context);
 	}
 
+	/**
+	 * Constructor
+	 * @param context
+	 * @param attrs
+	 */
 	public SwipeInterceptorView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 	}
 
+	/**
+	 * Constructor
+	 * @param context
+	 * @param attrs
+	 * @param defStyle
+	 */
 	public SwipeInterceptorView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 	}
