@@ -375,14 +375,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				{
 					//Handle cases where successful requests still return errors (these include
 					//configurations in AjaxOptions and HTTP Headers
-					
-					Header h = response.getHeaders("Last-Modified")[0];
-					SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
-					Date lastModified = format.parse(h.getValue());
-					Date now = new Date();
-					
 					String key = String.format(Locale.US, "%s_?=%s", options.url(), options.dataType());
 					CachedResponse cache = URLresponses.get(key);
+					Date now = new Date();
 					//handle ajax caching option
 					if (cache != null)
 					{
@@ -401,30 +396,46 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 								}
 							}
 						}
-						if (options.ifModified() && lastModified != null)
+						
+					}
+					//handle ajax ifModified option
+					Header[] lastModifiedHeaders = response.getHeaders("Last-Modified");
+					if (lastModifiedHeaders.length >= 1) {
+						try
 						{
-							if (cache.lastModified != null && cache.lastModified.compareTo(lastModified) == 0)
+							Header h = response.getHeaders("Last-Modified")[0];
+							SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+							Date lastModified = format.parse(h.getValue());
+							if (options.ifModified() && lastModified != null)
 							{
-								//request response has not been modified. 
-								//Causes an error instead of a success.
-								Error e = new Error();
-								e.obj = request;
-								e.status = 304;
-								e.reason = "Not Modified";
-								e.headers = response.getAllHeaders();
-								Function func = options.statusCode().get(304);
-								if (func != null)
-									func.invoke();
-								return e;
-							}
-							else
-							{
-								cache.lastModified = lastModified;
-								synchronized(URLresponses) {
-									URLresponses.put(key, cache);
+								if (cache.lastModified != null && cache.lastModified.compareTo(lastModified) == 0)
+								{
+									//request response has not been modified. 
+									//Causes an error instead of a success.
+									Error e = new Error();
+									e.obj = request;
+									e.status = 304;
+									e.reason = "Not Modified";
+									e.headers = response.getAllHeaders();
+									Function func = options.statusCode().get(304);
+									if (func != null)
+										func.invoke();
+									return e;
+								}
+								else
+								{
+									cache.lastModified = lastModified;
+									synchronized(URLresponses) {
+										URLresponses.put(key, cache);
+									}
 								}
 							}
 						}
+						catch (Throwable t)
+						{
+							Log.e("Ajax", "Could not parse Last-Modified Header", t);
+						}
+						
 					}
 					
 					//Now handle a successful request
@@ -444,6 +455,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			}
 			
 		} catch (Throwable t) {
+			t.printStackTrace();
 			return null;
 		}
 	}

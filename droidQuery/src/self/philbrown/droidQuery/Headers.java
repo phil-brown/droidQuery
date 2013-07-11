@@ -354,67 +354,208 @@ public class Headers
 	public Headers if_match(String if_match){headers.put("If-Match", if_match); return this;}
 
 	//If-Modified-Since
+	/**
+	 * Get the date string that the response must be modified after. If it has not been modified
+	 * since the given date string, a {@code 304 Not Modified} error will occur.
+	 * @return the date string
+	 */
 	public String if_modified_since(){return headers.get("If-Modified-Since");}
+	/**
+	 * Set the date string that the response must be modified after. If it has not been modified
+	 * since the given date string, a {@code 304 Not Modified} error will occur.
+	 * @param if_modified_since the date string
+	 * @return this
+	 */
 	public Headers if_modified_since(String if_modified_since){headers.put("If-Modified-Since", if_modified_since); return this;}
 
 	//If-None-Match
+	/**
+	 * Get the String entity that must not match the same entity on the server in order for the request 
+	 * action to succeed. This is often used as a fallback in conjuncture with {@link #if_modified_since()}
+	 * @return the String entity
+	 */
 	public String if_none_match(){return headers.get("If-None-Match");}
+	/**
+	 * Set the String entity that must not match the same entity on the server in order for the request 
+	 * action to succeed. This is often used as a fallback in conjuncture with {@link #if_modified_since()}
+	 * @param if_none_match the String entity
+	 * @return this
+	 */
 	public Headers if_none_match(String if_none_match){headers.put("If-None-Match", if_none_match); return this;}
 
 	//If-Range
+	/**
+	 * Get the String entity that can be broken into pieces of "changed data" to send in the response,
+	 * instead of sending all data.
+	 * @return the String entity
+	 */
 	public String if_range(){return headers.get("If-Range");}
+	/**
+	 * Set the String entity that can be broken into pieces of "changed data" to send in the response,
+	 * instead of sending all data.
+	 * @param if_range the String entity
+	 * @return this
+	 */
 	public Headers if_range(String if_range){headers.put("If-Range", if_range); return this;}
 
 	//If-Unmodified-Since
+	/**
+	 * Get the date-time String for when the response must have been last modified, in order for 
+	 * the request to receive a response.
+	 * @return the date String
+	 */
 	public String if_unmodified_since(){return headers.get("If-Unmodified-Since");}
+	/**
+	 * Set the date-time String for when the response must have been last modified, in order for 
+	 * the request to receive a response.
+	 * @param if_unmodified_since the date String
+	 * @return this
+	 */
 	public Headers if_unmodified_since(String if_unmodified_since){headers.put("If-Unmodified-Since", if_unmodified_since); return this;}
 
 	//Max-Forwards
+	/**
+	 * Get the number of times the message can be forwarded through proxies or gateways.
+	 * @return the number of times
+	 */
 	public String max_forwards(){return headers.get("Max-Forwards");}
+	/**
+	 * Set the number of times the message can be forwarded through proxies or gateways. Example: "10"
+	 * @param max_forwards the number of times
+	 * @return this
+	 */
 	public Headers max_forwards(String max_forwards){headers.put("Max-Forwards", max_forwards); return this;}
 
 	//Origin
+	/**
+	 * Get the header field meant to initialize a request for cross-origin resource sharing.
+	 * @return the URL Origin String
+	 */
 	public String origin(){return headers.get("Origin");}
+	/**
+	 * Set the header field meant to initialize a request for cross-origin resource sharing.
+	 * @param origin the URL Origin String
+	 * @return this
+	 */
 	public Headers origin(String origin){headers.put("Origin", origin); return this;}
 
 	//Pragma
+	/**
+	 * Get implementation-specific headers 
+	 * @return implementation-specific headers 
+	 */
 	public String pragma(){return headers.get("Pragma");}
+	/**
+	 * Set implementation-specific headers 
+	 * @param implementation-specific headers 
+	 * @return this
+	 */
 	public Headers pragma(String pragma){headers.put("Pragma", pragma); return this;}
 
 	//Proxy-Authorization
+	/**
+	 * Gets the authorization credentials for connecting to a proxy.
+	 * @return the credentials
+	 */
 	public String proxy_authorization(){return headers.get("Proxy-Authorization");}
+	/**
+	 * Sets the authorization credentials for connecting to a proxy.
+	 * @param proxy_authorization the credentials
+	 * @return this
+	 */
 	public Headers proxy_authorization(String proxy_authorization){headers.put("Proxy-Authorization", proxy_authorization); return this;}
 
 	//Range
+	/**
+	 * Get a range of bytes used to only request part of an entity. Example: "bytes=500-999"
+	 * @return the byte range string
+	 */
 	public String range(){return headers.get("Range");}
+	/**
+	 * Set a range of bytes used to only request part of an entity. Example: "bytes=500-999"
+	 * @param range the byte range string
+	 * @return this
+	 */
 	public Headers range(String range){headers.put("Range", range); return this;}
 
-	//Referer
-	public String referer(){return headers.get("Referer");}
-	public Headers referer(String referer){headers.put("Referer", referer); return this;}
-
 	//TE
+	/**
+	 * Get the transfer encodings the user agent is willing to accept
+	 * @return the transfer encodings the user agent is willing to accept
+	 */
 	public String te(){return headers.get("TE");}
+	/**
+	 * Set the transfer encodings the user agent is willing to accept
+	 * @param te the transfer encodings the user agent is willing to accept
+	 * @return this
+	 */
 	public Headers te(String te){headers.put("TE", te); return this;}
 
 	//Upgrade
+	/**
+	 * Get the String used to ask the server to upgrade to another protocol. For example:
+	 * "HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11"
+	 * @return the upgrade request
+	 */
 	public String upgrade(){return headers.get("Upgrade");}
+	/**
+	 * Set the String used to ask the server to upgrade to another protocol. For example:
+	 * "HTTP/2.0, SHTTP/1.3, IRC/6.9, RTA/x11"
+	 * @param upgrade the upgrade request
+	 * @return this
+	 */
 	public Headers upgrade(String upgrade){headers.put("Upgrade", upgrade); return this;}
 
 	//User-Agent
+	/**
+	 * Get the user agent String that is used to set the user agent of the requesting client
+	 * @return the user agent String
+	 */
 	public String user_agent(){return headers.get("User-Agent");}
+	/**
+	 * Set the user agent String that is used to set the user agent of the requesting client
+	 * @param user_agent the user agent String
+	 * @return this
+	 */
 	public Headers user_agent(String user_agent){headers.put("User-Agent", user_agent); return this;}
 
 	//Via
+	/**
+	 * Get which proxies the request was already sent through.
+	 * @return the proxies String
+	 */
 	public String via(){return headers.get("Via");}
+	/**
+	 * Set which proxies the request was already sent through (may be used to trick the server, or something else).
+	 * @param via the proxies String
+	 * @return this
+	 */
 	public Headers via(String via){headers.put("Via", via); return this;}
 
 	//Warning
+	/**
+	 * Get a general warning about possible problems with the entity body.
+	 * @return the general warning
+	 */
 	public String warning(){return headers.get("Warning");}
+	/**
+	 * Set a general warning about possible problems with the entity body.
+	 * @param warning the general warning
+	 * @return this
+	 */
 	public Headers warning(String warning){headers.put("Warning", warning); return this;}
 
 	//X-Requested-With
+	/**
+	 * Get the Object type of the request. For example: "XMLHttpRequest"
+	 * @return the type of request Object
+	 */
 	public String x_requested_with(){return headers.get("X-Requested-With");}
+	/**
+	 * Set the Object type of the request. For example: "XMLHttpRequest"
+	 * @param x_requested_with the type of request Object
+	 * @return this
+	 */
 	public Headers x_requested_with(String x_requested_with){headers.put("X-Requested-With", x_requested_with); return this;}
 
 }

@@ -290,6 +290,20 @@ public class $
 	}
 	
 	/**
+	 * Constructor used to privately and safely allow the creation of droidQuery instances using with empty lists
+	 * @param context the current context
+	 * @param views the selection
+	 * @see #with(Context, List)
+	 */
+	private $(Context context, List<View> views)
+	{
+		if (views == null)
+			views = new ArrayList<View>();
+		this.views = views;
+		setup();
+	}
+	
+	/**
 	 * Constructor. Accepts a <em>List&lt;View&gt;</em> Object.
 	 * @param view
 	 * @see #with(View)
@@ -523,6 +537,17 @@ public class $
 	public static $ with(List<View> views)
 	{
 		return new $(views);
+	}
+	
+	/**
+	 * Used to privately and safely allow the creation of droidQuery instances using with empty lists
+	 * @param context the current context
+	 * @param views the selection
+	 * @return a new instance of droidQuery with the selection set to the given views
+	 */
+	private static $ with(Context context, List<View> views)
+	{
+		return new $(context, views);
 	}
 	
 	/**
@@ -945,6 +970,11 @@ public class $
 	{
 		AnimatorSet animation = new AnimatorSet();
 		handleAnimationOptions(animation, options);
+		
+		Log.d("$", "Animations: " + animation);
+		Log.d("$", "Properties: " + properties);
+		//FIXME: this method is failing somewhere...
+		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (Entry<String, Object> entry : properties.entrySet())
 		{
@@ -1161,8 +1191,8 @@ public class $
 			else
 				ones.add(view);
 		}
-		$.with(zeros).fadeIn(duration, complete);
-		$.with(ones).fadeOut(duration, complete);
+		$.with(context, zeros).fadeIn(duration, complete);
+		$.with(context, ones).fadeOut(duration, complete);
 	}
 	
 	/**
@@ -1181,8 +1211,8 @@ public class $
 			else
 				ones.add(view);
 		}
-		$.with(zeros).fadeIn(options);
-		$.with(ones).fadeOut(options);
+		$.with(context, zeros).fadeIn(options);
+		$.with(context, ones).fadeOut(options);
 	}
 	
 	/**
@@ -2535,7 +2565,7 @@ public class $
 	 */
 	public $ slice(int start)
 	{
-		return $.with(this.views.subList(start, this.views.size()));
+		return $.with(context, this.views.subList(start, this.views.size()));
 	}
 	
 	/**
@@ -2546,7 +2576,7 @@ public class $
 	 */
 	public $ slice(int start, int end)
 	{
-		return $.with(this.views.subList(start, end));
+		return $.with(context, this.views.subList(start, end));
 	}
 	
 	/** @return the number of views that are currently selected */
@@ -2674,7 +2704,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectAllSubViews(view));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 	
 	/**
@@ -2699,7 +2729,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectByType(view, clazz));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 		
 	}
 	
@@ -2729,7 +2759,7 @@ public class $
 				list.add(((ViewGroup) view(0)).getChildAt(i));
 			}
 		}
-		return $.with(list);
+		return $.with(context, list);
 	}
 	
 	/**
@@ -2766,7 +2796,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectEmpties(view));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 	
 	/**
@@ -2866,7 +2896,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectHidden(view));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 	
 	/**
@@ -2881,7 +2911,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectVisible(view));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 	
 	/**
@@ -2912,7 +2942,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectByType(view, ImageView.class));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 
 	/**
@@ -2948,7 +2978,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectOnlyChilds(view));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 	
 	/**
@@ -2962,7 +2992,7 @@ public class $
 		{
 			subviews.addAll(recursivelySelectByType(view, ViewGroup.class));
 		}
-		return $.with(subviews);
+		return $.with(context, subviews);
 	}
 	
 	
@@ -3419,7 +3449,7 @@ public class $
 	 * @return a Key-Value mapping of the Objects set in the JSONObject
 	 * @throws JSONException if the JSON is malformed
 	 */
-	public static Map<String, ?> map(JSONObject json) throws JSONException
+	public static Map<String, Object> map(JSONObject json) throws JSONException
 	{
 		@SuppressWarnings("unchecked")
 		Iterator<String> iterator = json.keys();
