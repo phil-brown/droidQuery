@@ -16,7 +16,6 @@
 
 package self.philbrown.droidQuery.Example;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -194,11 +193,7 @@ public class ExampleActivity extends Activity
 							if (datas.length() != 0)
 							{
 								//clear old subviews in layout
-								List<$> oldChildren = $.with(ExampleActivity.this, R.id.example_layout).selectChildren();
-								for ($ child : oldChildren)
-								{
-									child.remove();
-								}
+								$.with(ExampleActivity.this, R.id.example_layout).selectChildren().remove();
 								
 								//get each message infos and create a cell
 								for (int i = 0; i < datas.length(); i++) 

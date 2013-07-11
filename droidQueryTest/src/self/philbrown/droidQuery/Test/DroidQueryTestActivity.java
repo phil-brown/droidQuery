@@ -121,12 +121,7 @@ public class DroidQueryTestActivity extends Activity {
 //        	}
 //        });
         
-        list.manage(new Function(){
-        	public void invoke(Object... args)
-        	{
-        		refresh((View) args[1]);
-        	}
-        });
+        refresh(list.view(0));
     }
     
     private void refresh(View v)
