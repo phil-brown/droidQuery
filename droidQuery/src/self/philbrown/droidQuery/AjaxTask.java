@@ -425,52 +425,6 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 								}
 							}
 						}
-						if (options.headers().if_modified_since() != null)
-						{
-							Date ifModifiedSince = format.parse(options.headers().if_modified_since());
-							if (ifModifiedSince != null)
-							{
-								//if lastModified is before, or equal to the modified since date,
-								//then this causes an error.
-								if (!(lastModified.compareTo(ifModifiedSince) > 0))
-								{
-									//request response has not been modified. 
-									//Causes an error instead of a success.
-									Error e = new Error();
-									e.obj = request;
-									e.status = 304;
-									e.reason = "Not Modified";
-									e.headers = response.getAllHeaders();
-									Function func = options.statusCode().get(304);
-									if (func != null)
-										func.invoke();
-									return e;
-								}
-							}
-						}
-						if (options.headers().if_unmodified_since() != null)
-						{
-							Date ifUnmodifiedSince = format.parse(options.headers().if_unmodified_since());
-							if (ifUnmodifiedSince != null)
-							{
-								//if the response has been modified after the unmodified since date
-								//then this causes an error
-								if (lastModified.compareTo(ifUnmodifiedSince) > 0)
-								{
-									//request response has not been modified. 
-									//Causes an error instead of a success.
-									Error e = new Error();
-									e.obj = request;
-									e.status = 304;
-									e.reason = "Not Modified";
-									e.headers = response.getAllHeaders();
-									Function func = options.statusCode().get(304);
-									if (func != null)
-										func.invoke();
-									return e;
-								}
-							}
-						}
 					}
 					
 					//Now handle a successful request

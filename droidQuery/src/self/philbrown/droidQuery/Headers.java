@@ -123,53 +123,148 @@ public class Headers
 	//Accept
 	/**
 	 * Get the content type sent in the request header that tells the server what kind of response
-	 * it will accept in return.
+	 * it will accept in return. For example, "text/plain".
+	 * @param acceptable content types
 	 */
 	public String accept(){return headers.get("Accept");}
 	/**
 	 * Set the content type sent in the request header that tells the server what kind of response
-	 * it will accept in return.
+	 * it will accept in return. For example, "text/plain".
+	 * @return this
 	 */
 	public Headers accept(String accept){headers.put("Accept", accept); return this;}
 
 	//Accept-Charset
+	/**
+	 * Get the character sets that are acceptable (for example, "utf-8")
+	 * @return the acceptable character set
+	 */
 	public String accept_charset(){return headers.get("Accept-Charset");}
+	/**
+	 * Set the character sets that are acceptable (for example, "utf-8")
+	 * @param accept_charset the acceptable character set
+	 * @return this
+	 */
 	public Headers accept_charset(String accept_charset){headers.put("Accept-Charset", accept_charset); return this;}
 
 	//Accept-Encoding
+	/**
+	 * Get the list of acceptable encodings. For example, "gzip, deflate"
+	 * @return the list of acceptable encodings
+	 */
 	public String accept_encoding(){return headers.get("Accept-Encoding");}
+	/**
+	 * Set the list of acceptable encodings. For example, "gzip, deflate"
+	 * @param accept_encoding the list of acceptable encodings
+	 * @return this
+	 */
 	public Headers accept_encoding(String accept_encoding){headers.put("Accept-Encoding", accept_encoding); return this;}
 
 	//Accept-Language
+	/**
+	 * Get the list of acceptable human languages for response. Example: "en-US"
+	 * @return the list of acceptable human languages for response
+	 */
 	public String accept_language(){return headers.get("Accept-Language");}
+	/**
+	 * Set the list of acceptable human languages for response. Example: "en-US"
+	 * @param accept_language the list of acceptable human languages for response
+	 * @return this
+	 */
 	public Headers accept_language(String accept_language){headers.put("Accept-Language", accept_language); return this;}
 
 	//Accept-Datetime
+	/**
+	 * Get the acceptable version in time. Example: "Thu, 31 May 2007 20:35:00 GMT"
+	 * @return the acceptable version in time
+	 */
 	public String accept_datetime(){return headers.get("Accept-Datetime");}
+	
+	/**
+	 * Set the acceptable version in time. Example: "Thu, 31 May 2007 20:35:00 GMT"
+	 * @param accept_datetime the acceptable version in time
+	 * @return this
+	 */
 	public Headers accept_datetime(String accept_datetime){headers.put("Accept-Datetime", accept_datetime); return this;}
 
 	//Authorization
+	/**
+	 * Get the authentication credentials for HTTP authentication. For example: "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+	 * @return the authentication credentials for HTTP authentication
+	 */
 	public String authorization(){return headers.get("Authorization");}
+	/**
+	 * Set the authentication credentials for HTTP authentication. For example: "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+	 * @param authorization the authentication credentials for HTTP authentication
+	 * @return this
+	 */
 	public Headers authorization(String authorization){headers.put("Authorization", authorization); return this;}
 
 	//Cache-Control
+	/**
+	 * Get the directives that MUST be obeyed by all caching mechanisms along the request/response 
+	 * chain. For example: "no-cache"
+	 * @return the directives
+	 */
 	public String cache_control(){return headers.get("Cache-Control");}
-	public Headers cach_control(String cache_control){headers.put("Cache-Control", cache_control); return this;}
+	/**
+	 * Set the directives that MUST be obeyed by all caching mechanisms along the request/response 
+	 * chain. For example: "no-cache"
+	 * @param cache_control the directives
+	 * @return this
+	 */
+	public Headers cache_control(String cache_control){headers.put("Cache-Control", cache_control); return this;}
 
 	//Connection
+	/**
+	 * Get the type of connection the user-agent would prefer. For example: "keep-alive"
+	 * @return the type of connection
+	 */
 	public String connection(){return headers.get("Connection");}
+	/**
+	 * Set the type of connection the user-agent would prefer. For example: "keep-alive"
+	 * @param connection the type of connection
+	 * @return this
+	 */
 	public Headers connection(String connection){headers.put("Connection", connection); return this;}
 
 	//Cookie
+	/**
+	 * Get the data to attach to the request. For example: "Version=1; Option=new;"
+	 * @return the data to attach to the request
+	 */
 	public String cookie(){return headers.get("Cookie");}
+	/**
+	 * Set the data to attach to the request. For example: "Version=1; Option=new;"
+	 * @param cookie the data to attach to the request
+	 * @return this
+	 */
 	public Headers cookie(String cookie){headers.put("Cookie", cookie); return this;}
 
 	//Content-Length
+	/**
+	 * Get the length of the request body in octets (8-bit bytes). For example: "348"
+	 * @return the length of the request body in octets
+	 */
 	public String content_length(){return headers.get("Content-Length");}
+	/**
+	 * Set the length of the request body in octets (8-bit bytes). For example: "348"
+	 * @param content_length the length of the request body in octets
+	 * @return this
+	 */
 	public Headers content_length(String content_length){headers.put("Content-Length", content_length); return this;}
 
 	//Content-MD5
+	/**
+	 * Get the Base64-encoded binary MD5 sum of the content of the request body
+	 * @return the MD5 sum
+	 */
 	public String content_md5(){return headers.get("Content-MD5");}
+	/**
+	 * Set the Base64-encoded binary MD5 sum of the content of the request body
+	 * @param content_md5 the MD5 sum
+	 * @return this
+	 */
 	public Headers content_md5(String content_md5){headers.put("Content-MD5", content_md5); return this;}
 
 	//Content-Type
@@ -182,29 +277,80 @@ public class Headers
 	/**
 	 * Set the content type of the data sent to the server.
 	 * Default is "application/x-www-form-urlencoded; charset=UTF-8", which is fine for most cases.
-	 * @param content_type
+	 * @param content_type the content type
 	 * @return this
 	 */
 	public Headers content_type(String content_type){headers.put("Content-Type", content_type); return this;}
 
 	//Date
+	/**
+	 * Get the date and time that the message was sent. Example: "Tue, 15 Nov 1994 08:12:31 GMT"
+	 * @return the date and time that the message was sent
+	 */
 	public String date(){return headers.get("Date");}
+	/**
+	 * Set the date and time that the message was sent. Example: "Tue, 15 Nov 1994 08:12:31 GMT"
+	 * @param date the date and time that the message was sent
+	 * @return this
+	 */
 	public Headers date(String date){headers.put("Date", date); return this;}
 
 	//Expect
+	/**
+	 * Get particular server behaviors that are required by the client. Example: "100-continue"
+	 * @return server behaviors required by the client
+	 */
 	public String expect(){return headers.get("Expect");}
+	/**
+	 * Set particular server behaviors that are required by the client. Example: "100-continue"
+	 * @param expect server behaviors required by the client
+	 * @return this
+	 */
 	public Headers expect(String expect){headers.put("Expect", expect); return this;}
 
 	//From
+	/**
+	 * Get the email address of the user making the request
+	 * @return the email address of the user making the request
+	 */
 	public String from(){return headers.get("From");}
+	/**
+	 * Set the email address of the user making the request
+	 * @param from the email address of the user making the request
+	 * @return this
+	 */
 	public Headers from(String from){headers.put("From", from); return this;}
 
 	//Host
+	/**
+	 * Get the domain name of the server. May include the port number. 
+	 * Examples: "192.168.0.1", "192.168.0.1:8080", "http://www.github.com", "http://www.github.com:8081"
+	 * @return the domain name of the server
+	 */
 	public String host(){return headers.get("Host");}
+	/**
+	 * Set the domain name of the server. May include the port number. 
+	 * Examples: "192.168.0.1", "192.168.0.1:8080", "http://www.github.com", "http://www.github.com:8081"
+	 * @param host the domain name of the server
+	 * @return this
+	 */
 	public Headers host(String host){headers.put("Host", host); return this;}
 
 	//If-Match
+	/**
+	 * Get the String entity that must match the same entity on the server in order for the request 
+	 * action to succeed. This is mainly for methods like PUT to only update a resource if it has not 
+	 * been modified since the user last updated it.
+	 * @return the String entity
+	 */
 	public String if_match(){return headers.get("If-Match");}
+	/**
+	 * Set the String entity that must match the same entity on the server in order for the request 
+	 * action to succeed. This is mainly for methods like PUT to only update a resource if it has not 
+	 * been modified since the user last updated it.
+	 * @param if_match the String entity
+	 * @return this
+	 */
 	public Headers if_match(String if_match){headers.put("If-Match", if_match); return this;}
 
 	//If-Modified-Since
