@@ -722,11 +722,12 @@ public class $
 	
 	/**
 	 * This reusable chunk of code can set up the given animation using the given animation options
-	 * @param animation the set of animated views and attributes whose options will be initialized
 	 * @param options the options used to manipulate how the animation behaves
+	 * @return the container for placing views that will be animated using the given options
 	 */
-	private void handleAnimationOptions(AnimatorSet animation, final AnimationOptions options)
+	private AnimatorSet animationWithOptions(final AnimationOptions options)
 	{
+		AnimatorSet animation = new AnimatorSet();
 		animation.setDuration(options.duration());
 		animation.addListener(new AnimatorListener(){
 
@@ -799,6 +800,7 @@ public class $
 			interpolator = options.specialEasing();
 		
 		animation.setInterpolator(interpolator);
+		return animation;
 	}
 	
 	/**
@@ -968,47 +970,39 @@ public class $
 	 */
 	public $ animate(Map<String, Object> properties, final AnimationOptions options)
 	{
-		AnimatorSet animation = new AnimatorSet();
-		handleAnimationOptions(animation, options);
-		
-		Log.d("$", "Animations: " + animation);
-		Log.d("$", "Properties: " + properties);
-		//FIXME: this method is failing somewhere...
+		AnimatorSet animation = animationWithOptions(options);
 		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (Entry<String, Object> entry : properties.entrySet())
 		{
 			final String key = entry.getKey();
 			Object value = entry.getValue();
-			ObjectAnimator anim = null;
 			
-			if (value instanceof String)
+			for (final View view : this.views)
 			{
-				for (final View view : this.views)
-				{
+				ObjectAnimator anim = null;
+				if (value instanceof String)
 					value = getAnimationValue(view, key, (String) value);
-					if (value != null)
+				if (value != null)
+				{
+					if (value instanceof Integer)
+						anim = ObjectAnimator.ofInt(view, key, (Integer) value);
+					else if (value instanceof Float)
+						anim = ObjectAnimator.ofFloat(view, key, (Float) value);
+					
+					if (options.progress() != null)
 					{
-						if (value instanceof Integer)
-							anim = ObjectAnimator.ofInt(view, key, (Integer) value);
-						else if (value instanceof Float)
-							anim = ObjectAnimator.ofFloat(view, key, (Float) value);
-						
-						if (options.progress() != null)
-						{
-							anim.addUpdateListener(new AnimatorUpdateListener(){
+						anim.addUpdateListener(new AnimatorUpdateListener(){
 
-								@Override
-								public void onAnimationUpdate(ValueAnimator animation) {
-									options.progress().invoke(view, key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
-								}
-								
-							});
-						}
-						
-						animations.add(anim);
+							@Override
+							public void onAnimationUpdate(ValueAnimator animation) {
+								options.progress().invoke(view, key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+							}
+							
+						});
 					}
 					
+					animations.add(anim);
 				}
 				
 			}
@@ -1269,8 +1263,7 @@ public class $
 	 */
 	public void slideDown(final AnimationOptions options)
 	{
-		AnimatorSet animation = new AnimatorSet();
-		handleAnimationOptions(animation, options);
+		AnimatorSet animation = animationWithOptions(options);
 		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
@@ -1350,8 +1343,7 @@ public class $
 	 */
 	public void slideUp(final AnimationOptions options)
 	{
-		AnimatorSet animation = new AnimatorSet();
-		handleAnimationOptions(animation, options);
+		AnimatorSet animation = animationWithOptions(options);
 		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
@@ -1429,8 +1421,7 @@ public class $
 	 */
 	public void slideRight(final AnimationOptions options)
 	{
-		AnimatorSet animation = new AnimatorSet();
-		handleAnimationOptions(animation, options);
+		AnimatorSet animation = animationWithOptions(options);
 		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
@@ -1508,8 +1499,7 @@ public class $
 	 */
 	public void slideLeft(final AnimationOptions options)
 	{
-		AnimatorSet animation = new AnimatorSet();
-		handleAnimationOptions(animation, options);
+		AnimatorSet animation = animationWithOptions(options);
 		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
