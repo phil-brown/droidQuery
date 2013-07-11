@@ -21,13 +21,17 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -75,6 +79,21 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	private static volatile List<AjaxTask> localTasks = new ArrayList<AjaxTask>();
 	/** Contains the current global tasks */
 	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
+	/** Represents a cached HTTP response */
+	class CachedResponse
+	{
+		/** The response Object */
+		public Object response;
+		/** The Last-Requested timestamp */
+		public Date timestamp;
+		/** The Last-Modified timestamp */
+		public Date lastModified;
+	}
+	/** 
+	 * Keeps track of the responses made by each URL. This cache will be used for caching and
+	 * modified headers. 
+	 */
+	private static volatile Map<String, CachedResponse> URLresponses = new HashMap<String, CachedResponse>();
 	
 	/**
 	 * Constructor
@@ -296,6 +315,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				e.obj = request;
 				e.status = statusLine.getStatusCode();
 				e.reason = statusLine.getReasonPhrase();
+				e.headers = response.getAllHeaders();
 				return e;
 	        }
 			else
@@ -337,6 +357,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					e.obj = request;
 					e.status = 0;
 					e.reason = "parsererror";
+					e.headers = response.getAllHeaders();
 					return e;
 				}
 				catch (Exception ioe)
@@ -347,20 +368,124 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					e.obj = request;
 					e.status = 0;
 					e.reason = "parsererror";
+					e.headers = response.getAllHeaders();
 					return e;
 				}
 				if (success)
 				{
-					//success
+					//Handle cases where successful requests still return errors (these include
+					//configurations in AjaxOptions and HTTP Headers
+					
+					Header h = response.getHeaders("Last-Modified")[0];
+					SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+					Date lastModified = format.parse(h.getValue());
+					Date now = new Date();
+					
+					String key = String.format(Locale.US, "%s_?=%s", options.url(), options.dataType());
+					CachedResponse cache = URLresponses.get(key);
+					//handle ajax caching option
+					if (cache != null)
+					{
+						if (options.cache())
+						{
+							if (now.getTime() - cache.timestamp.getTime() < options.cacheTimeout())
+							{
+								parsedResponse = cache;
+							}
+							else
+							{
+								cache.response = parsedResponse;
+								cache.timestamp = now;
+								synchronized(URLresponses) {
+									URLresponses.put(key, cache);
+								}
+							}
+						}
+						if (options.ifModified() && lastModified != null)
+						{
+							if (cache.lastModified != null && cache.lastModified.compareTo(lastModified) == 0)
+							{
+								//request response has not been modified. 
+								//Causes an error instead of a success.
+								Error e = new Error();
+								e.obj = request;
+								e.status = 304;
+								e.reason = "Not Modified";
+								e.headers = response.getAllHeaders();
+								Function func = options.statusCode().get(304);
+								if (func != null)
+									func.invoke();
+								return e;
+							}
+							else
+							{
+								cache.lastModified = lastModified;
+								synchronized(URLresponses) {
+									URLresponses.put(key, cache);
+								}
+							}
+						}
+						if (options.headers().if_modified_since() != null)
+						{
+							Date ifModifiedSince = format.parse(options.headers().if_modified_since());
+							if (ifModifiedSince != null)
+							{
+								//if lastModified is before, or equal to the modified since date,
+								//then this causes an error.
+								if (!(lastModified.compareTo(ifModifiedSince) > 0))
+								{
+									//request response has not been modified. 
+									//Causes an error instead of a success.
+									Error e = new Error();
+									e.obj = request;
+									e.status = 304;
+									e.reason = "Not Modified";
+									e.headers = response.getAllHeaders();
+									Function func = options.statusCode().get(304);
+									if (func != null)
+										func.invoke();
+									return e;
+								}
+							}
+						}
+						if (options.headers().if_unmodified_since() != null)
+						{
+							Date ifUnmodifiedSince = format.parse(options.headers().if_unmodified_since());
+							if (ifUnmodifiedSince != null)
+							{
+								//if the response has been modified after the unmodified since date
+								//then this causes an error
+								if (lastModified.compareTo(ifUnmodifiedSince) > 0)
+								{
+									//request response has not been modified. 
+									//Causes an error instead of a success.
+									Error e = new Error();
+									e.obj = request;
+									e.status = 304;
+									e.reason = "Not Modified";
+									e.headers = response.getAllHeaders();
+									Function func = options.statusCode().get(304);
+									if (func != null)
+										func.invoke();
+									return e;
+								}
+							}
+						}
+					}
+					
+					//Now handle a successful request
+					
 					Success s = new Success();
 					s.obj = parsedResponse;
 					s.reason = statusLine.getReasonPhrase();
+					s.headers = response.getAllHeaders();
 					return s;
 				}
 				//success
 				Success s = new Success();
 				s.obj = parsedResponse;
 				s.reason = statusLine.getReasonPhrase();
+				s.headers = response.getAllHeaders();
 				return s;
 			}
 			
@@ -539,6 +664,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		public int status;
 		/** The response Object */
 		public Object obj;
+		/** The response Headers */
+		public Header[] headers;
 	}
 	
 	/**

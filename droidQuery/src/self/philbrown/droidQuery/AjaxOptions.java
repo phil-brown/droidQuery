@@ -280,7 +280,17 @@ public class AjaxOptions
 	 * the integer Status, and the String Error
 	 */
 	private Function error;
+
+	/**
+	 * Get the function to be called if the request fails. Receives original Request, 
+	 * the integer Status, and the String Error
+	 */
 	public Function error() { return error; }
+
+	/**
+	 * Set the function to be called if the request fails. Receives original {@code HttpUriRequest}
+	 * request, the integer Status, and the String Error
+	 */
 	public AjaxOptions error(Function error)
 	{
 		this.error = error;
@@ -288,12 +298,25 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Whether to trigger global Ajax event handlers for this request. The default is true. 
-	 * Set to false to prevent the global handlers like ajaxStart or ajaxStop from being triggered. 
-	 * This can be used to control various Ajax Events.
+	 * Whether to trigger global Ajax event handlers for this request. The default is {@code true}. 
+	 * Set to {@code false} to prevent the global handlers like {@link $#ajaxStart() ajaxStart} or 
+	 * {@link $#ajaxStop() ajaxStop} from being triggered. This can be used to control various 
+	 * Ajax Events.
 	 */
 	private boolean global = true;
+	
+	/**
+	 * Get whether to trigger global Ajax event handlers for this request.
+	 * @return
+	 */
 	public boolean global() { return global; }
+	
+	/**
+	 * Set whether to trigger global Ajax event handlers for this request. The default is {@code true}. 
+	 * Set to {@code false} to prevent the global handlers like {@link $#ajaxStart() ajaxStart} or 
+	 * {@link $#ajaxStop() ajaxStop} from being triggered. This can be used to control various 
+	 * Ajax Events.
+	 */
 	public AjaxOptions global(boolean global)
 	{
 		this.global = global;
@@ -304,7 +327,17 @@ public class AjaxOptions
 	 * HTTP Request Headers
 	 */
 	private Headers headers = new Headers();
+	
+	/**
+	 * Get the HTTP Headers for the request
+	 * @return the HTTP Headers for the request
+	 */
 	public Headers headers() { return headers; }
+	
+	/**
+	 * Set the HTTP Headers for the request
+	 * @param headers the HTTP Headers for the request
+	 */
 	public AjaxOptions headers(Headers headers)
 	{
 		this.headers = headers;
@@ -312,39 +345,101 @@ public class AjaxOptions
 	}
 	
 	/**
+	 * If set to {@code true}, the most recent responses will be cached. The length of time
+	 * that a cached response is considered valid can be set using the 
+	 * {@link #cacheTimeout() cacheTimeout} option. Default is {@code false}. 
+	 */
+	private boolean cache;
+	
+	/**
+	 * Get whether or not the most recent responses will be cached.
+	 * @return {@code true} if the most recent responses will be cached. Otherwise, {@code false}.
+	 */
+	public boolean cache() { return cache; }
+	
+	/**
+	 * Set whether or not the most recent responses will be cached.
+	 * @param cache If set to {@code true}, the most recent responses will be cached. 
+	 * The length of time that a cached response is considered valid can be set using the 
+	 * {@link #cacheTimeout() cacheTimeout} option. Default is {@code false}. 
+	 * @return this
+	 */
+	public AjaxOptions cache(boolean cache)
+	{
+		this.cache = cache;
+		return this;
+	}
+	
+	/**
+	 * When the {@link #cache() cache} option is set to {@code true}, this option determines
+	 * the length of time required (in milliseconds) between the current response and a 
+	 * cached response in order to update the response data and cache the new response.
+	 * Default is 600,000 ms (10 minutes). 
+	 */
+	private long cacheTimeout = 600000;
+	
+	/**
+	 * Get the amount of time required, in milliseconds, between the current response and a cached
+	 * response, in order to update the response data and cache the new response. This is only
+	 * used when the {@link #cache() cache} option is set to {@code true}.
+	 * @return the time, in milliseconds
+	 */
+	public long cacheTimeout() { return cacheTimeout; }
+	
+	/**
+	 * Set the amount of time required, in milliseconds, between the current response and a cached
+	 * response, in order to update the response data and cache the new response. This is only
+	 * used when the {@link #cache() cache} option is set to {@code true}.
+	 * @param cacheTimeout the time, in milliseconds
+	 * @return this
+	 */
+	public AjaxOptions cacheTimeout(long cacheTimeout)
+	{
+		this.cacheTimeout = cacheTimeout;
+		return this;
+	}
+	
+	/**
 	 * Allow the request to be successful only if the response has changed since the last request. 
-	 * This is done by checking the Last-Modified header. Default value is false, ignoring the header.
-	 * @note This is not yet implemented
+	 * This is done by checking the Last-Modified header. Default value is {@code false}, ignoring 
+	 * the header.
 	 */
 	private boolean ifModified = false;
+	
+	/**
+	 * Get whether or not the response is only considered successful if it has been changed since
+	 * the last request. This is done by checking the Last-Modified header.
+	 * @return {@code true} to enable the check. Otherwise {@code false}.
+	 */
 	public boolean ifModified() { return ifModified; }
+	
+	/**
+	 * Set whether or not the response is only considered successful if it has been changed since
+	 * the last request. This is done by checking the Last-Modified header. Default value is
+	 * {@code false}, ignoring the header.
+	 * @param {@code true} to enable the check. Otherwise {@code false}.
+	 * @return this
+	 */
 	public AjaxOptions ifModified(boolean ifModified)
 	{
 		this.ifModified = ifModified;
 		return this;
 	}
 	
-//	private boolean isLocal;
-//	public boolean isLocal() { return isLocal; }
-//	public AjaxOptions isLocal(boolean isLocal)
-//	{
-//		this.isLocal = isLocal;
-//		return this;
-//	}
-	
-//	private String mimeType;
-//	public String mimeType() { return mimeType; }
-//	public AjaxOptions mimeType(String mimeType)
-//	{
-//		this.mimeType = mimeType;
-//		return this;
-//	}
-	
 	/**
 	 * A password to be used with HTTP Request in response to an HTTP access authentication request.
+	 * @see #username
 	 */
 	private String password;
-	//there is no password() method to protect the password.
+	
+	/**
+	 * Set the password to use if prompted with an HTTP access authentication request. There is
+	 * no {@code password()} method in order to protect the password.
+	 * @param password the password to use for authentication
+	 * @return this
+	 * @see #username()
+	 * @see #getEncodedCredentials()
+	 */
 	public AjaxOptions password(String password)
 	{
 		this.password = password;
@@ -352,28 +447,34 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Should be set to a class that extends {@link DataProcessor} in order to handle raw data
-	 * to be sent to an HTTP request, instead of it being converted to a String.
+	 * Should be set to the name of a class that extends {@link DataProcessor} in order to handle 
+	 * raw data to send in the HTTP request, in order to prevent it from being converted to a String.
 	 */
 	private String processDataClass = null;
+	
+	/**
+	 * Get the name of a class that extends {@link DataProcessor} that is meant to handle
+	 * raw data to send in the HTTP request, in order to prevent it from being converted to a String.
+	 * If {@code null} is returned, then no such class has been configured.
+	 * @return the name of a class that extends {@link DataProcessor}
+	 */
 	public String processData() { return processDataClass; }
+	
+	/**
+	 * Set the name of a class that extends {@link DataProcessor} in order to handle 
+	 * raw data to send in the HTTP request, in order to prevent it from being converted to a String.
+	 * This name should include the package name (for example: "com.example.android.MyDataProcessor").
+	 * @param processDataClass the name of a class that extends {@link DataProcessor}
+	 * @return this
+	 */
 	public AjaxOptions processData(String processDataClass) 
 	{
 		this.processDataClass = processDataClass;
 		return this;
 	}
 	
-//	
-//	private String scriptCharset;
-//	public String scriptCharset() { return scriptCharset; }
-//	public AjaxOptions scriptCharset(String scriptCharset)
-//	{
-//		this.scriptCharset = scriptCharset;
-//		return this;
-//	}
-	
 	/**
-	 * An object of numeric HTTP codes and functions to be called when the response has the 
+	 * A mapping of numeric HTTP codes to functions to be called when the response has the 
 	 * corresponding code. For example, the following will alert when the response status is a 404:
 	 * <pre>
 	 * $.ajax(new AjaxOptions(this).statusCode(404, new Function(){
@@ -385,14 +486,43 @@ public class AjaxOptions
 	 * </pre>
 	 */
 	private Map<Integer, Function> statusCode = new HashMap<Integer, Function>();
+	
+	/**
+	 * Get a mapping of numeric HTTP codes to functions to be called when the response has the 
+	 * corresponding code.
+	 * @return the mapping
+	 */
 	public Map<Integer, Function> statusCode() { return statusCode; }
-	/** sets the status code */
+	
+	/**
+	 * Sets a mapping of numeric HTTP codes to functions to be 
+	 * called when the response has the corresponding code.
+	 * @param statusCode the mapping
+	 * @return this
+	 * @see #statusCode(Integer, Function)
+	 */
 	public AjaxOptions statusCode(Map<Integer, Function> statusCode)
 	{
 		this.statusCode = statusCode;
 		return this;
 	}
-	/** Adds a status code */
+	
+	/**
+	 * Adds a Key-Value entry to the status code mapping of numeric HTTP codes to functions to be 
+	 * called when the response has the corresponding code. For example, the following will alert 
+	 * when the response status is a 404:
+	 * <pre>
+	 * $.ajax(new AjaxOptions(this).statusCode(404, new Function(){
+	 * 	public void invoke(Object... params)
+	 * 	{
+	 * 		$.with(this).alert("Page not found");
+	 * 	}
+	 * }));
+	 * </pre>
+	 * @param code the code key for the given function
+	 * @param function the function to call when the response returns the given code
+	 * @return this
+	 */
 	public AjaxOptions statusCode(Integer code, Function function)
 	{
 		this.statusCode.put(code, function);
@@ -401,13 +531,34 @@ public class AjaxOptions
 	
 	/**
 	 * A function to be called if the request succeeds. The function gets passed two arguments:
-	 * <ul>
+	 * <ol>
 	 * <li>The data returned from the server, formatted according to the dataType parameter
 	 * <li>a string describing the status
-	 * </ul>
+	 * </ol>
 	 */
 	private Function success;
+	
+	/**
+	 * Gets the function that will be called if the request succeeds. The function gets passed 
+	 * two arguments:
+	 * <ol>
+	 * <li>The data returned from the server, formatted according to the dataType parameter
+	 * <li>a string describing the status
+	 * </ol>
+	 * @return the function
+	 */
 	public Function success() { return success; }
+	
+	/**
+	 * Sets the function that will be called if the request succeeds. The function will get passed 
+	 * two arguments:
+	 * <ol>
+	 * <li>The data returned from the server, formatted according to the dataType parameter
+	 * <li>a string describing the status
+	 * </ol>
+	 * @param success the function
+	 * @return this
+	 */
 	public AjaxOptions success(Function success)
 	{
 		this.success = success;
@@ -415,30 +566,50 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Set a timeout (in milliseconds) for the request.
+	 * The timeout (in milliseconds) for the request. This will affect the request timeout
+	 * and the socket timeout.
 	 */
 	private int timeout;
+	
+	/**
+	 * Get the request (and socket) timeout (in milliseconds) for the request.
+	 * @return the timeout, in milliseconds
+	 */
 	public int timeout() { return timeout; }
+	
+	/**
+	 * Set the timeout (in milliseconds) for the request. This will affect the request timeout
+	 * and the socket timeout.
+	 * @param timeout the timeout, in milliseconds
+	 * @return this
+	 */
 	public AjaxOptions timeout(int timeout) 
 	{
 		this.timeout = timeout;
 		return this;
 	}
-//	
-//	private boolean traditional;
-//	public boolean traditional() { return traditional; }
-//	public AjaxOptions traditional(boolean traditional)
-//	{
-//		this.traditional = traditional;
-//		return this;
-//	}
 	
 	/**
 	 * The type of request to make ("POST", "GET", "DELETE", "PUT", "HEAD", "OPTIONS", "TRACE" or "CUSTOM"), default is "GET".
 	 * @see #customRequestClass
 	 */
 	private String type;
+	
+	/**
+	 * Get the type of request to make. The response String will be one of "POST", "GET", "DELETE", 
+	 * "PUT", "HEAD", "OPTIONS", "TRACE" or "CUSTOM"
+	 * @return the response type
+	 * @see #customRequestClass
+	 */
 	public String type() { return type; }
+	
+	/**
+	 * Set the type of request to make. The response String will be one of "POST", "GET", "DELETE", 
+	 * "PUT", "HEAD", "OPTIONS", "TRACE" or "CUSTOM"
+	 * @param type the response type
+	 * @return this
+	 * @see #customRequestClass
+	 */
 	public AjaxOptions type(String type)
 	{
 		this.type = type;
@@ -446,11 +617,22 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Used to set the output width for Async Requests that set the type attribute to image. 
-	 * If not set, no scaling will be done of the raw image.
+	 * Used to configure the output bitmap width for requests that set the type attribute to "IMAGE". 
+	 * If not set, no width scaling will be done of the raw image.
 	 */
 	private int imageWidth = -1;
+	
+	/**
+	 * Get the output bitmap width for requests that set the type attribute to "IMAGE". 
+	 * @return the scaled width, or -1 if the image width should not be scaled
+	 */
 	public int imageWidth() { return imageWidth; }
+	
+	/**
+	 * Set the output bitmap width for requests that set the type attribute to "IMAGE".
+	 * @param width the scaled width, or -1 if the image width should not be scaled
+	 * @return this
+	 */
 	public AjaxOptions imageWidth(int width)
 	{
 		this.imageWidth = width;
@@ -458,11 +640,22 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Used to set the output height for Async Requests that set the type attribute to image. 
-	 * If not set, no scaling will be done of the raw image.
+	 * Used to configure the output bitmap height for requests that set the type attribute to "IMAGE". 
+	 * If not set, no height scaling will be done of the raw image.
 	 */
 	private int imageHeight = -1;
+	
+	/**
+	 * Get the output bitmap height for requests that set the type attribute to "IMAGE". 
+	 * @return the scaled height, or -1 if the image height should not be scaled
+	 */
 	public int imageHeight() { return imageHeight; }
+	
+	/**
+	 * Set the output bitmap height for requests that set the type attribute to "IMAGE".
+	 * @param height the scaled height, or -1 if the image height should not be scaled
+	 * @return this
+	 */
 	public AjaxOptions imageHeight(int height)
 	{
 		this.imageHeight = height;
@@ -473,7 +666,18 @@ public class AjaxOptions
 	 * A string containing the URL to which the request is sent.
 	 */
 	private String url;
+	
+	/**
+	 * Get the request URL
+	 * @return the request URL
+	 */
 	public String url() { return url; }
+	
+	/**
+	 * Set the request URL
+	 * @param url the request URL
+	 * @return this
+	 */
 	public AjaxOptions url(String url)
 	{
 		this.url = url;
@@ -481,19 +685,43 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * A username to be used with HTTP Request in response to an HTTP access authentication request.
+	 * A username to be used with the HTTP request in response to an HTTP access authentication request.
+	 * @see #password
 	 */
 	private String username;
+	
+	/**
+	 * Get the username to use if prompted with an HTTP access authentication request.
+	 * @return the String username
+	 * @see #password(String)
+	 * @see #getEncodedCredentials()
+	 */
 	public String username() { return username; }
+	
+	/**
+	 * Set the username to use if prompted with an HTTP access authentication request
+	 * @param username the String username
+	 * @return this
+	 */
 	public AjaxOptions username(String username)
 	{
 		this.username = username;
 		return this;
 	}
 	
-	/** If "type" is set to "custom", then this can be used to pass a custom HTTP Request type to the HTTP Client. 
-	 * Class must extend CustomHttpRequest. */
+	/** 
+	 * If {@link #type} is set to "CUSTOM", then this can be used to pass a custom HTTP Request 
+	 * type to the HTTP Client by setting it to name of a custom class that must extend 
+	 * {@link CustomHttpUriRequest}. 
+	 */
 	private String customRequestClass;
+	
+	/**
+	 * Get a new instance of the subclass of {@link CustomHttpUriRequest} that is used when the 
+	 * {@link #type() type} option is set to "CUSTOM".
+	 * @return the new instance 
+	 * @throws Exception if the class name is {@code null} or is not a valid class name
+	 */
 	public CustomHttpUriRequest customRequest() throws Exception { 
 		try
 		{
@@ -506,15 +734,26 @@ public class AjaxOptions
 			throw new Exception("Invalid Custom Request Class!");
 		}
 	}
+	
+	/**
+	 * Set the class name of the subclass of {@link CustomHttpUriRequest} that is used when the 
+	 * {@link #type() type} option is set to "CUSTOM". Once instantiated, the Object is used to pass
+	 * a custom HTTP Request type to the HTTP Client.
+	 * @param customRequestClass the name of the class. Should include the full package name. 
+	 * For example: "com.example.android.MyCustomHttpUriRequest".
+	 * @return this
+	 */
 	public AjaxOptions customRequest(String customRequestClass)
 	{
 		this.customRequestClass = customRequestClass;
 		return this;
 	}
 	
-//	private Function xhr;//probably not needed
-//	//xhrFields
-	
+	/**
+	 * Set options to be included in all ajax requests. Requests can manually override these options
+	 * by setting them on a per-request basis.
+	 * @param options options to be included in all ajax requests
+	 */
 	public static void ajaxSetup(AjaxOptions options)
 	{
 		globalOptions = options;
@@ -550,12 +789,21 @@ public class AjaxOptions
 		this.url = url;
 	}
 	
+	/**
+	 * Constructs a new AjaxOptions Object with the given URL and the Key-Value Mapping of Ajax Options values.
+	 * @param url the request URL
+	 * @param settings mapping of Ajax Options values. Can include all types - Strings, Functions, etc.
+	 */
 	public AjaxOptions(String url, Map<String, Object> settings)
 	{
 		this(settings);
 		this.url = url;
 	}
 	
+	/**
+	 * Constructs a new AjaxOptions Object with the given Key-Value Mapping of Ajax Options values.
+	 * @param settings mapping of Ajax Options values. Can include all types - Strings, Functions, etc.
+	 */
 	public AjaxOptions(Map<String, Object> settings)
 	{
 		this();
@@ -574,9 +822,9 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Construct with JSONObject. This is more time consuming that other options.
-	 * @param json
-	 * @throws JSONException 
+	 * Construct a new AjaxOptions Object with the given JSONObject of Ajax Options values.
+	 * @param json the JSONObject
+	 * @throws JSONException if the {@code json} is malformed
 	 */
 	public AjaxOptions(JSONObject json) throws JSONException
 	{
@@ -611,9 +859,12 @@ public class AjaxOptions
 	}
 
 	/**
-	 * Since password is not publicly available, use this to assemble the encoded authentication
-	 * credentials (base64). 
-	 * @return
+	 * As a security feature, this class will not allow queries of authentication passwords. This
+	 * method will instead encode the security credentials (username and password) using
+	 * Base64-encryption, and return the encrypted data as a byte array.
+	 * @return the encrypted credentials
+	 * @see #username()
+	 * @see #password(String)
 	 */
 	public byte[] getEncodedCredentials()
 	{
