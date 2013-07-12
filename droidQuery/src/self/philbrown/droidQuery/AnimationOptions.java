@@ -277,7 +277,7 @@ public class AnimationOptions
 	 * Set the function called after each step of the animation. The invoked function will receive
 	 * three arguments:
 	 * <ol>
-	 * <li><b>View</b> the view that is animating
+	 * <li><b>$</b> the droidQuery selected on the view that is being animated
 	 * <li><b>String</b> the name of the animated value
 	 * <li><b>Object</b> current value
 	 * <li><b>long</b> remaining milliseconds

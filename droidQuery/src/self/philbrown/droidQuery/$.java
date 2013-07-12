@@ -269,7 +269,6 @@ public class $
 		View view = new View(context);//if view operations are attempted without the view set, this prevents null pointer exceptions
 		this.rootView = view;
 		this.views.add(view);
-		setup();
 	}
 	
 	/**
@@ -286,7 +285,6 @@ public class $
 		this.views = new ArrayList<View>();
 		this.views.add(view);
 		this.context = view.getContext();
-		setup();
 	}
 	
 	/**
@@ -300,7 +298,6 @@ public class $
 		if (views == null)
 			views = new ArrayList<View>();
 		this.views = views;
-		setup();
 	}
 	
 	/**
@@ -321,7 +318,6 @@ public class $
 		this.rootView = views.get(0);
 		this.context = this.rootView.getContext();
 		this.views = views;
-		setup();
 	}
 	
 	/**
@@ -342,17 +338,6 @@ public class $
 		this.rootView = views[0];
 		this.context = this.rootView.getContext();
 		this.views = Arrays.asList(views);
-		setup();
-	}
-	
-	/**
-	 * Refreshes the listeners for focus changes, key inputs, and swipe events.
-	 */
-	private void setup()
-	{
-		setupFocusListener();
-		setupKeyListener();
-		setupSwipeListener();
 	}
 	
 	/**
@@ -671,8 +656,8 @@ public class $
 	 *                        new AnimationOptions("{ duration: 3000,
 	 *                                                easing: linear
 	 *                                            }").complete(new Function() {
-	 *                        						public void invoke(Object... args) {
-	 *                        							$.alert("Animation Complete!");
+	 *                        						public void invoke($ droidQuery, Object... args) {
+	 *                        							droidQuery.alert("Animation Complete!");
 	 *                        						}
 	 *                        					  });
 	 * </pre>
@@ -996,7 +981,7 @@ public class $
 
 							@Override
 							public void onAnimationUpdate(ValueAnimator animation) {
-								options.progress().invoke(view, key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+								options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
 							}
 							
 						});
@@ -1286,7 +1271,7 @@ public class $
 
 					@Override
 					public void onAnimationUpdate(ValueAnimator animation) {
-						options.progress().invoke(view, "y", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+						options.progress().invoke($.with(view), "y", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
 					}
 					
 				});
@@ -1355,7 +1340,7 @@ public class $
 
 					@Override
 					public void onAnimationUpdate(ValueAnimator animation) {
-						options.progress().invoke(view, "y", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+						options.progress().invoke($.with(view), "y", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
 					}
 					
 				});
@@ -1444,7 +1429,7 @@ public class $
 
 					@Override
 					public void onAnimationUpdate(ValueAnimator animation) {
-						options.progress().invoke(view, "x", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+						options.progress().invoke($.with(view), "x", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
 					}
 					
 				});
@@ -1511,7 +1496,7 @@ public class $
 
 					@Override
 					public void onAnimationUpdate(ValueAnimator animation) {
-						options.progress().invoke(view, "x", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+						options.progress().invoke($.with(view), "x", animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
 					}
 					
 				});
@@ -1723,10 +1708,9 @@ public class $
 	 * Binds the views in the current selection to the event. For example:
 	 * <pre>
 	 * $.with(myView).bind("click", "Hello World!", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		Object data = args[1];
-	 * 		$.alert(v.getContext(), (String) data);
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		Object data = args[0];
+	 * 		droidQuery.alert((String) data);
 	 * 	}
 	 * });
 	 * </pre>
@@ -1734,34 +1718,31 @@ public class $
 	 * capitalized. For example, to bind to a long-click event, both of the following are acceptable:
 	 * <pre>
 	 * $.with(myView).bind("longClick", "Hello World!", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		Object data = args[1];
-	 * 		$.alert(v.getContext(), (String) data);
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		Object data = args[0];
+	 * 		droidQuery.alert((String) data);
 	 * 	}
 	 * });
 	 * 
 	 * $.with(myView).bind("LongClick", "Hello World!", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		Object data = args[1];
-	 * 		$.alert(v.getContext(), (String) data);
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		Object data = args[0];
+	 * 		droidQuery.alert((String) data);
 	 * 	}
 	 * });
 	 * </pre>
 	 * However, this will fail:
 	 * <pre>
 	 * $.with(myView).bind("longclick", "Hello World!", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		Object data = args[1];
-	 * 		$.alert(v.getContext(), (String) data);
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		Object data = args[0];
+	 * 		droidQuery.alert((String) data);
 	 * 	}
 	 * });
 	 * </pre>
 	 * @param eventType should be the verb in OnVerbListener
 	 * @param data an Object passed to {@code handler} when the event is triggered.
-	 * @param handler receives two arguments: the affected view, and the {@code data} parameter
+	 * @param handler receives two arguments: a droidQuery with the affected view selected, and the {@code data} parameter
 	 * @return the current instance of {@code droidQuery}
 	 * @see #on(String, Function)
 	 * @see #one(String, Function)
@@ -1789,7 +1770,7 @@ public class $
 					}
 				}
 				Method setEventListener = view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-				EventHandlerCreator proxy = new EventHandlerCreator(handler, view, data);
+				EventHandlerCreator proxy = new EventHandlerCreator($.with(view), handler, data);
 				Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
 				setEventListener.invoke(view, eventInterface.cast(eventHandler));
 				
@@ -1807,9 +1788,8 @@ public class $
 	 * Binds the views in the current selection to the event. For example:
 	 * <pre>
 	 * $.with(myView).on("click", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		$.alert(v.getContext(), "View Clicked!");
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		droidQuery.alert("View Clicked!");
 	 * 	}
 	 * });
 	 * </pre>
@@ -1817,30 +1797,27 @@ public class $
 	 * capitalized. For example, to bind to a long-click event, both of the following are acceptable:
 	 * <pre>
 	 * $.with(myView).on("longClick", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		$.alert(v.getContext(), "View LongClicked!");
+	 * 	public void invoke($droidQuery, Object... args) {
+	 * 		droidQuery.alert("View LongClicked!");
 	 * 	}
 	 * });
 	 * 
 	 * $.with(myView).on("LongClick", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		$.alert(v.getContext(), "View LongClicked!");
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		droidQuery.alert("View LongClicked!");
 	 * 	}
 	 * });
 	 * </pre>
 	 * However, this will fail:
 	 * <pre>
 	 * $.with(myView).on("longclick", new Function() {
-	 * 	public void invoke(Object... args) {
-	 * 		View v = args[0];
-	 * 		$.alert(v.getContext(), "View LongClicked!");
+	 * 	public void invoke($ droidQuery, Object... args) {
+	 * 		droidQuery.alert("View LongClicked!");
 	 * 	}
 	 * });
 	 * </pre>
 	 * @param event should be the verb in OnVerbListener
-	 * @param handler receives two arguments: the affected view, and the {@code data} parameter
+	 * @param handler receives one argument: a droidQuery with the affected view selected
 	 * @return the current instance of {@code droidQuery}
 	 * @see #bind(String, Object, Function)
 	 * @see #one(String, Function)
@@ -1869,7 +1846,7 @@ public class $
 				}
 
 				Method setEventListener = view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-				EventHandlerCreator proxy = new EventHandlerCreator(handler, view);
+				EventHandlerCreator proxy = new EventHandlerCreator($.with(view), handler);
 				Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
 				setEventListener.invoke(view, eventInterface.cast(eventHandler));
 			}
@@ -1895,9 +1872,9 @@ public class $
 		{
 
 			@Override
-			public void invoke(Object... params) {
-				handler.invoke();
-				$.with((View) params[0]).unbind(event);
+			public void invoke($ droidQuery, Object... params) {
+				handler.invoke(droidQuery);
+				droidQuery.unbind(event);
 			}
 			
 		};
@@ -2331,9 +2308,9 @@ public class $
 	
 	/**
 	 * Set the function to call when a key-down event has been detected on this view.
-	 * @param function the Function to invoke. Receives three arguments:
+	 * @param function the Function to invoke. Receives a droidQuery containing the responding view
+	 * and two variable arguments:
 	 * <ol>
-	 * <li>a droidQuery containing the responding view
 	 * <li>the Integer key code
 	 * <li>the {@link KeyEvent} Object that was produced
 	 * </ol>
@@ -2348,9 +2325,9 @@ public class $
 	
 	/**
 	 * Set the function to call when a key-press event has been detected on this view.
-	 * @param function the Function to invoke. Receives three arguments:
+	 * @param function the Function to invoke. Receives a droidQuery containing the responding view
+	 * and two variable arguments:
 	 * <ol>
-	 * <li>a droidQuery containing the responding view
 	 * <li>the Integer key code
 	 * <li>the {@link KeyEvent} Object that was produced
 	 * </ol>
@@ -2365,9 +2342,9 @@ public class $
 	
 	/**
 	 * Set the function to call when a key-up event has been detected on this view.
-	 * @param function the Function to invoke. Receives three arguments:
+	 * @param function the Function to invoke. Receives a droidQuery containing the responding view
+	 * and two variable arguments:
 	 * <ol>
-	 * <li>a droidQuery containing the responding view
 	 * <li>the Integer key code
 	 * <li>the {@link KeyEvent} Object that was produced
 	 * </ol>
@@ -2384,11 +2361,8 @@ public class $
 	 * For each subclass on an {@link AdapterView} in the current selection, {@code select(Function)}
 	 * will register an {@link AdapterView.OnItemSelectedListener OnItemSelectedListener} to invoke
 	 * the given function.
-	 * @param function function to invoke. receives two aruments:
-	 * <ol>
-	 * <li>a droidQuery with the parent selected view
-	 * <li>the view position (int)
-	 * </ol>
+	 * @param function function to invoke. Receives a droidQuery with the {@code AdapterView} selected,
+	 * and the view position (int) as the only varargs parameter.
 	 * @return this
 	 */
 	public $ select(final Function function)
@@ -2455,7 +2429,7 @@ public class $
 				
 				Class<?> eventInterface = Class.forName(listener);
 				Method setEventListener = view.getClass().getMethod(method, new Class<?>[]{eventInterface});
-				EventHandlerCreator proxy = new EventHandlerCreator($.noop(), view, null);
+				EventHandlerCreator proxy = new EventHandlerCreator($.with(view), $.noop());
 				Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
 				setEventListener.invoke(view, eventInterface.cast(eventHandler));
 				
@@ -2487,20 +2461,14 @@ public class $
 	
 	/**
 	 * If the first view of the current selection is a subclass of {@link AdapterView}, this will loop through all the 
-	 * adapter data and invoke the given function, passing the parameters:
+	 * adapter data and invoke the given function, passing the varargs:
 	 * <ol>
-	 * <li>this droidQuery
 	 * <li>the item from the adapter
 	 * <li>the index
 	 * </ol>
 	 * Otherwise, if the first view in the current selection is a subclass of {@link ViewGroup}, {@code each} will
 	 * loop through all the child views, and wrap each one in a droidQuery object. The invoked
-	 * function will receive these arguments:
-	 * 
-	 * <ol>
-	 * <li>the droidQuery wrapping the child view
-	 * <li>the index of the child view
-	 * </ol>
+	 * function will receive it, and an int for the index of the selected child view.
 	 * @param function Function the function to invoke
 	 * @return this
 	 */
@@ -3127,7 +3095,7 @@ public class $
 		{
 			if (error != null)
 			{
-				error.invoke(s, path, "Invalid Project Package!");
+				error.invoke(this, s, path, "Invalid Project Package!");
 			}
 			return;
 		}
@@ -3135,7 +3103,7 @@ public class $
 		{
 			if (error != null)
 			{
-				error.invoke(s, path, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
+				error.invoke(this, s, path, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
 			}
 			return;
 		}
@@ -3147,7 +3115,7 @@ public class $
 			if (fileName.contains("\\")) {
 				if (error != null)
 				{
-					error.invoke(s, path, "Internal file names cannot include a path separator. Aborting.");
+					error.invoke(this, s, path, "Internal file names cannot include a path separator. Aborting.");
 				}
 				return;
 			}
@@ -3161,7 +3129,7 @@ public class $
 					public void run()
 					{
 						if (success != null)
-							success.invoke(s, path);
+							success.invoke($.this, s, path);
 					}
 				});
 				fileObservers.add(o);
@@ -3218,7 +3186,7 @@ public class $
 				public void run()
 				{
 					if (success != null)
-						success.invoke(s, path);
+						success.invoke($.this, s, path);
 				}
 			});
 			
@@ -3272,7 +3240,7 @@ public class $
 		{
 			if (error != null)
 			{
-				error.invoke(s, path, "Invalid Project Package!");
+				error.invoke(this, s, path, "Invalid Project Package!");
 			}
 			return;
 		}
@@ -3280,7 +3248,7 @@ public class $
 		{
 			if (error != null)
 			{
-				error.invoke(s, path, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
+				error.invoke(this, s, path, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
 			}
 			return;
 		}
@@ -3292,7 +3260,7 @@ public class $
 			if (fileName.contains("\\")) {
 				if (error != null)
 				{
-					error.invoke(s, path, "Internal file names cannot include a path separator. Aborting.");
+					error.invoke(this, s, path, "Internal file names cannot include a path separator. Aborting.");
 				}
 				return;
 			}
@@ -3306,7 +3274,7 @@ public class $
 					public void run()
 					{
 						if (success != null)
-							success.invoke(s, path);
+							success.invoke($.this, s, path);
 					}
 				});
 				fileObservers.add(o);
@@ -3363,7 +3331,7 @@ public class $
 				public void run()
 				{
 					if (success != null)
-						success.invoke(s, path);
+						success.invoke($.this, s, path);
 				}
 			});
 			
@@ -3512,7 +3480,7 @@ public class $
 	{
 		return new Function() {
 			@Override
-			public void invoke(Object... args) {}
+			public void invoke($ droidQuery, Object... args) {}
 		};
 	}
 	
@@ -3837,9 +3805,9 @@ public class $
 		$.ajax(new AjaxOptions(url).data(data).complete(new Function() {
 
 			@Override
-			public void invoke(Object... params) {
+			public void invoke($ droidQuery, Object... params) {
 				$.this.html(params[0].toString());
-				complete.invoke(params);
+				complete.invoke($.this, params);
 			}
 			
 		}));
@@ -3959,6 +3927,18 @@ public class $
 	
 	/**
 	 * Shortcut to show a Toast Message
+	 * @param text the text to display
+	 * @param duration the Toast Duration
+	 * @see Toast#LENGTH_LONG
+	 * @see Toast#LENGTH_SHORT
+	 */
+	public void toast(CharSequence text, int duration)
+	{
+		Toast.makeText(context, text, duration).show();
+	}
+	
+	/**
+	 * Shortcut to show a Toast Message
 	 * @param context used to show the toast
 	 * @param text the text to display
 	 * @param duration the Toast Duration
@@ -4040,11 +4020,25 @@ public class $
 	
 	/**
 	 * A multi-purpose callbacks list object that provides a powerful way to manage callback lists.
+	 * Registered callback functions will receive a {@code null} for their <em>droidQuery</em>
+	 * variable. To receive a non-{@code null} variable, you must provide a <em>Context</em>.
 	 * @return a new instance of {@link Callbacks}
+	 * @see #Callbacks(Context)
 	 */
 	public static Callbacks Callbacks()
 	{
 		return new Callbacks();
+	}
+	
+	/**
+	 * A multi-purpose callbacks list object that provides a powerful way to manage callback lists.
+	 * If {@code context} is not {@code null}, Functions invoked will receive a non-{@code null} 
+	 * droidQuery instance using that context.
+	 * @return a new instance of {@link Callbacks}
+	 */
+	public static Callbacks Callbacks(Context context)
+	{
+		return new Callbacks(context);
 	}
 	
 	//////CSS-based
@@ -4298,7 +4292,7 @@ public class $
 
 			@Override
 			public void run() {
-				function.invoke();
+				function.invoke(null);
 			}
 			
 		}, delay);
@@ -4319,7 +4313,7 @@ public class $
 
 			@Override
 			public void run() {
-				function.invoke();
+				function.invoke(null);
 			}
 			
 		}, 0, delay);
@@ -4384,35 +4378,5 @@ public class $
 		}
 		
 	}
-	
-//	/**
-//	 * Sets a function for double click events registered with dblclick.
-//	 * Receives this droidQuery instance and the motionEvent as params.
-//	 * Third param if set in constructor.
-//	 */
-//	class DoubleClickHandler extends GestureDetector.SimpleOnGestureListener
-//	{
-//		private Function function;
-//		private Object data;
-//		
-//		public DoubleClickHandler(Function function, Object eventData)
-//		{
-//			this.function = function;
-//			this.data = eventData;
-//		}
-//		
-//		@Override
-//		public boolean onDoubleTap (MotionEvent e)
-//		{
-//			if (function != null)
-//			{
-//				if (data != null)
-//					function.invoke($.this, e, data);
-//				else
-//					function.invoke($.this, e);
-//				return true;
-//			}
-//			return false;
-//		}
-//	}
+
 }

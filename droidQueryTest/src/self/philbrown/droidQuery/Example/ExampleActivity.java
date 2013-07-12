@@ -36,7 +36,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -99,7 +98,7 @@ public class ExampleActivity extends Activity
         final Progress progress = (Progress) $.with(this).ext("progress", new ProgressOptions().indeterminate(true));
         
         $.ajaxStart(new Function() {
-        	public void invoke(Object... args)
+        	public void invoke($ droidQuery, Object... args)
         	{
         		Log.i("Ajax Test", "Global start");
         		progress.start();
@@ -107,7 +106,7 @@ public class ExampleActivity extends Activity
         });
         
         $.ajaxStop(new Function(){
-        	public void invoke(Object... args)
+        	public void invoke($ droidQuery, Object... args)
         	{
         		Log.i("Ajax Test", "Global stop");
         		progress.stop();
@@ -120,7 +119,7 @@ public class ExampleActivity extends Activity
         //Register a click event
         $.with(this, R.id.btn_refresh).click(new Function() {
 			@Override
-			public void invoke(Object... params) {
+			public void invoke($ droidQuery, Object... params) {
 				Toast.makeText(ExampleActivity.this, "Refresh", Toast.LENGTH_SHORT).show();
 				refresh();
 			}
@@ -129,9 +128,8 @@ public class ExampleActivity extends Activity
         //or use the "on" method to register a longClick event.
         $.with(this, R.id.btn_longrefresh).on("longClick", new Function() {
         	@Override
-			public void invoke(Object... params) {
-        		Button b = (Button) params[0];
-        		$.toast(b.getContext(), "Refresh", Toast.LENGTH_LONG);
+			public void invoke($ droidQuery, Object... params) {
+        		droidQuery.toast("Refresh", Toast.LENGTH_LONG);
         		refresh();
 			}
         });
@@ -168,7 +166,7 @@ public class ExampleActivity extends Activity
 				.type("GET")
 				.error(new Function() {
 					@Override
-					public void invoke(Object... params) {
+					public void invoke($ droidQuery, Object... params) {
 						//Object error, int status, String reason
 						Object error = params[0];
 						int status = (Integer) params[1];
@@ -178,7 +176,7 @@ public class ExampleActivity extends Activity
 				})
 				.success(new Function() {
 					@Override
-					public void invoke(Object... params) 
+					public void invoke($ droidQuery, Object... params) 
 					{
 						//Object, reason
 						JSONObject json = (JSONObject) params[0];
@@ -273,7 +271,7 @@ public class ExampleActivity extends Activity
 												.global(false)
 												.success(new Function() {
 													@Override
-													public void invoke(Object... params)
+													public void invoke($ droidQuery, Object... params)
 													{
 														//Object, reason
 														Bitmap src = (Bitmap) params[0];
@@ -301,7 +299,7 @@ public class ExampleActivity extends Activity
 												})
 												.error(new Function() {
 													@Override
-													public void invoke(Object... params)
+													public void invoke($ droidQuery, Object... params)
 													{
 														//Object error, int status, String reason
 														Object error = params[0];

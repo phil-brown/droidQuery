@@ -169,7 +169,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		
 		if (options.beforeSend() != null)
 		{
-			options.beforeSend().invoke(options);
+			if (options.context() != null)
+				options.beforeSend().invoke($.with(options.context()), options);
+			else
+				options.beforeSend().invoke(null, options);
 		} 
 		
 		if (options.global())
@@ -297,7 +300,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			
 			if (options.dataFilter() != null)
 			{
-				options.dataFilter().invoke(response, options.dataType());
+				if (options.context() != null)
+					options.dataFilter().invoke($.with(options.context()), response, options.dataType());
+				else
+					options.dataFilter().invoke(null, response, options.dataType());
 			}
 			
 			StatusLine statusLine = response.getStatusLine();
@@ -305,7 +311,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			Function function = options.statusCode().get(statusLine);
 			if (function != null)
 			{
-				function.invoke();
+				if (options.context() != null)
+					function.invoke($.with(options.context()));
+				else
+					function.invoke(null);
 			}
 			
 			if (statusLine.getStatusCode() >= 300)
@@ -419,7 +428,12 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 									e.headers = response.getAllHeaders();
 									Function func = options.statusCode().get(304);
 									if (func != null)
-										func.invoke();
+									{
+										if (options.context() != null)
+											func.invoke($.with(options.context()));
+										else
+											func.invoke(null);
+									}
 									return e;
 								}
 								else
@@ -472,7 +486,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			if (options.error() != null)
 			{
 				//invoke error with Request, Status, and Error
-				options.error().invoke(request, 0, "null response");
+				if (options.context() != null)
+					options.error().invoke($.with(options.context()), request, 0, "null response");
+				else
+					options.error().invoke(null, request, 0, "null response");
 			}
 			
 			if (options.global())
@@ -484,7 +501,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			{
 				//invoke error with Request, Status, and Error
 				Error e = (Error) response;
-				options.error().invoke(e.obj, e.status, e.reason);
+				if (options.context() != null)
+					options.error().invoke($.with(options.context()), e.obj, e.status, e.reason);
+				else
+					options.error().invoke(null, e.obj, e.status, e.reason);
 			}
 			
 			if (options.global())
@@ -496,7 +516,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			if (options.success() != null)
 			{
 				//invoke success with parsed response and the status string
-				options.success().invoke(s.obj, s.reason);
+				if (options.context() != null)
+					options.success().invoke($.with(options.context()), s.obj, s.reason);
+				else
+					options.success().invoke(null, s.obj, s.reason);
 			}
 			
 			if (options.global())
@@ -507,9 +530,19 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		if (options.complete() != null)
 		{
 			if (response != null)
-				options.complete().invoke(response.reason);
+			{
+				if (options.context() != null)
+					options.complete().invoke($.with(options.context()), response.reason);
+				else
+					options.complete().invoke(null, response.reason);
+			}
 			else
-				options.complete().invoke("null response");
+			{
+				if (options.context() != null)
+					options.complete().invoke($.with(options.context()), "null response");
+				else
+					options.complete().invoke(null, "null response");
+			}
 		}
 		if (options.global())
 			$.ajaxComplete();

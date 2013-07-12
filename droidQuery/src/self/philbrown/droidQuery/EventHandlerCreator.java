@@ -32,14 +32,17 @@ public class EventHandlerCreator implements InvocationHandler
 	private Object[] args;
 	/** The function to call when the interface's method is invoked. */
 	private Function function;
+	/** Contains the droidQuery to pass to the function. */
+	private $ droidQuery;
 	
 	/**
 	 * Constructor
 	 * @param function the function to call instead of the interface's main method
 	 * @param args the arguments to pass to the function
 	 */
-	public EventHandlerCreator(Function function, Object... args)
+	public EventHandlerCreator($ droidQuery, Function function, Object... args)
 	{
+		this.droidQuery = droidQuery;
 		this.function = function;
 		this.args = args;
 	}
@@ -49,7 +52,7 @@ public class EventHandlerCreator implements InvocationHandler
 		
 		try
 		{
-			function.invoke(this.args);
+			function.invoke(droidQuery, this.args);
 			return true;
 		}
 		catch (Throwable t)

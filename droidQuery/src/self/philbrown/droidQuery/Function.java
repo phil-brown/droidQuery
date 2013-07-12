@@ -24,7 +24,10 @@ public interface Function
 {
 	/**
 	 * Variable arguments method that can be called on a Function
+	 * @param droidQuery the {@code droidQuery} instance with the selection on the relevant view(s). 
+	 * May be {@code null} in some cases, such as static methods, or places where no {@code View} or 
+	 * {@code Context} is used.
 	 * @param params optional arguments
 	 */
-	public void invoke(Object... params);
+	public void invoke($ droidQuery, Object... params);
 }

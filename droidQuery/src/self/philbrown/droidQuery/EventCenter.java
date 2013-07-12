@@ -89,7 +89,7 @@ public class EventCenter
 	}
 	
 	/**
-	 * Trigger an event
+	 * Trigger an event. Note that the {@code droidQuery} function parameter will be {@code null}.
 	 * @param text the name of the event
 	 * @param args the arguments to pass to the registered functions
 	 * @param scope the scope of the event
@@ -106,7 +106,7 @@ public class EventCenter
 		
 		for (Function f : functions)
 		{
-			f.invoke(text, args);
+			f.invoke(null, text, args);
 		}
 	}
 	

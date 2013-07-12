@@ -19,6 +19,9 @@ package self.philbrown.droidQuery;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.content.Context;
+import android.graphics.BitmapFactory.Options;
+
 /**
  * A multi-purpose callbacks list object that provides a powerful way to manage callback lists.
  * @author Phil Brown
@@ -43,14 +46,36 @@ public class Callbacks
 	private boolean once = false;
 	/** {@code true} if a callback can only be added once */
 	private boolean unique = false;
+	/** The variable to pass as the droidQuery argument to Callback Functions. May be {@code null}. */
+	private $ droidQuery;
 
 	/** 
 	 * Constructor 
-	 * @see Callbacks#Callbacks(CallbacksOptions)
 	 */
 	public Callbacks()
 	{
 		functions = new ArrayList<Function>();
+	}
+	
+	/**
+	 * Constructor 
+	 * @param context used to create the {@link self.philbrown.droidQuery.$ droidQuery} Object
+	 * that will be passed to callback functions
+	 */
+	public Callbacks(Context context)
+	{
+		this();
+		this.droidQuery = $.with(context);
+	}
+	
+	/**
+	 * Constructor 
+	 * @param droidQuery the <em>droidQuery</em> Object that will be passed to callback functions
+	 */
+	public Callbacks($ droidQuery)
+	{
+		this();
+		this.droidQuery = droidQuery;
 	}
 	
 	/**
@@ -66,6 +91,29 @@ public class Callbacks
 			this.once = true;
 		if (opt.unique())
 			this.unique = true;
+	}
+	
+	/**
+	 * Constructor 
+	 * @param context used to create the {@link self.philbrown.droidQuery.$ droidQuery} Object
+	 * that will be passed to callback functions
+	 * @param opt the Callbacks Options
+	 */
+	public Callbacks(Context context, CallbacksOptions opt)
+	{
+		this(opt);
+		this.droidQuery = $.with(context);
+	}
+
+	/**
+	 * Constructor 
+	 * @param droidQuery the <em>droidQuery</em> Object that will be passed to callback functions
+	 * @param opt the Callbacks Options
+	 */
+	public Callbacks($ droidQuery, CallbacksOptions opt)
+	{
+		this(opt);
+		this.droidQuery = droidQuery;
 	}
 	
 	/**
@@ -187,7 +235,7 @@ public class Callbacks
 				{
 					for (Function f : functions)
 					{
-						f.invoke(memArgs);
+						f.invoke(droidQuery, memArgs);
 					}
 					hasFired = true;
 				}
@@ -204,7 +252,7 @@ public class Callbacks
 		}
 		for (Function f : functions)
 		{
-			f.invoke(args);
+			f.invoke(droidQuery, args);
 		}
 		hasFired = true;
 	}

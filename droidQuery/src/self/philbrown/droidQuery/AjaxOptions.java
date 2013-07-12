@@ -109,7 +109,10 @@ public class AjaxOptions
 	public Function beforeSend(){ return beforeSend; }
 	/**
 	 * Sets the function that is registered to call before the Ajax Task begins
-	 * @param beforeSend the Function to call
+	 * @param beforeSend the Function to call. This will receive a {@code null} Object for the
+	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
+	 * the case, {@code beforeSend} will receive a <em>droidQuery</em> instance with that <em>context</em>.
+	 * The varargs parameter will include these options, so that they can be manipulated. 
 	 * @return this
 	 */
 	public AjaxOptions beforeSend(Function beforeSend)
@@ -129,7 +132,11 @@ public class AjaxOptions
 	 */
 	public Function complete() { return complete; }
 	/**
-	 * Sets the function that is registered to when the task has completed
+	 * Sets the function that is registered to when the task has completed. The function will receive
+	 * no varargs, 
+	 * It will also receive a {@code null} Object for the
+	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
+	 * the case, {@code complete} will receive a <em>droidQuery</em> instance with that <em>context</em>.
 	 * @param complete the Function to call
 	 * @return this
 	 */
@@ -175,7 +182,9 @@ public class AjaxOptions
 	public Context context() { return context; }
 	
 	/**
-	 * Set the context
+	 * Set the context. Setting this to a non-{@code null} value will allow the callback Functions
+	 * (such as {@link #success() success}, {@link #error() error}, {@link #beforeSend() beforeSend},
+	 * and {@link #complete() complete}) to pass a non-{@code null} <em>droidQuery</em> instance.
 	 * @param context
 	 * @return this
 	 */
@@ -226,8 +235,10 @@ public class AjaxOptions
 	/**
 	 * Set the function to be used to handle the raw response data. This is a 
 	 * pre-filtering function to sanitize the response. You should return the sanitized 
-	 * data. The function accepts two arguments: The raw data returned from the server (HttpResponse) 
-	 * and the 'dataType' parameter (String).
+	 * data. The function accepts two varargs: The raw data returned from the server (HttpResponse) 
+	 * and the 'dataType' parameter (String). It will also receive a {@code null} Object for the
+	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
+	 * the case, {@code dataFilter} will receive a <em>droidQuery</em> instance with that <em>context</em>.
 	 * @param dataFilter
 	 * @return this
 	 */
@@ -289,7 +300,11 @@ public class AjaxOptions
 
 	/**
 	 * Set the function to be called if the request fails. Receives original {@code HttpUriRequest}
-	 * request, the integer Status, and the String Error
+	 * request, the integer Status, and the String Error for varargs. 
+	 * It will also receive a {@code null} Object for the
+	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
+	 * the case, {@code error} will receive a <em>droidQuery</em> instance with that <em>context</em>.
+
 	 */
 	public AjaxOptions error(Function error)
 	{
@@ -496,7 +511,10 @@ public class AjaxOptions
 	
 	/**
 	 * Sets a mapping of numeric HTTP codes to functions to be 
-	 * called when the response has the corresponding code.
+	 * called when the response has the corresponding code. 
+	 * The function will receive a {@code null} Object for the
+	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
+	 * the case, {@code statusCode} will receive a <em>droidQuery</em> instance with that <em>context</em>.
 	 * @param statusCode the mapping
 	 * @return this
 	 * @see #statusCode(Integer, Function)
@@ -551,11 +569,14 @@ public class AjaxOptions
 	
 	/**
 	 * Sets the function that will be called if the request succeeds. The function will get passed 
-	 * two arguments:
+	 * two arguments for varargs:
 	 * <ol>
 	 * <li>The data returned from the server, formatted according to the dataType parameter
 	 * <li>a string describing the status
 	 * </ol>
+	 * It will also receive a {@code null} Object for the
+	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
+	 * the case, {@code success} will receive a <em>droidQuery</em> instance with that <em>context</em>.
 	 * @param success the function
 	 * @return this
 	 */
