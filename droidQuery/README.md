@@ -51,10 +51,13 @@ limitations under the License.
 
 ### How to Use
 
+> Note: droidQuery is a work in progress. If you find any bugs or would like functionality that is missing, please create a new issue (https://github.com/phil-brown/droidQuery/issues).
+
 Below are some of the most common tasks that *droidQuery* can be used for. A full list, as well as 
-examples, is currently under construction in the [wiki](https://github.com/phil-brown/droidQuery/wiki/Commands).
+examples, is currently under construction in the [wiki](https://github.com/phil-brown/droidQuery/wiki/API-Documentation).
 A sample application can also be found in the `droidQueryTest` directory. The relevant code can be found
 in [ExampleActivity.java](https://github.com/phil-brown/droidQuery/blob/master/droidQueryTest/src/self/philbrown/droidQuery/Example/ExampleActivity.java).
+Finally, most of the [jQuery API Documentation](http://api.jquery.com) is sufficient to explain the *droidQuery* API.
 
 To **instantiate** a new *droidQuery*, you need to pass in a `Context`, a `View`, or set of `View`s. The
 simplest way to create the instance is using the `with` static methods:
@@ -76,7 +79,69 @@ or, for short:
 Once you have the *droidQuery* instance, you can either save it as a variable, or chain calls to manipulate
 the selected `View` or `View`s.
 
+**Ajax**
 
+To perform an asynchronous network task, you can use *ajax*. The most straight-forward way to create and
+start an ajax task is with the `$.ajax(AjaxOptions)` method. For example:
 
+    ajax(new AjaxOptions().url("http://www.example.com")
+                          .type("GET")
+                          .dataType("text")
+                          .context(this)
+                          .success(new Function() {
+                              @Override
+                              public void invoke($ droidQuery, Object... params) {
+                                  droidQuery.alert((String) params[0]);
+                              }
+                          }).error(new Function() {
+                              @Override
+                              public void invoke($ droidQuery, Object... params) {
+                                  int statusCode = (Integer) params[1];
+                                  String error = (String) params[2];
+                                  Log.e("Ajax", statusCode + " " + error);
+                              }
+                          }));
 
+**Attributes**
 
+*droidQuery* can be used to get or change the attributes of its selected `View`s. The most common
+methods include `attr()` to get an attribute, `attr(String, Object)` to set an attribute, `val()` to
+get the value of a UI element (such as `CharSequence` for `TextView`s, `Drawable`s for `ImageView`s, etc),
+and `val(Object)` to set the value.
+
+**Callbacks**
+
+The *Callbacks* Object provides a simple way to manage and fire sets of callbacks. To get an instance
+of this Object, use `$.Callbacks(this)`.
+
+**Effects**
+
+*droidQuery* can be used to animate the selected `View`s. The simplest way to perform a custom animation
+is by using the `animate(String, long, Easing, Function)` method. For example:
+
+    $.with(myView).children().animate("{left: 100px, top: 100, width: 50%, height: 50% }", 400, Easing.LINEAR, new Function() {
+    	@Override
+    	public void invoke($ droidQuery, Object... params)
+    	{
+    		droidQuery.toast("animation complete", Toast.LENGTH_SHORT);
+    	}
+    });
+
+It can also be used to perform pre-configured animations, such as fades (using `fadeIn`, `fadeOut`, 
+`fadeTo`, and `fadeToggle`) and slides (`slideUp`, `slideDown`, `slideLeft`, and `slideRight`).
+
+**Events**
+
+Documentation coming soon
+
+**Miscellaneous**
+
+Documentation coming soon
+
+**Selectors**
+
+Documentation coming soon
+
+**Other**
+
+Documentation coming soon
