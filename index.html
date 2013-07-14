@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="droidQuery : Android port of jQuery" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>droidQuery</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/phil-brown/droidQuery">View on GitHub</a>
+
+          <h1 id="project_title">droidQuery</h1>
+          <h2 id="project_tagline">Android port of jQuery</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/phil-brown/droidQuery/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/phil-brown/droidQuery/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h2>
+<a name="droidquery" class="anchor" href="#droidquery"><span class="octicon octicon-link"></span></a>droidQuery</h2>
+
+<hr><h3>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p><strong>droidQuery</strong> is an Android <em>port</em> of <a href="https://github.com/jquery/jquery">jQuery</a>, and is designed to
+be as syntactically alike as possible in Java.</p>
+
+<p>For those not familiar with <em>jQuery</em>, it essentially provides magic for allowing the simultaneous
+manipulation of a set of UI entities (using animations, attributes settings, etc), as well as to
+perform complex tasks, such as asynchronous network tasks. <em>droidQuery</em> can do all of these things.</p>
+
+<p>Essentially, <em>droidQuery</em> provides this same type of magic for the view hierarchy and <code>AsyncTasks</code>, and
+can be used to perform other frequent jobs, such as showing alert messages. Also like <em>jQuery</em>,
+<em>droidQuery</em> allows the addition of extensions to add to the power of the library.</p>
+
+<p>Popular extensions currently available include <a href="https://github.com/phil-brown/droidProgress">droidProgress</a>, 
+which can show a progress bar or spinner, and <a href="https://github.com/phil-brown/droidMail">droidMail</a>, 
+which allows email to be configured and sent without using <code>Intent</code>. A full listing can be found on the
+<a href="https://github.com/phil-brown/droidQuery/wiki/Available-extensions">wiki</a>. If you have created a new <em>droidQuery</em>
+extension, please let me know, and I can add a link on the wiki.</p>
+
+<p><em>droidQuery</em> is intended to be used by all Android developers, as it greatly simplifies the procedures 
+for performing many common tasks. <em>droidQuery</em> can also be used to help web developers that are familiar
+with <em>jQuery</em> to get into Android development.</p>
+
+<h3>
+<a name="how-to-include-droidquery-in-your-project" class="anchor" href="#how-to-include-droidquery-in-your-project"><span class="octicon octicon-link"></span></a>How to Include droidQuery in your Project</h3>
+
+<p>The simplest way to include <em>droidQuery</em> in your project is to copy <a href="https://github.com/phil-brown/droidQuery/blob/master/droidQuery/bin/droidquery.jar">droidquery.jar</a>
+into your project's <code>libs</code> directory. If the <code>libs</code> folder does not exist, create it (this will be
+automatically included in your build path).</p>
+
+<h3>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h3>
+
+<p>Copyright 2013 Phil Brown</p>
+
+<p><em>droidQuery</em> is licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+
+<p><a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></p>
+
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+
+<h3>
+<a name="how-to-use" class="anchor" href="#how-to-use"><span class="octicon octicon-link"></span></a>How to Use</h3>
+
+<blockquote>
+<p>Note: droidQuery is a work in progress. If you find any bugs or would like functionality that is missing, please create a new issue (<a href="https://github.com/phil-brown/droidQuery/issues">https://github.com/phil-brown/droidQuery/issues</a>).</p>
+</blockquote>
+
+<p>Below are some of the most common tasks that <em>droidQuery</em> can be used for. A full list, as well as 
+examples, is currently under construction in the <a href="https://github.com/phil-brown/droidQuery/wiki/API-Documentation">wiki</a>.
+A sample application can also be found in the <code>droidQueryTest</code> directory. The relevant code can be found
+in <a href="https://github.com/phil-brown/droidQuery/blob/master/droidQueryTest/src/self/philbrown/droidQuery/Example/ExampleActivity.java">ExampleActivity.java</a>.
+You may also browse the <em>javadocs</em> <a href="https://github.com/phil-brown/droidQuery/tree/gh-pages/droidQuery/doc/index.html">here</a>.
+Finally, most of the <a href="http://api.jquery.com">jQuery API Documentation</a> is sufficient to explain the <em>droidQuery</em> API.</p>
+
+<p>To <strong>instantiate</strong> a new <em>droidQuery</em>, you need to pass in a <code>Context</code>, a <code>View</code>, or set of <code>View</code>s. The
+simplest way to create the instance is using the <code>with</code> static methods:</p>
+
+<pre><code>$.with(Context);
+$.with(View);
+$.with(List&lt;View&gt;);
+$.with(View[]);
+</code></pre>
+
+<p>If <code>Context</code> is passed, <em>droidQuery</em> will attempt to manipulate the root view. For example, if <code>Context</code>
+is an <code>Activity</code>, the content view will be selected. There is also a way to select a <code>View</code> using it's id:</p>
+
+<pre><code>$.with(Context).id(Integer);
+</code></pre>
+
+<p>or, for short:</p>
+
+<pre><code>$.with(Context, Integer);
+</code></pre>
+
+<p>Once you have the <em>droidQuery</em> instance, you can either save it as a variable, or chain calls to manipulate
+the selected <code>View</code> or <code>View</code>s.</p>
+
+<p><strong>Ajax</strong></p>
+
+<p>To perform an asynchronous network task, you can use <em>ajax</em>. The most straight-forward way to create and
+start an ajax task is with the <code>$.ajax(AjaxOptions)</code> method. For example:</p>
+
+<pre><code>ajax(new AjaxOptions().url("http://www.example.com")
+                      .type("GET")
+                      .dataType("text")
+                      .context(this)
+                      .success(new Function() {
+                          @Override
+                          public void invoke($ droidQuery, Object... params) {
+                              droidQuery.alert((String) params[0]);
+                          }
+                      }).error(new Function() {
+                          @Override
+                          public void invoke($ droidQuery, Object... params) {
+                              int statusCode = (Integer) params[1];
+                              String error = (String) params[2];
+                              Log.e("Ajax", statusCode + " " + error);
+                          }
+                      }));
+</code></pre>
+
+<p><strong>Attributes</strong></p>
+
+<p><em>droidQuery</em> can be used to get or change the attributes of its selected <code>View</code>s. The most common
+methods include <code>attr()</code> to get an attribute, <code>attr(String, Object)</code> to set an attribute, <code>val()</code> to
+get the value of a UI element (such as <code>CharSequence</code> for <code>TextView</code>s, <code>Drawable</code>s for <code>ImageView</code>s, etc),
+and <code>val(Object)</code> to set the value.</p>
+
+<p><strong>Callbacks</strong></p>
+
+<p>The <em>Callbacks</em> Object provides a simple way to manage and fire sets of callbacks. To get an instance
+of this Object, use <code>$.Callbacks(this)</code>.</p>
+
+<p><strong>Effects</strong></p>
+
+<p><em>droidQuery</em> can be used to animate the selected <code>View</code>s. The simplest way to perform a custom animation
+is by using the <code>animate(String, long, Easing, Function)</code> method. For example:</p>
+
+<pre><code>$.with(myView).children().animate("{left: 100px, top: 100, width: 50%, height: 50% }", 400, Easing.LINEAR, new Function() {
+    @Override
+    public void invoke($ droidQuery, Object... params)
+    {
+        droidQuery.toast("animation complete", Toast.LENGTH_SHORT);
+    }
+});
+</code></pre>
+
+<p>It can also be used to perform pre-configured animations, such as fades (using <code>fadeIn</code>, <code>fadeOut</code>, 
+<code>fadeTo</code>, and <code>fadeToggle</code>) and slides (<code>slideUp</code>, <code>slideDown</code>, <code>slideLeft</code>, and <code>slideRight</code>).</p>
+
+<p><strong>Events</strong></p>
+
+<p><em>droidQuery</em> can be used to register events (such user input or view changes) on the selected UI elements.
+This can be done using the following methods: <code>bind</code>, <code>on</code>, <code>one</code>, <code>change</code>, <code>click</code>, <code>longclick</code>, <code>swipe</code>,
+<code>swipeUp</code>, <code>swipeLeft</code>, <code>swipeDown</code>, <code>swipeRight</code>, <code>focus</code>, <code>focusOut</code>, <code>keyDown</code>, <code>keyUp</code>, <code>keyPress</code>,
+<code>select</code>, and <code>unbind</code>. For example:</p>
+
+<pre><code>//Register a click event
+$.with(this, R.id.btn_refresh).click(new Function() {
+    @Override
+    public void invoke($ droidQuery, Object... params) {
+        droidQuery.alert("refresh");
+        refresh();
+    }
+});
+
+//or use the "on" method to register a click event.
+$.with(this, R.id.btn_refresh).on("click", new Function() {
+    @Override
+    public void invoke($ droidQuery, Object... params) {
+        droidQuery.toast("Refresh", Toast.LENGTH_LONG);
+        refresh();
+    }
+});
+</code></pre>
+
+<p><strong>Selectors</strong></p>
+
+<p>The real magic behind <em>droidQuery</em> is its ability to manipulate a set of UI elements at one instance.
+a <code>View</code> or a set of <code>View</code>s can be passed to a <em>droidQuery</em> instance using any of the <em>with</em> methods,
+or a new instance of <em>droidQuery</em> containing a set of *View*s can be created using any of the selector
+methods, including <code>view</code>, <code>child</code>, <code>parent</code>, <code>children</code>, <code>siblings</code>, <code>slice</code>, <code>selectAll</code>, <code>selectByType</code>,
+<code>selectChildren</code>, <code>selectEmpties</code>, <code>selectFocused</code>, <code>selectHidden</code>, <code>selectVisible</code>, <code>id</code>, <code>selectImages</code>,
+<code>selectOnlyChilds</code>, and <code>selectParents</code>.</p>
+
+<p><strong>Miscellaneous</strong></p>
+
+<p><em>droidQuery</em> also comes with several methods that simplify a lot of common tasks. including:</p>
+
+<ul>
+<li>
+<strong>each(Function)</strong> - invokes the given function for each selected View</li>
+<li>
+<strong>map(String)/map(JSONObject)</strong> - converts a JSON String or a JSONObject to a Map Object</li>
+<li>
+<strong>map(Entry...)</strong> - quickly make a Map Object</li>
+<li>
+<strong>entry(String, Object)</strong> - quickly make a Map Entry Object</li>
+<li>
+<strong>alert</strong> - show an alert dialog</li>
+<li>
+<strong>toast</strong> - show a <code>Toast</code> message</li>
+<li>
+<strong>write</strong> - write text to a file</li>
+<li>
+<strong>parseJSON</strong> - parses a JSON string and returns a JSONObject</li>
+<li>
+<strong>parseXML</strong> - parses an XML string and returns a Document Object</li>
+</ul><p><strong>A note about Scripts</strong></p>
+
+<p>In <em>jQuery</em>, there is an <code>Ajax</code> type called <code>Script</code>, which can be used to download a <code>Javascript</code> file.
+This type also exists in <em>droidQuery</em>, but instead of <code>Javascript</code>, it expects a <code>Bourne</code> script, which
+is runnable on the Android command line. Common usage for such a feature include running an existing script,
+without the need to port to <code>Java</code>, or to run <code>Android Debug Bridge</code> (adb) commands. For example, say the
+<em>POST</em> request to <code>http://www.example.com/settings</code> returns a <code>bourne</code> script as a response to issue a 
+command based on the current application settings. The command, for example, could broadcast an <code>Intent</code>
+to open an app:</p>
+
+<pre><code>am broadcast -a android.intent.action.CAMERA_BUTTON
+</code></pre>
+
+<p>The request would likely look like this:</p>
+
+<pre><code>$.ajax("{url: 'http://www.example.com/settings', type: 'post', dataType: 'script', data: '{id: 4, setting: 1}' }");
+</code></pre>
+
+<p>and as long as the request was successful, the native camera app would open once the response came back.</p>
+
+<p>If the script does not issue an <em>adb</em> command, but instead calculates some data, the response would include the script
+output.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">droidQuery maintained by <a href="https://github.com/phil-brown">phil-brown</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-42406660-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
