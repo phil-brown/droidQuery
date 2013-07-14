@@ -55,7 +55,7 @@ Below are some of the most common tasks that *droidQuery* can be used for. A ful
 examples, is currently under construction in the [wiki](https://github.com/phil-brown/droidQuery/wiki/API-Documentation).
 A sample application can also be found in the `droidQueryTest` directory. The relevant code can be found
 in [ExampleActivity.java](https://github.com/phil-brown/droidQuery/blob/master/droidQueryTest/src/self/philbrown/droidQuery/Example/ExampleActivity.java).
-You may also browse the *javadocs* [here](https://github.com/phil-brown/droidQuery/tree/gh-pages/droidQuery/doc/index.html).
+You may also browse the *javadocs* [here](http://phil-brown.github.io/droidQuery/doc/).
 Finally, most of the [jQuery API Documentation](http://api.jquery.com) is sufficient to explain the *droidQuery* API.
 
 To **instantiate** a new *droidQuery*, you need to pass in a `Context`, a `View`, or set of `View`s. The
