@@ -200,7 +200,7 @@ output.
 
 **Special Thanks**
 
-This project uses (AsyncTaskEx)[https://github.com/commonsguy/cwac-wakeful] to allow an umlimited number
+This project uses [AsyncTaskEx](https://github.com/commonsguy/cwac-wakeful) to allow an unlimited number
 of simultaneous network tasks. This project also would not exist if it were not for the excellent *jQuery*
 library, and its excellent documentation.
 
