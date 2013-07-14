@@ -25,7 +25,7 @@ extension, please let me know, and I can add a link on the wiki.
 for performing many common tasks. *droidQuery* can also be used to help web developers that are familiar
 with *jQuery* to get into Android development.
 
-### How to Include in Project
+### How to Include droidQuery in your Project
 
 The simplest way to include *droidQuery* in your project is to copy [droidquery.jar](https://github.com/phil-brown/droidQuery/blob/master/droidQuery/bin/droidquery.jar)
 into your project's `libs` directory. If the `libs` folder does not exist, create it (this will be
@@ -55,6 +55,7 @@ Below are some of the most common tasks that *droidQuery* can be used for. A ful
 examples, is currently under construction in the [wiki](https://github.com/phil-brown/droidQuery/wiki/API-Documentation).
 A sample application can also be found in the `droidQueryTest` directory. The relevant code can be found
 in [ExampleActivity.java](https://github.com/phil-brown/droidQuery/blob/master/droidQueryTest/src/self/philbrown/droidQuery/Example/ExampleActivity.java).
+You may also browse the *javadocs* [here](https://github.com/phil-brown/droidQuery/tree/gh-pages/droidQuery/doc/index.html).
 Finally, most of the [jQuery API Documentation](http://api.jquery.com) is sufficient to explain the *droidQuery* API.
 
 To **instantiate** a new *droidQuery*, you need to pass in a `Context`, a `View`, or set of `View`s. The
