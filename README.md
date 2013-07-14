@@ -198,4 +198,10 @@ and as long as the request was successful, the native camera app would open once
 If the script does not issue an *adb* command, but instead calculates some data, the response would include the script
 output.
 
+**Special Thanks**
+
+This project uses (AsyncTaskEx)[https://github.com/commonsguy/cwac-wakeful] to allow an umlimited number
+of simultaneous network tasks. This project also would not exist if it were not for the excellent *jQuery*
+library, and its excellent documentation.
+
     
