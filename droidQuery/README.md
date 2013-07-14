@@ -21,8 +21,6 @@ which allows email to be configured and sent without using `Intent`. A full list
 [wiki](https://github.com/phil-brown/droidQuery/wiki/Available-extensions). If you have created a new *droidQuery*
 extension, please let me know, and I can add a link on the wiki.
 
-### Target Audience
-
 *droidQuery* is intended to be used by all Android developers, as it greatly simplifies the procedures 
 for performing many common tasks. *droidQuery* can also be used to help web developers that are familiar
 with *jQuery* to get into Android development.
@@ -132,16 +130,71 @@ It can also be used to perform pre-configured animations, such as fades (using `
 
 **Events**
 
-Documentation coming soon
+*droidQuery* can be used to register events (such user input or view changes) on the selected UI elements.
+This can be done using the following methods: `bind`, `on`, `one`, `change`, `click`, `longclick`, `swipe`,
+`swipeUp`, `swipeLeft`, `swipeDown`, `swipeRight`, `focus`, `focusOut`, `keyDown`, `keyUp`, `keyPress`,
+`select`, and `unbind`. For example:
 
-**Miscellaneous**
-
-Documentation coming soon
+    //Register a click event
+    $.with(this, R.id.btn_refresh).click(new Function() {
+		@Override
+		public void invoke($ droidQuery, Object... params) {
+			droidQuery.alert("refresh");
+			refresh();
+		}
+    });
+    
+    //or use the "on" method to register a click event.
+    $.with(this, R.id.btn_refresh).on("click", new Function() {
+    	@Override
+		public void invoke($ droidQuery, Object... params) {
+    		droidQuery.toast("Refresh", Toast.LENGTH_LONG);
+    		refresh();
+		}
+    });
 
 **Selectors**
 
-Documentation coming soon
+The real magic behind *droidQuery* is its ability to manipulate a set of UI elements at one instance.
+a `View` or a set of `View`s can be passed to a *droidQuery* instance using any of the *with* methods,
+or a new instance of *droidQuery* containing a set of *View*s can be created using any of the selector
+methods, including `view`, `child`, `parent`, `children`, `siblings`, `slice`, `selectAll`, `selectByType`,
+`selectChildren`, `selectEmpties`, `selectFocused`, `selectHidden`, `selectVisible`, `id`, `selectImages`,
+`selectOnlyChilds`, and `selectParents`.
 
-**Other**
+**Miscellaneous**
 
-Documentation coming soon
+*droidQuery* also comes with several methods that simplify a lot of common tasks. including:
+
+* __each(Function)__ - invokes the given function for each selected View
+* __map(String)/map(JSONObject)__ - converts a JSON String or a JSONObject to a Map Object
+* __map(Entry...)__ - quickly make a Map Object
+* __entry(String, Object)__ - quickly make a Map Entry Object
+* __alert__ - show an alert dialog
+* __toast__ - show a `Toast` message
+* __write__ - write text to a file
+* __parseJSON__ - parses a JSON string and returns a JSONObject
+* __parseXML__ - parses an XML string and returns a Document Object
+
+**A note about Scripts**
+
+In *jQuery*, there is an `Ajax` type called `Script`, which can be used to download a `Javascript` file.
+This type also exists in *droidQuery*, but instead of `Javascript`, it expects a `Bourne` script, which
+is runnable on the Android command line. Common usage for such a feature include running an existing script,
+without the need to port to `Java`, or to run `Android Debug Bridge` (adb) commands. For example, say the
+*POST* request to `http://www.example.com/settings` returns a `bourne` script as a response to issue a 
+command based on the current application settings. The command, for example, could broadcast an `Intent`
+to open an app:
+
+    am broadcast -a android.intent.action.CAMERA_BUTTON
+    
+The request would likely look like this:
+
+    $.ajax("{url: 'http://www.example.com/settings', type: 'post', dataType: 'script', data: '{id: 4, setting: 1}' }");
+    
+and as long as the request was successful, the native camera app would open once the response came back.
+
+If the script does not issue an *adb* command, but instead calculates some data, the response would include the script
+output.
+
+    
