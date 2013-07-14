@@ -1,7 +1,5 @@
 ## droidQuery
 
----------------------
-
 ### Introduction
 
 __droidQuery__ is an Android *port* of [jQuery](https://github.com/jquery/jquery), and is designed to
