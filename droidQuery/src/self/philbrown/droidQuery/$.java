@@ -3494,14 +3494,17 @@ public class $
 	}
 	
 	/**
-	 * Parses a JSON string into a JSONObject
+	 * Parses a JSON string into a JSONObject or JSONArray
 	 * @param json the String to parse
-	 * @return JSONObject if parse succeeds. Otherwise {@code null}.
+	 * @return JSONObject or JSONArray (depending on the given string) if parse succeeds. Otherwise {@code null}.
 	 */
-	public JSONObject parseJSON(String json)
+	public Object parseJSON(String json)
 	{
 		try {
-			return new JSONObject(json);
+			if (json.startsWith("{"))
+        		return new JSONObject(json);
+        	else
+        		return new JSONArray(json);
 		} catch (JSONException e) {
 			return null;
 		}

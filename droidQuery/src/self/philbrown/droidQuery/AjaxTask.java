@@ -606,7 +606,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	 * @param response the response to parse
 	 * @return a JSONObject response
 	 */
-	private JSONObject parseJSON(HttpResponse response) throws ClientProtocolException, IOException
+	private Object parseJSON(HttpResponse response) throws ClientProtocolException, IOException
 	{
 		JSONResponseHandler handler = new JSONResponseHandler();
 		return handler.handleResponse(response);

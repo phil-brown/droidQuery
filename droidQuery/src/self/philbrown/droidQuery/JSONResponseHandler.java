@@ -25,20 +25,21 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.util.Log;
 
 /**
- * Handle an HttpResponse as a JSON Object. 
+ * Handle an HttpResponse as a {@link JSONObject} or {@link JSONArray}. 
  * @author Phil Brown
  */
-public class JSONResponseHandler implements ResponseHandler<JSONObject> 
+public class JSONResponseHandler implements ResponseHandler<Object> 
 {
 	
 	@Override
-	public JSONObject handleResponse(HttpResponse response) throws ClientProtocolException, IOException 
+	public Object handleResponse(HttpResponse response) throws ClientProtocolException, IOException 
 	{
 		StatusLine statusLine = response.getStatusLine();
 		if (statusLine.getStatusCode() >= 300)
@@ -53,7 +54,11 @@ public class JSONResponseHandler implements ResponseHandler<JSONObject>
         
         try 
         {
-        	return new JSONObject(EntityUtils.toString(entity));
+        	String json = EntityUtils.toString(entity);
+        	if (json.startsWith("{"))
+        		return new JSONObject(json);
+        	else
+        		return new JSONArray(json);
         	
 		} 
         catch (ParseException e) 
