@@ -408,11 +408,11 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 						
 					}
 					//handle ajax ifModified option
-					Header[] lastModifiedHeaders = response.getHeaders("Last-Modified");
+					Header[] lastModifiedHeaders = response.getHeaders("last-modified");
 					if (lastModifiedHeaders.length >= 1) {
 						try
 						{
-							Header h = response.getHeaders("Last-Modified")[0];
+							Header h = lastModifiedHeaders[0];
 							SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 							Date lastModified = format.parse(h.getValue());
 							if (options.ifModified() && lastModified != null)
