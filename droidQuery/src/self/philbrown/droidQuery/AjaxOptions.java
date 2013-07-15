@@ -299,8 +299,8 @@ public class AjaxOptions
 	public Function error() { return error; }
 
 	/**
-	 * Set the function to be called if the request fails. Receives original {@code HttpUriRequest}
-	 * request, the integer Status, and the String Error for varargs. 
+	 * Set the function to be called if the request fails. Receives an {@link AjaxTask.AjaxError}
+	 * error, the integer Status, and the String Error for varargs. 
 	 * It will also receive a {@code null} Object for the
 	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
 	 * the case, {@code error} will receive a <em>droidQuery</em> instance with that <em>context</em>.

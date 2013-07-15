@@ -35,6 +35,7 @@ import java.util.TimerTask;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.http.client.methods.HttpUriRequest;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -3589,6 +3590,17 @@ public class $
 		{
 			Log.e("droidQuery", "Could not complete ajax task!", t);
 		}
+	}
+	
+	/**
+	 * Perform an Ajax Task. This is usually done as the result of an Ajax Error
+	 * @param request the request
+	 * @param options the configuration
+	 * @see AjaxTask.AjaxError
+	 */
+	public static void ajax(HttpUriRequest request, AjaxOptions options)
+	{
+		new AjaxTask(request, options).execute();
 	}
 	
 	///////ajax shortcut methods

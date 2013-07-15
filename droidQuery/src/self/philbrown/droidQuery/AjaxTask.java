@@ -106,6 +106,17 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	}
 	
 	/**
+	 * Can be used to restart an Ajax Task
+	 * @param request a request (to retry)
+	 * @param options options for request retry.
+	 */
+	public AjaxTask(HttpUriRequest request, AjaxOptions options)
+	{
+		this(options);
+		this.request = request;
+	}
+	
+	/**
 	 * Constructor
 	 * @param options used to configure this task
 	 */
@@ -183,61 +194,64 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	@Override
 	protected TaskResponse doInBackground(Void... arg0) 
 	{
-		
-		String type = options.type();
-		if (type == null)
-			type = "GET";
-		if (type.equalsIgnoreCase("DELETE"))
+		if (request == null)
 		{
-			request = new HttpDelete(options.url());
-		}
-		else if (type.equalsIgnoreCase("GET"))
-		{
-			request = new HttpGet(options.url());
-		}
-		else if (type.equalsIgnoreCase("HEAD"))
-		{
-			request = new HttpHead(options.url());
-		}
-		else if (type.equalsIgnoreCase("OPTIONS"))
-		{
-			request = new HttpOptions(options.url());
-		}
-		else if (type.equalsIgnoreCase("POST"))
-		{
-			request = new HttpPost(options.url());
-		}
-		else if (type.equalsIgnoreCase("PUT"))
-		{
-			request = new HttpPut(options.url());
-		}
-		else if (type.equalsIgnoreCase("TRACE"))
-		{
-			request = new HttpTrace(options.url());
-		}
-		else if (type.equalsIgnoreCase("CUSTOM"))
-		{
-			try
+			String type = options.type();
+			if (type == null)
+				type = "GET";
+			if (type.equalsIgnoreCase("DELETE"))
 			{
-				request = options.customRequest();
+				request = new HttpDelete(options.url());
 			}
-			catch (Exception e)
+			else if (type.equalsIgnoreCase("GET"))
 			{
-				request = null;
+				request = new HttpGet(options.url());
 			}
-			
-			if (request == null)
+			else if (type.equalsIgnoreCase("HEAD"))
 			{
-				Log.w("droidQuery.ajax", "CUSTOM type set, but AjaxOptions.customRequest is invalid. Defaulting to GET.");
+				request = new HttpHead(options.url());
+			}
+			else if (type.equalsIgnoreCase("OPTIONS"))
+			{
+				request = new HttpOptions(options.url());
+			}
+			else if (type.equalsIgnoreCase("POST"))
+			{
+				request = new HttpPost(options.url());
+			}
+			else if (type.equalsIgnoreCase("PUT"))
+			{
+				request = new HttpPut(options.url());
+			}
+			else if (type.equalsIgnoreCase("TRACE"))
+			{
+				request = new HttpTrace(options.url());
+			}
+			else if (type.equalsIgnoreCase("CUSTOM"))
+			{
+				try
+				{
+					request = options.customRequest();
+				}
+				catch (Exception e)
+				{
+					request = null;
+				}
+				
+				if (request == null)
+				{
+					Log.w("droidQuery.ajax", "CUSTOM type set, but AjaxOptions.customRequest is invalid. Defaulting to GET.");
+					request = new HttpGet();
+				}
+				
+			}
+			else
+			{
+				//default to GET
 				request = new HttpGet();
 			}
-			
 		}
-		else
-		{
-			//default to GET
-			request = new HttpGet();
-		}
+		
 		
 		Map<String, Object> args = new HashMap<String, Object>();
 		args.put("options", options);
@@ -321,10 +335,15 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	        {
 				//an error occurred
 				Error e = new Error();
-				e.obj = request;
+				AjaxError error = new AjaxError();
+				error.request = request;
+				error.options = options;
 				e.status = statusLine.getStatusCode();
 				e.reason = statusLine.getReasonPhrase();
+				error.status = e.status;
+				error.reason = e.reason;
 				e.headers = response.getAllHeaders();
+				e.error = error;
 				return e;
 	        }
 			else
@@ -363,10 +382,15 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					cpe.printStackTrace();
 					success = false;
 					Error e = new Error();
-					e.obj = request;
-					e.status = 0;
-					e.reason = "parsererror";
+					AjaxError error = new AjaxError();
+					error.request = request;
+					error.options = options;
+					e.status = statusLine.getStatusCode();
+					e.reason = statusLine.getReasonPhrase();
+					error.status = e.status;
+					error.reason = e.reason;
 					e.headers = response.getAllHeaders();
+					e.error = error;
 					return e;
 				}
 				catch (Exception ioe)
@@ -374,10 +398,15 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					ioe.printStackTrace();
 					success = false;
 					Error e = new Error();
-					e.obj = request;
-					e.status = 0;
-					e.reason = "parsererror";
+					AjaxError error = new AjaxError();
+					error.request = request;
+					error.options = options;
+					e.status = statusLine.getStatusCode();
+					e.reason = statusLine.getReasonPhrase();
+					error.status = e.status;
+					error.reason = e.reason;
 					e.headers = response.getAllHeaders();
+					e.error = error;
 					return e;
 				}
 				if (success)
@@ -422,10 +451,15 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 									//request response has not been modified. 
 									//Causes an error instead of a success.
 									Error e = new Error();
-									e.obj = request;
-									e.status = 304;
-									e.reason = "Not Modified";
+									AjaxError error = new AjaxError();
+									error.request = request;
+									error.options = options;
+									e.status = statusLine.getStatusCode();
+									e.reason = statusLine.getReasonPhrase();
+									error.status = e.status;
+									error.reason = e.reason;
 									e.headers = response.getAllHeaders();
+									e.error = error;
 									Function func = options.statusCode().get(304);
 									if (func != null)
 									{
@@ -502,9 +536,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				//invoke error with Request, Status, and Error
 				Error e = (Error) response;
 				if (options.context() != null)
-					options.error().invoke($.with(options.context()), e.obj, e.status, e.reason);
+					options.error().invoke($.with(options.context()), e.error, e.status, e.reason);
 				else
-					options.error().invoke(null, e.obj, e.status, e.reason);
+					options.error().invoke(null, e.error, e.status, e.reason);
 			}
 			
 			if (options.global())
@@ -661,8 +695,6 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		public String reason;
 		/** The status ID */
 		public int status;
-		/** The response Object */
-		public Object obj;
 		/** The response Headers */
 		public Header[] headers;
 	}
@@ -672,7 +704,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	 */
 	class Error extends TaskResponse
 	{
-		
+		/** The response Object */
+		public AjaxError error;
 	}
 	
 	/**
@@ -680,6 +713,23 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	 */
 	class Success extends TaskResponse
 	{
-		
+		/** The response Object */
+		public Object obj;
+	}
+	
+	/**
+	 * This is the first object that is returned when an Error occurs for an Ajax Request
+	 * @see AjaxTask#AjaxTask(HttpUriRequest, AjaxOptions)
+	 */
+	public static class AjaxError
+	{
+		/** The original request */
+		public HttpUriRequest request;
+		/** The original options */
+		public AjaxOptions options;
+		/** The error status code */
+		public int status;
+		/** The error string */
+		public String reason;
 	}
 }
