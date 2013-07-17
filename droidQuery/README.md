@@ -81,23 +81,23 @@ the selected `View` or `View`s.
 To perform an asynchronous network task, you can use *ajax*. The most straight-forward way to create and
 start an ajax task is with the `$.ajax(AjaxOptions)` method. For example:
 
-    ajax(new AjaxOptions().url("http://www.example.com")
-                          .type("GET")
-                          .dataType("text")
-                          .context(this)
-                          .success(new Function() {
-                              @Override
-                              public void invoke($ droidQuery, Object... params) {
-                                  droidQuery.alert((String) params[0]);
-                              }
-                          }).error(new Function() {
-                              @Override
-                              public void invoke($ droidQuery, Object... params) {
-                                  int statusCode = (Integer) params[1];
-                                  String error = (String) params[2];
-                                  Log.e("Ajax", statusCode + " " + error);
-                              }
-                          }));
+    $.ajax(new AjaxOptions().url("http://www.example.com")
+                            .type("GET")
+                            .dataType("text")
+                            .context(this)
+                            .success(new Function() {
+                                @Override
+                                public void invoke($ droidQuery, Object... params) {
+                                    droidQuery.alert((String) params[0]);
+                                }
+                            }).error(new Function() {
+                                @Override
+                                public void invoke($ droidQuery, Object... params) {
+                                    int statusCode = (Integer) params[1];
+                                    String error = (String) params[2];
+                                    Log.e("Ajax", statusCode + " " + error);
+                                }
+                            }));
 
 **Attributes**
 
