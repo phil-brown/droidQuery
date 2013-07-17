@@ -57,7 +57,10 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import android.os.FileObserver;
@@ -83,6 +86,7 @@ import android.view.animation.BounceInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.webkit.URLUtil;
 import android.widget.AdapterView;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -2446,16 +2450,16 @@ public class $
 	/////Miscellaneous
 	
 	/**
-	 * Invokes the given function for each view in the current selection. Function receives a single
-	 * parameter - a droidQuery instance containing the single view.
+	 * Invokes the given function for each view in the current selection. Function receives a 
+	 * droidQuery instance containing the single view, and an integer of the current index
 	 * @param function the function to invoke
 	 * @return this
 	 */
 	public $ each(Function function)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < views.size(); i++)
 		{
-			function.invoke($.with(view));
+			function.invoke($.with(views.get(i)), i);
 		}
 		return this;
 	}
@@ -3889,11 +3893,11 @@ public class $
 	/**
 	 * Includes the given text string inside of the selected views. If a view has a setText method, it is used
 	 * otherwise, if possible, a textview is added as a child to display the text.
-	 * @param text resource ID of the text to include
+	 * @param resourceId resource ID of the text to include
 	 */
-	public $ text(int resourceID)
+	public $ text(int resourceId)
 	{
-		return text(context.getResources().getText(resourceID).toString());
+		return text(context.getResources().getText(resourceId));
 	}
 	
 	/**
@@ -3937,6 +3941,235 @@ public class $
 			}
 		}
 		
+		return this;
+	}
+	
+	/**
+	 * Includes the given image inside of the selected views. If a view is an `ImageView`, its image
+	 * is set. Otherwise, the background image of the view is set.
+	 * @param resourceId the resource ID of the drawable to display
+	 * @return this
+	 */
+	public $ image(int resourceId)
+	{
+		for (View v : views)
+		{
+			if (v instanceof ImageView)
+			{
+				((ImageView) v).setImageResource(resourceId);
+			}
+			else
+			{
+				v.setBackgroundResource(resourceId);
+			}
+		}
+		return this;
+	}
+	
+	/**
+	 * Includes the given image inside of the selected views. If a view is an `ImageView`, its image
+	 * is set. Otherwise, the background image of the view is set.
+	 * @param image the bitmap image to include
+	 * @return this
+	 */
+	public $ image(Bitmap image)
+	{
+		for (View v : views)
+		{
+			if (v instanceof ImageView)
+			{
+				((ImageView) v).setImageBitmap(image);
+			}
+			else
+			{
+				v.setBackgroundDrawable(new BitmapDrawable(image));
+			}
+		}
+		return this;
+	}
+	
+	/**
+	 * Includes the given image inside of the selected views. If a view is an `ImageView`, its image
+	 * is set. Otherwise, the background image of the view is set.
+	 * @param image the drawable image to include
+	 * @return this
+	 */
+	public $ image(Drawable image)
+	{
+		for (View v : views)
+		{
+			if (v instanceof ImageView)
+			{
+				((ImageView) v).setImageDrawable(image);
+			}
+			else
+			{
+				v.setBackgroundDrawable(image);
+			}
+		}
+		return this;
+	}
+	
+	/**
+	 * For `ImageView`s, this will set the image to the given asset or url. Otherwise, it will set the
+	 * background image for the selected views.
+	 * @param source asset path or URL to image
+	 * @return this
+	 */
+	public $ image(String source)
+	{
+		return image(source, -1, -1, null);
+	}
+	
+	/**
+	 * For `ImageView`s, this will set the image to the given asset or url. Otherwise, it will set the
+	 * background image for the selected views.
+	 * @param source asset path or URL to image
+	 * @param width specifies the output bitmap width
+	 * @param height specifies the output bitmap height
+	 * @param error if the given source is a file or asset, this receives a droidQuery wrapping the 
+	 * current context and the {@code Throwable} error. Otherwise, this will receive an
+	 * Ajax error.
+	 * @return this
+	 * @see AjaxOptions#error(Function)
+	 */
+	public $ image(String source, int width, int height, Function error)
+	{
+		if (source.startsWith("file://"))
+		{
+			try {
+				BitmapFactory.Options opt = new BitmapFactory.Options();
+				opt.inPreferredConfig = Bitmap.Config.ARGB_8888;
+				if (width >= 0)
+					opt.outWidth = width;
+				if (height >= 0)
+					opt.outHeight = height;
+				Bitmap bitmap = BitmapFactory.decodeFile(source.substring(6), opt);
+				for (View v : views)
+				{
+					if (v instanceof ImageView)
+					{
+						((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+					}
+					else
+					{
+						v.setBackgroundDrawable(new BitmapDrawable(Bitmap.createBitmap(bitmap)));
+					}
+				}
+			}
+			catch(Throwable t) {
+				if (error != null) {
+					error.invoke($.with(context), t);
+				}
+			}
+		}
+		else if (URLUtil.isValidUrl(source))
+		{
+			AjaxOptions options = new AjaxOptions(source).type("GET")
+					                                     .dataType("image")
+					                                     .context(context)
+					                                     .success(new Function() {
+				@Override
+				public void invoke($ droidQuery, Object... params) {
+					Bitmap bitmap = (Bitmap) params[0];
+					for (View v : views)
+					{
+						if (v instanceof ImageView)
+						{
+							((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+						}
+						else
+						{
+							v.setBackgroundDrawable(new BitmapDrawable(Bitmap.createBitmap(bitmap)));
+						}
+					}
+				}
+			});
+			
+			if (error != null) {
+				options.error(error);
+			}
+			if (width >= 0)
+			{
+				options.imageWidth(width);
+			}
+			if (height >= 0)
+			{
+				options.imageHeight(height);
+			}
+			$.ajax(options);
+		}
+		else
+		{
+			try {
+				BitmapFactory.Options opt = new BitmapFactory.Options();
+				opt.inSampleSize = 1;
+				opt.inPurgeable = true;
+				opt.inInputShareable = false;
+				if (width >= 0)
+					opt.outWidth = width;
+				if (height >= 0)
+					opt.outHeight = height;
+				Bitmap bitmap = BitmapFactory.decodeStream(context.getAssets().open(source), new Rect(0,0,0,0), opt);
+				for (View v : views)
+				{
+					if (v instanceof ImageView)
+					{
+						((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+					}
+					else
+					{
+						v.setBackgroundDrawable(new BitmapDrawable(Bitmap.createBitmap(bitmap)));
+					}
+				}
+				
+			}
+			catch(Throwable t) {
+				if (error != null) {
+					error.invoke($.with(context), t);
+				}
+			}
+			
+			
+		}
+		return this;
+	}
+	
+	/**
+	 * Iterates through the selected views and sets the images to the given images (in order)
+	 * @param sources the file paths or URLs to set
+	 * @return this
+	 */
+	public $ image(final List<String> sources)
+	{
+		this.each(new Function() {
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				droidQuery.image(sources.get((Integer) params[0]));
+			}
+		});
+		return this;
+	}
+	
+	/**
+	 * Iterates through the selected views and sets the images to the given images (in order)
+	 * @param sources the file paths or URLs to set
+	 * @param width the output width of the image
+	 * @param height the output height of the image
+	 * @param error if the given source is a file or asset, this receives a droidQuery wrapping the 
+	 * current context and the {@code Throwable} error. Otherwise, this will receive an
+	 * Ajax error.
+	 * @return this
+	 * @see AjaxOptions#error(Function)
+	 */
+	public $ image(final List<String> sources, final int width, final int height, final Function error)
+	{
+		this.each(new Function() {
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				droidQuery.image(sources.get((Integer) params[0]), width, height, error);
+			}
+		});
 		return this;
 	}
 	
