@@ -124,23 +124,23 @@ the selected <code>View</code> or <code>View</code>s.</p>
 <p>To perform an asynchronous network task, you can use <em>ajax</em>. The most straight-forward way to create and
 start an ajax task is with the <code>$.ajax(AjaxOptions)</code> method. For example:</p>
 
-<pre><code>ajax(new AjaxOptions().url("http://www.example.com")
-                      .type("GET")
-                      .dataType("text")
-                      .context(this)
-                      .success(new Function() {
-                          @Override
-                          public void invoke($ droidQuery, Object... params) {
-                              droidQuery.alert((String) params[0]);
-                          }
-                      }).error(new Function() {
-                          @Override
-                          public void invoke($ droidQuery, Object... params) {
-                              int statusCode = (Integer) params[1];
-                              String error = (String) params[2];
-                              Log.e("Ajax", statusCode + " " + error);
-                          }
-                      }));
+<pre><code>$.ajax(new AjaxOptions().url("http://www.example.com")
+                        .type("GET")
+                        .dataType("text")
+                        .context(this)
+                        .success(new Function() {
+                            @Override
+                            public void invoke($ droidQuery, Object... params) {
+                                droidQuery.alert((String) params[0]);
+                            }
+                        }).error(new Function() {
+                            @Override
+                            public void invoke($ droidQuery, Object... params) {
+                                int statusCode = (Integer) params[1];
+                                String error = (String) params[2];
+                                Log.e("Ajax", statusCode + " " + error);
+                            }
+                        }));
 </code></pre>
 
 <p><strong>Attributes</strong></p>
