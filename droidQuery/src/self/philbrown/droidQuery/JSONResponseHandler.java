@@ -52,13 +52,18 @@ public class JSONResponseHandler implements ResponseHandler<Object>
         if (entity == null) 
         	return null;
         
+        String json = null;
         try 
         {
-        	String json = EntityUtils.toString(entity);
+        	json = EntityUtils.toString(entity);
         	if (json.startsWith("{"))
+        	{
         		return new JSONObject(json);
+        	}
         	else
+        	{
         		return new JSONArray(json);
+        	}
         	
 		} 
         catch (ParseException e) 
@@ -67,7 +72,8 @@ public class JSONResponseHandler implements ResponseHandler<Object>
 		} 
         catch (JSONException e) 
         {
-        	throw new IOException();
+        	throw new IOException("Received malformed JSON", e);
+        	
 		}
 	}
 

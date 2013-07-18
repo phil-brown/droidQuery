@@ -90,6 +90,7 @@ import android.webkit.URLUtil;
 import android.widget.AdapterView;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.ImageView.ScaleType;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -3380,18 +3381,20 @@ public class $
 	public static Object[] makeArray(JSONArray array)
 	{
 		Object[] obj = new Object[array.length()];
-		try
+		for (int i = 0; i < array.length(); i++)
 		{
-			for (int i = 0; i < array.length(); i++)
+			try
 			{
 				obj[i] = array.get(i);
 			}
-			return obj;
+			catch (Throwable t)
+			{
+				obj[i] = JSONObject.NULL;
+			}
+			
 		}
-		catch (Throwable t)
-		{
-			return null;
-		}
+		return obj;
+		
 		
 	}
 	
@@ -3978,7 +3981,7 @@ public class $
 		{
 			if (v instanceof ImageView)
 			{
-				((ImageView) v).setImageBitmap(image);
+				((ImageView) v).setImageBitmap(Bitmap.createBitmap(image));
 			}
 			else
 			{
@@ -4013,7 +4016,7 @@ public class $
 	/**
 	 * For `ImageView`s, this will set the image to the given asset or url. Otherwise, it will set the
 	 * background image for the selected views.
-	 * @param source asset path or URL to image
+	 * @param source asset path, file path (starting with "file://") or URL to image
 	 * @return this
 	 */
 	public $ image(String source)
@@ -4024,7 +4027,7 @@ public class $
 	/**
 	 * For `ImageView`s, this will set the image to the given asset or url. Otherwise, it will set the
 	 * background image for the selected views.
-	 * @param source asset path or URL to image
+	 * @param source asset path, file path (starting with "file://") or URL to image
 	 * @param width specifies the output bitmap width
 	 * @param height specifies the output bitmap height
 	 * @param error if the given source is a file or asset, this receives a droidQuery wrapping the 
@@ -4068,6 +4071,7 @@ public class $
 			AjaxOptions options = new AjaxOptions(source).type("GET")
 					                                     .dataType("image")
 					                                     .context(context)
+					                                     .global(false)
 					                                     .success(new Function() {
 				@Override
 				public void invoke($ droidQuery, Object... params) {
@@ -4137,7 +4141,7 @@ public class $
 	
 	/**
 	 * Iterates through the selected views and sets the images to the given images (in order)
-	 * @param sources the file paths or URLs to set
+	 * @param source asset path, file path (starting with "file://") or URL to image
 	 * @return this
 	 */
 	public $ image(final List<String> sources)
@@ -4168,6 +4172,265 @@ public class $
 			@Override
 			public void invoke($ droidQuery, Object... params) {
 				droidQuery.image(sources.get((Integer) params[0]), width, height, error);
+			}
+		});
+		return this;
+	}
+	
+	/**
+	 * Adds an Image over each selected View as a mask. 
+	 * In most cases, this mask can be retrieved by querying siblings. For example:
+	 * <pre>
+	 * ImageView mask = (ImageView) $.with(myView).parent().selectChildren().selectImages().view(0);
+	 * </pre>
+	 * @param resourceId the resource ID of the mask drawable
+	 * @return this
+	 */
+	public $ mask(int resourceId)
+	{
+		for (View v : views)
+		{
+			ImageView image = new ImageView(context);
+			image.setImageResource(resourceId);
+			image.setScaleType(ScaleType.FIT_XY);
+			ViewParent parent = v.getParent();
+			if (parent != null && parent instanceof ViewGroup)
+			{
+				image.setLayoutParams(v.getLayoutParams());
+				((ViewGroup) parent).addView(image);
+			}
+			else if (v instanceof ViewGroup)
+			{
+				image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+				((ViewGroup) v).addView(image);
+			}
+		}
+		return this;
+	}
+	
+	/**
+	 * Adds an Image over each selected View as a mask.
+	 * In most cases, this mask can be retrieved by querying siblings. For example:
+	 * <pre>
+	 * ImageView mask = (ImageView) $.with(myView).parent().selectChildren().selectImages().view(0);
+	 * </pre>
+	 * @param mask the bitmap to draw
+	 * @return this
+	 */
+	public $ mask(Bitmap mask)
+	{
+		for (View v : views)
+		{
+			ImageView image = new ImageView(context);
+			image.setImageBitmap(mask);
+			image.setScaleType(ScaleType.FIT_XY);
+			ViewParent parent = v.getParent();
+			if (parent != null && parent instanceof ViewGroup)
+			{
+				image.setLayoutParams(v.getLayoutParams());
+				((ViewGroup) parent).addView(image);
+			}
+			else if (v instanceof ViewGroup)
+			{
+				image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+				((ViewGroup) v).addView(image);
+			}
+		}
+		return this;
+	}
+	
+	/**
+	 * Adds an Image over each selected View as a mask.
+	 * In most cases, this mask can be retrieved by querying siblings. For example:
+	 * <pre>
+	 * ImageView mask = (ImageView) $.with(myView).parent().selectChildren().selectImages().view(0);
+	 * </pre>
+	 * @param mask the drawable to draw
+	 * @return this
+	 */
+	public $ mask(Drawable mask)
+	{
+		for (View v : views)
+		{
+			ImageView image = new ImageView(context);
+			image.setImageDrawable(mask);
+			image.setScaleType(ScaleType.FIT_XY);
+			ViewParent parent = v.getParent();
+			if (parent != null && parent instanceof ViewGroup)
+			{
+				image.setLayoutParams(v.getLayoutParams());
+				((ViewGroup) parent).addView(image);
+			}
+			else if (v instanceof ViewGroup)
+			{
+				image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+				((ViewGroup) v).addView(image);
+			}
+		}
+		return this;
+	}
+	
+	/**
+	 * Adds an Image over each selected View as a mask.
+	 * In most cases, this mask can be retrieved by querying siblings. For example:
+	 * <pre>
+	 * ImageView mask = (ImageView) $.with(myView).parent().selectChildren().selectImages().view(0);
+	 * </pre>
+	 * @param source asset path, file path (starting with "file://") or URL to image
+	 * @return this
+	 */
+	public $ mask(String source)
+	{
+		return mask(source, -1, -1, null);
+	}
+	
+	/**
+	 * Adds an Image over each selected View as a mask.
+	 * In most cases, this mask can be retrieved by querying siblings. For example:
+	 * <pre>
+	 * ImageView mask = (ImageView) $.with(myView).parent().selectChildren().selectImages().view(0);
+	 * </pre>
+	 * @param source asset path, file path (starting with "file://") or URL to image
+	 * @param width specifies the output bitmap width
+	 * @param height specifies the output bitmap height
+	 * @param error if the given source is a file or asset, this receives a droidQuery wrapping the 
+	 * current context and the {@code Throwable} error. Otherwise, this will receive an
+	 * Ajax error.
+	 * @return this
+	 * @see AjaxOptions#error(Function)
+	 */
+	public $ mask(String source, int width, int height, Function error)
+	{
+		if (source.startsWith("file://"))
+		{
+			try {
+				BitmapFactory.Options opt = new BitmapFactory.Options();
+				opt.inPreferredConfig = Bitmap.Config.ARGB_8888;
+				if (width >= 0)
+					opt.outWidth = width;
+				if (height >= 0)
+					opt.outHeight = height;
+				Bitmap bitmap = BitmapFactory.decodeFile(source.substring(6), opt);
+				for (View v : views)
+				{
+					ImageView image = new ImageView(context);
+					image.setImageBitmap(Bitmap.createBitmap(bitmap));
+					image.setScaleType(ScaleType.FIT_XY);
+					ViewParent parent = v.getParent();
+					if (parent != null && parent instanceof ViewGroup)
+					{
+						image.setLayoutParams(v.getLayoutParams());
+						((ViewGroup) parent).addView(image);
+					}
+					else if (v instanceof ViewGroup)
+					{
+						image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+						((ViewGroup) v).addView(image);
+					}
+				}
+			}
+			catch(Throwable t) {
+				if (error != null) {
+					error.invoke($.with(context), t);
+				}
+			}
+		}
+		else if (URLUtil.isValidUrl(source))
+		{
+			AjaxOptions options = new AjaxOptions(source).type("GET")
+					                                     .dataType("image")
+					                                     .context(context)
+					                                     .global(false)
+					                                     .success(new Function() {
+				@Override
+				public void invoke($ droidQuery, Object... params) {
+					Bitmap bitmap = (Bitmap) params[0];
+					for (View v : views)
+					{
+						ImageView image = new ImageView(context);
+						image.setImageBitmap(Bitmap.createBitmap(bitmap));
+						image.setScaleType(ScaleType.FIT_XY);
+						ViewParent parent = v.getParent();
+						if (parent != null && parent instanceof ViewGroup)
+						{
+							image.setLayoutParams(v.getLayoutParams());
+							((ViewGroup) parent).addView(image);
+						}
+						else if (v instanceof ViewGroup)
+						{
+							image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+							((ViewGroup) v).addView(image);
+						}
+					}
+				}
+			});
+			
+			if (error != null) {
+				options.error(error);
+			}
+			if (width >= 0)
+			{
+				options.imageWidth(width);
+			}
+			if (height >= 0)
+			{
+				options.imageHeight(height);
+			}
+			$.ajax(options);
+		}
+		else
+		{
+			try {
+				BitmapFactory.Options opt = new BitmapFactory.Options();
+				opt.inSampleSize = 1;
+				opt.inPurgeable = true;
+				opt.inInputShareable = false;
+				if (width >= 0)
+					opt.outWidth = width;
+				if (height >= 0)
+					opt.outHeight = height;
+				Bitmap bitmap = BitmapFactory.decodeStream(context.getAssets().open(source), new Rect(0,0,0,0), opt);
+				for (View v : views)
+				{
+					ImageView image = new ImageView(context);
+					image.setImageBitmap(Bitmap.createBitmap(bitmap));
+					image.setScaleType(ScaleType.FIT_XY);
+					ViewParent parent = v.getParent();
+					if (parent != null && parent instanceof ViewGroup)
+					{
+						image.setLayoutParams(v.getLayoutParams());
+						((ViewGroup) parent).addView(image);
+					}
+					else if (v instanceof ViewGroup)
+					{
+						image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+						((ViewGroup) v).addView(image);
+					}
+				}
+				
+			}
+			catch(Throwable t) {
+				if (error != null) {
+					error.invoke($.with(context), t);
+				}
+			}
+			
+			
+		}
+		return this;
+	}
+	
+	/**
+	 * Iterates through the selected views and sets the masks to the given images (in order)
+	 * @param source asset path, file path (starting with "file://") or URL to image
+	 * @return this
+	 */
+	public $ mask(final List<String> sources)
+	{
+		this.each(new Function() {
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				droidQuery.mask(sources.get((Integer) params[0]));
 			}
 		});
 		return this;
