@@ -217,6 +217,28 @@ public class AjaxOptions
 		this.data = data;
 		return this;
 	}
+	
+	/**
+	 * If {@code true}, some Ajax Debug information will be provided in the logcat
+	 */
+	private boolean debug = false;
+	/**
+	 * Get whether or not Ajax debug output will be pushed to the logcat
+	 * @return {@code true} if the debug information will be printed. Otherwise {@code false}
+	 */
+	public boolean debug() { return debug; }
+	
+	/**
+	 * Sets whether or not Ajax debug output will be pushed to the logcat
+	 * @param debug {@code true} if the debug information will be printed. Otherwise {@code false}. 
+	 * Default is {@code false}.
+	 * @return this
+	 */
+	public AjaxOptions debug(boolean debug)
+	{
+		this.debug = debug;
+		return this;
+	}
 
 	/**
 	 * A function to be used to handle the raw response data. This is a 

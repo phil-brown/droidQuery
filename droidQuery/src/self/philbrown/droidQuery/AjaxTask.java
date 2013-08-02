@@ -379,7 +379,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				}
 				catch (ClientProtocolException cpe)
 				{
-					cpe.printStackTrace();
+					if (options.debug())
+						cpe.printStackTrace();
 					success = false;
 					Error e = new Error();
 					AjaxError error = new AjaxError();
@@ -395,7 +396,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				}
 				catch (Exception ioe)
 				{
-					ioe.printStackTrace();
+					if (options.debug())
+						ioe.printStackTrace();
 					success = false;
 					Error e = new Error();
 					AjaxError error = new AjaxError();
@@ -503,7 +505,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			}
 			
 		} catch (Throwable t) {
-			t.printStackTrace();
+			if (options.debug())
+				t.printStackTrace();
 			return null;
 		}
 	}
