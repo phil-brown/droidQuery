@@ -30,6 +30,7 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
+import android.webkit.URLUtil;
 
 /**
  * Build an Ajax Request
@@ -823,13 +824,21 @@ public class AjaxOptions
 	}
 	
 	/**
-	 * Construct with URL
-	 * @param url
+	 * Construct with JSON string. To support versions 0.1.0-0.1.3, this method can also accept a URL.
+	 * @param json JSON options
+	 * @throws JSONException 
 	 */
-	public AjaxOptions(String url)
+	public AjaxOptions(String json) throws JSONException
 	{
 		this();
-		this.url = url;
+		if (URLUtil.isValidUrl(json))
+		{
+			this.url = json;
+		}
+		else
+		{
+			handleJSONOptions(new JSONObject(json));
+		}
 	}
 	
 	/**
@@ -872,7 +881,16 @@ public class AjaxOptions
 	public AjaxOptions(JSONObject json) throws JSONException
 	{
 		this();
-		
+		handleJSONOptions(json);
+	}
+	
+	/**
+	 * Used privately by constructors to parse JSON options
+	 * @param json
+	 * @throws JSONException
+	 */
+	private void handleJSONOptions(JSONObject json) throws JSONException
+	{
 		@SuppressWarnings("unchecked")
 		Iterator<String> iterator = json.keys();
 		

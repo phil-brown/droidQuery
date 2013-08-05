@@ -3825,7 +3825,7 @@ public class $
 	 */
 	public void load(String url, Object data, final Function complete)
 	{
-		$.ajax(new AjaxOptions(url).data(data).complete(new Function() {
+		$.ajax(new AjaxOptions().url(url).data(data).complete(new Function() {
 
 			@Override
 			public void invoke($ droidQuery, Object... params) {
@@ -4069,11 +4069,12 @@ public class $
 		}
 		else if (URLUtil.isValidUrl(source))
 		{
-			AjaxOptions options = new AjaxOptions(source).type("GET")
-					                                     .dataType("image")
-					                                     .context(context)
-					                                     .global(false)
-					                                     .success(new Function() {
+			AjaxOptions options = new AjaxOptions().url(source)
+					                               .type("GET")
+					                               .dataType("image")
+					                               .context(context)
+					                               .global(false)
+					                               .success(new Function() {
 				@Override
 				public void invoke($ droidQuery, Object... params) {
 					Bitmap bitmap = (Bitmap) params[0];
@@ -4338,11 +4339,12 @@ public class $
 		}
 		else if (URLUtil.isValidUrl(source))
 		{
-			AjaxOptions options = new AjaxOptions(source).type("GET")
-					                                     .dataType("image")
-					                                     .context(context)
-					                                     .global(false)
-					                                     .success(new Function() {
+			AjaxOptions options = new AjaxOptions().url(source)
+					                               .type("GET")
+					                               .dataType("image")
+					                               .context(context)
+					                               .global(false)
+					                               .success(new Function() {
 				@Override
 				public void invoke($ droidQuery, Object... params) {
 					Bitmap bitmap = (Bitmap) params[0];
