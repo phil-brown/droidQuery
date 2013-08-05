@@ -3073,15 +3073,15 @@ public class $
 	 * @param success Function to invoke on a successful file-write. Parameters received will be:
 	 * <ol>
 	 * <li>the String to write
-	 * <li>the path to the file
+	 * <li>the File that was written (to)
 	 * </ol>
 	 * @param error Function to invoke on a file I/O error. Parameters received will be:
 	 * <ol>
 	 * <li>the String to write
-	 * <li>the path to the file
+	 * <li>the String reason
 	 * </ol>
 	 */
-	public void write(final String s, final FileLocation path, String fileName, boolean append, boolean async, final Function success, Function error)
+	public void write(final String s, final FileLocation path, final String fileName, boolean append, boolean async, final Function success, Function error)
 	{
 		boolean hasWritePermissions = false;
 		try {
@@ -3101,7 +3101,7 @@ public class $
 		{
 			if (error != null)
 			{
-				error.invoke(this, s, path, "Invalid Project Package!");
+				error.invoke(this, s, "Invalid Project Package!");
 			}
 			return;
 		}
@@ -3109,7 +3109,7 @@ public class $
 		{
 			if (error != null)
 			{
-				error.invoke(this, s, path, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
+				error.invoke(this, s, "You do not have file write privelages. Add the android.permission.WRITE_EXTERNAL_STORAGE permission to your Android Manifest.");
 			}
 			return;
 		}
@@ -3121,7 +3121,7 @@ public class $
 			if (fileName.contains("\\")) {
 				if (error != null)
 				{
-					error.invoke(this, s, path, "Internal file names cannot include a path separator. Aborting.");
+					error.invoke(this, s, "Internal file names cannot include a path separator. Aborting.");
 				}
 				return;
 			}
@@ -3135,7 +3135,7 @@ public class $
 					public void run()
 					{
 						if (success != null)
-							success.invoke($.this, s, path);
+							success.invoke($.this, s, new File(String.format(Locale.US, "%s/%s", context.getFilesDir().getName(), fileName)));
 					}
 				});
 				fileObservers.add(o);
@@ -3187,12 +3187,13 @@ public class $
 			{
 				fileObservers = new ArrayList<LogFileObserver>();
 			}
+			final File fLogFile = logFile;
 			LogFileObserver o = new LogFileObserver(logFile, new Runnable(){
 				@Override
 				public void run()
 				{
 					if (success != null)
-						success.invoke($.this, s, path);
+						success.invoke($.this, s, fLogFile);
 				}
 			});
 			
