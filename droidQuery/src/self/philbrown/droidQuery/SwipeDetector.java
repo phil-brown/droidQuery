@@ -31,7 +31,7 @@ public class SwipeDetector implements View.OnTouchListener
 	/** Swipe Direction */
 	public static enum Direction
 	{
-		RIGHT, DOWN, UP, LEFT
+		RIGHT, DOWN, UP, LEFT, START, STOP
 	}
 	
 	/**

@@ -470,10 +470,20 @@ public class $
 			}
 
 			@Override
-			public void onStartSwipe(View v) {}
+			public void onStartSwipe(View v) {
+				if (swipe != null)
+				{
+					swipe.invoke($.with(v), SwipeDetector.Direction.START);
+				}
+			}
 
 			@Override
-			public void onStopSwipe(View v) {}
+			public void onStopSwipe(View v) {
+				if (swipe != null)
+				{
+					swipe.invoke($.with(v), SwipeDetector.Direction.STOP);
+				}
+			}
 			
 		});
 		
