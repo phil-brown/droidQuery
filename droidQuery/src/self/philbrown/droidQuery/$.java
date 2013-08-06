@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -990,8 +991,46 @@ public class $
 						anim = ObjectAnimator.ofInt(view, key, (Integer) value);
 					else if (value instanceof Float)
 						anim = ObjectAnimator.ofFloat(view, key, (Float) value);
-					
-					if (options.progress() != null)
+					if (anim == null)
+					{
+						//probably a LayoutParams variable, such as width or height
+						try 
+						{
+							String method = String.format(Locale.US, "set%s", capitalize(key));
+							final Method setter = view.getLayoutParams().getClass().getMethod(method, new Class<?>[]{value.getClass()});
+							if (setter != null)
+							{
+								if (value instanceof Integer)
+									anim = ObjectAnimator.ofInt(view.getLayoutParams(), key, (Integer) value);
+								else if (value instanceof Float)
+									anim = ObjectAnimator.ofFloat(view.getLayoutParams(), key, (Float) value);
+								if (options.progress() != null)
+								{
+									anim.addUpdateListener(new AnimatorUpdateListener(){
+
+										@Override
+										public void onAnimationUpdate(ValueAnimator animation) {
+											ViewGroup.LayoutParams params = view.getLayoutParams();
+											try {
+												setter.invoke(params, animation.getAnimatedValue());
+												view.setLayoutParams(params);
+											} catch (Throwable t) {
+												Log.e("$", "Could not animate value " + key);
+											}
+											options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+										}
+										
+									});
+								}
+							}
+							
+						} 
+						catch (Throwable t)
+						{
+							//can't animate the given property.
+						}
+					}
+					else if (options.progress() != null)
 					{
 						anim.addUpdateListener(new AnimatorUpdateListener(){
 
