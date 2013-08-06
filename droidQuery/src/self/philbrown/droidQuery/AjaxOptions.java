@@ -438,6 +438,50 @@ public class AjaxOptions
 	}
 	
 	/**
+	 * Contains a Key-Value mapping of cookies to send to in the Ajax request.
+	 */
+	private Map<String, String> cookies;
+	
+	/**
+	 * Get the Key-Value mapping of cookies to send in the Ajax request.
+	 * @return the Key-Value mapping of cookies to send
+	 */
+	public Map<String, String> cookies()
+	{
+		return cookies;
+	}
+	
+	/**
+	 * Set the Key-Value mapping of cookies to send in the Ajax request.
+	 * @param cookies
+	 */
+	public void cookies(Map<String, String> cookies)
+	{
+		this.cookies = cookies;
+	}
+	
+	/**
+	 * Set the Key-Value mapping of cookies to send in the Ajax request.
+	 * @param cookies
+	 * @throws JSONException if the JSON is malformed
+	 */
+	@SuppressWarnings("unchecked")
+	public void cookies(JSONObject cookies) throws JSONException
+	{
+		this.cookies = (Map<String, String>) $.map(cookies);
+	}
+	
+	/**
+	 * Set the Key-Value mapping of cookies to send in the Ajax request using a JSON string.
+	 * @param cookies JSON representation of the cookies to send.
+	 * @throws JSONException if the JSON is malformed
+	 */
+	public void cookies(String cookies) throws JSONException
+	{
+		cookies(new JSONObject(cookies));
+	}
+	
+	/**
 	 * Allow the request to be successful only if the response has changed since the last request. 
 	 * This is done by checking the Last-Modified header. Default value is {@code false}, ignoring 
 	 * the header.

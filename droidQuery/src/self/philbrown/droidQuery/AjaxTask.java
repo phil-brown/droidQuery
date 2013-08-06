@@ -36,6 +36,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -45,12 +46,17 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 
@@ -330,7 +336,25 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		
 		
 		try {
-			HttpResponse response = client.execute(request);
+			
+			HttpResponse response;
+			
+			if (options.cookies() != null)
+			{
+				CookieStore cookies = new BasicCookieStore();
+				for (Entry<String, String> entry : options.cookies().entrySet())
+				{
+					cookies.addCookie(new BasicClientCookie(entry.getKey(), entry.getValue()));
+				}
+				HttpContext httpContext = new BasicHttpContext();
+				httpContext.setAttribute(ClientContext.COOKIE_STORE, cookies);
+				response = client.execute(request, httpContext);
+			}
+			else
+			{
+				response = client.execute(request);
+			}
+			
 			
 			if (options.dataFilter() != null)
 			{
