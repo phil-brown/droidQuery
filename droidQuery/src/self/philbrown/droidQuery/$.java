@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -667,7 +666,6 @@ public class $
 	 * $.with(mView).animate("{
 	 *                           left: 1000px,
 	 *                           top: 0%,
-	 *                           width: 50%,
 	 *                           alpha: 0.5
 	 *                        }", 
 	 *                        new AnimationOptions("{ duration: 3000,
@@ -991,41 +989,8 @@ public class $
 						anim = ObjectAnimator.ofInt(view, key, (Integer) value);
 					else if (value instanceof Float)
 						anim = ObjectAnimator.ofFloat(view, key, (Float) value);
-					if (anim == null)
-					{
-						Log.e("$", "Checking layoutParams");
-						//probably a LayoutParams variable, such as width or height
-						try 
-						{
-							String method = String.format(Locale.US, "set%s", capitalize(key));
-							final Method setter = view.getLayoutParams().getClass().getMethod(method, new Class<?>[]{value.getClass()});
-							if (setter != null)
-							{
-								if (value instanceof Integer)
-									anim = ObjectAnimator.ofInt(view.getLayoutParams(), key, (Integer) value);
-								else if (value instanceof Float)
-									anim = ObjectAnimator.ofFloat(view.getLayoutParams(), key, (Float) value);
-								if (options.progress() != null)
-								{
-									anim.addUpdateListener(new AnimatorUpdateListener(){
-
-										@Override
-										public void onAnimationUpdate(ValueAnimator animation) {
-											view.requestLayout();
-											options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
-										}
-										
-									});
-								}
-							}
-							
-						} 
-						catch (Throwable t)
-						{
-							//can't animate the given property.
-						}
-					}
-					else if (options.progress() != null)
+					
+					if (options.progress() != null)
 					{
 						anim.addUpdateListener(new AnimatorUpdateListener(){
 
