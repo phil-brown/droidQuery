@@ -993,6 +993,7 @@ public class $
 						anim = ObjectAnimator.ofFloat(view, key, (Float) value);
 					if (anim == null)
 					{
+						Log.e("$", "Checking layoutParams");
 						//probably a LayoutParams variable, such as width or height
 						try 
 						{
@@ -1010,13 +1011,7 @@ public class $
 
 										@Override
 										public void onAnimationUpdate(ValueAnimator animation) {
-											ViewGroup.LayoutParams params = view.getLayoutParams();
-											try {
-												setter.invoke(params, animation.getAnimatedValue());
-												view.setLayoutParams(params);
-											} catch (Throwable t) {
-												Log.e("$", "Could not animate value " + key);
-											}
+											view.requestLayout();
 											options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
 										}
 										
