@@ -522,11 +522,16 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		{
 			if (options.error() != null)
 			{
+				AjaxError error = new AjaxError();
+				error.request = request;
+				error.status = 0;
+				error.options = options;
+				error.reason = "null response";
 				//invoke error with Request, Status, and Error
 				if (options.context() != null)
-					options.error().invoke($.with(options.context()), request, 0, "null response");
+					options.error().invoke($.with(options.context()), error, 0, "null response");
 				else
-					options.error().invoke(null, request, 0, "null response");
+					options.error().invoke(null, error, 0, "null response");
 			}
 			
 			if (options.global())
