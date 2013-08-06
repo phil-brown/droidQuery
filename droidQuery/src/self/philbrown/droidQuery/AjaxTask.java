@@ -194,6 +194,26 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	@Override
 	protected TaskResponse doInBackground(Void... arg0) 
 	{
+		//handle cached responses
+		CachedResponse cachedResponse = URLresponses.get(String.format(Locale.US, "%s_?=%s", options.url(), options.dataType()));
+		//handle ajax caching option
+		if (cachedResponse != null)
+		{
+			if (options.cache())
+			{
+				if (new Date().getTime() - cachedResponse.timestamp.getTime() < options.cacheTimeout())
+				{
+					//return cached response
+					Success s = new Success();
+					s.obj = cachedResponse.response;
+					s.reason = "cached response";
+					s.headers = null;
+					return s;
+				}
+			}
+			
+		}
+		
 		if (request == null)
 		{
 			String type = options.type();
@@ -703,7 +723,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		public String reason;
 		/** The status ID */
 		public int status;
-		/** The response Headers */
+		/** The response Headers. If a cached response is returned, {@code headers} will be {@code null}. */
 		public Header[] headers;
 	}
 	
