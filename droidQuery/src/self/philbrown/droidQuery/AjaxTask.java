@@ -31,6 +31,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -59,6 +62,9 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 import self.philbrown.droidQuery.AjaxTask.TaskResponse;
 import android.graphics.Bitmap;
@@ -406,7 +412,35 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					}
 					else if (dataType.equalsIgnoreCase("xml"))
 					{
-						parsedResponse = parseXML(response);
+						if (options.customXMLParser() != null)
+						{
+							InputStream is = response.getEntity().getContent();
+							if (options.SAXContentHandler() != null)
+								options.customXMLParser().parse(is, options.SAXContentHandler());
+							else
+								options.customXMLParser().parse(is, new DefaultHandler());
+							parsedResponse = "Response handled by custom SAX parser";
+						}
+						else if (options.SAXContentHandler() != null)
+						{
+							InputStream is = response.getEntity().getContent();
+							
+							SAXParserFactory factory = SAXParserFactory.newInstance();
+							
+							factory.setFeature("http://xml.org/sax/features/namespaces", false);
+							factory.setFeature("http://xml.org/sax/features/namespace-prefixes", true);
+							
+							SAXParser parser = factory.newSAXParser();
+							
+							XMLReader reader = parser.getXMLReader();
+							reader.setContentHandler(options.SAXContentHandler());
+							reader.parse(new InputSource(is));
+							parsedResponse = "Response handled by custom SAX content handler";
+						}
+						else
+						{
+							parsedResponse = parseXML(response);
+						}
 					}
 					else if (dataType.equalsIgnoreCase("json"))
 					{

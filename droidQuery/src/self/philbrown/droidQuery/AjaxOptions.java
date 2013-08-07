@@ -24,8 +24,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.xml.parsers.SAXParser;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xml.sax.helpers.DefaultHandler;
 
 import android.content.Context;
 import android.util.Base64;
@@ -293,7 +296,9 @@ public class AjaxOptions
 	
 	/**
 	 * Sets the type of the data that the request expects from the server. Can be one of:
-	 * "xml": Returns a XML document that can be processed via droidQuery.
+	 * "xml": Returns a XML document that can be processed via droidQuery. Note that if {@link #customXMLParser()}
+	 * or {@link #SAXContentHandler()} have been set, no Document will be returned. Instead, it will 
+	 * pass a descriptive String.
 	 * "html": Returns HTML as plain text.
 	 * "script": Evaluates the response as bourne (NOT bash) script and returns it as plain text. 
 	 * "json": Evaluates the response as JSON and returns a JSONObject object. The JSON data is parsed in a strict manner; any malformed JSON is rejected and a parse error is thrown. (See json.org for more information on proper JSON formatting.)
@@ -307,6 +312,59 @@ public class AjaxOptions
 	{
 		this.dataType = dataType;
 		return this;
+	}
+	
+	/**
+	 * A custom content handler that can be used to handle XML using the SAX parser.  
+	 * {@link org.xml.sax.helpers.DefaultHandler}
+	 */
+	private DefaultHandler SAXContentHandler;
+	
+	/**
+	 * Set the Content Handler that should be used to handle SAX parsing. This will cause 
+	 * {@link #success()} to NOT pass a XML Document variable as a parameter. Instead, it will pass a
+	 * descriptive String.
+	 * @param SAXContentHandler
+	 * @return this
+	 */
+	public AjaxOptions SAXContentHandler(DefaultHandler SAXContentHandler)
+	{
+		this.SAXContentHandler = SAXContentHandler;
+		return this;
+	}
+	
+	/**
+	 * Get the SAX parser Content Handler
+	 * @return the handler
+	 */
+	public DefaultHandler SAXContentHandler()
+	{
+		return SAXContentHandler;
+	}
+	
+	/**
+	 * The custom parser for handling XML with SAX parser, instead of converting to a Document
+	 */
+	private SAXParser customXMLParser;
+	/**
+	 * Set the custom parser for handling XML with a SAX parser, instead of converting it to a
+	 * Document Object. This will cause {@link #success()} to NOT pass a XML Document variable as a
+	 * parameter.Instead, it will pass a descriptive String.
+	 * @param customXMLParser
+	 * @return this
+	 */
+	public AjaxOptions customXMLParser(SAXParser customXMLParser)
+	{
+		this.customXMLParser = customXMLParser;
+		return this;
+	}
+	/**
+	 * Get the custom parser for handling XML with a SAX parser instead of converting it to a Document.
+	 * @return the parser
+	 */
+	public SAXParser customXMLParser()
+	{
+		return customXMLParser;
 	}
 	
 	/**
