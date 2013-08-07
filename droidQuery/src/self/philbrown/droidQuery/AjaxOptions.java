@@ -45,18 +45,21 @@ public class AjaxOptions
 	/** Used privately for reflection */
 	private static Method[] methods = AjaxOptions.class.getMethods();
 	/** Used privately for reflection */
-	private static Map<String, Method> setters = new HashMap<String, Method>();
+	private static Map<String, Method> setters = new HashMap<String, Method>(),
+			                           getters = new HashMap<String, Method>();
 	static
 	{
 		for (Method m : methods)
 		{
-			if (m.getTypeParameters().length != 0)
+			if (m.getParameterTypes().length != 0)
 				setters.put(m.getName(), m);
+			else
+				getters.put(m.getName(), m);
 		}
 	}
 	
 	/** Used for reflection */
-	private static Field[] fields = AjaxOptions.class.getFields();
+	private static Field[] fields = AjaxOptions.class.getDeclaredFields();
 	/** global ajax options. This is set if $.ajaxSetup is called. */
 	private static AjaxOptions globalOptions;
 	
@@ -916,11 +919,14 @@ public class AjaxOptions
 			for (Field f : fields)
 			{
 				Method setter = setters.get(f.getName());
-				try {
-					setter.invoke(this, f.get(globalOptions));
-				} catch (Throwable t) {
-					Log.w("AjaxOptions", "Cannot set global option " + f.getName());
+				Method getter = getters.get(f.getName());
+				if (setter != null && getter != null)
+				{
+					try {
+						setter.invoke(this, getter.invoke(globalOptions));
+					} catch (Throwable t) {}
 				}
+				
 			}
 		}
 	}
