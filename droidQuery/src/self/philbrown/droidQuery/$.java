@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -90,9 +91,9 @@ import android.webkit.URLUtil;
 import android.widget.AdapterView;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.ImageView.ScaleType;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -196,6 +197,23 @@ public class $
 	    map.put(Long.class, long.class);
 	    map.put(Short.class, short.class);
 	    map.put(Byte.class, byte.class);
+	    return map;
+	}
+	
+	/** Used to correctly call methods that use wrapper type parameters via reflection */
+	private static final Map<Class<?>, Class<?>> WRAPPER_TYPE_MAP = buildWrapperTypeMap();
+	
+	/** Inflates the mapping of wrapper classes to primitive classes */
+	private static Map<Class<?>, Class<?>> buildWrapperTypeMap()
+	{
+	    Map<Class<?>, Class<?>> map = new HashMap<Class<?>, Class<?>>();
+	    map.put(float.class, Float.class);
+	    map.put(double.class, Double.class);
+	    map.put(int.class, Integer.class);
+	    map.put(boolean.class, Boolean.class);
+	    map.put(long.class, Long.class);
+	    map.put(short.class, Short.class);
+	    map.put(byte.class, Byte.class);
 	    return map;
 	}
 	
@@ -666,6 +684,7 @@ public class $
 	 * $.with(mView).animate("{
 	 *                           left: 1000px,
 	 *                           top: 0%,
+	 *                           width: 50%,
 	 *                           alpha: 0.5
 	 *                        }", 
 	 *                        new AnimationOptions("{ duration: 3000,
@@ -692,6 +711,7 @@ public class $
 		        String key = iterator.next();
 		        try {
 		            Object value = props.get(key);
+		            
 		            map.put(key, value);
 		            
 		        } catch (JSONException e) {
@@ -813,16 +833,17 @@ public class $
 	private Object getAnimationValue(View view, String key, String _value)
 	{
 		Object value = null;
+		
 		String[] split = (_value).split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)");
 		if (split.length == 1)
 		{
 			if (split[0].contains("."))
 			{
-				value = Float.parseFloat(split[0]);
+				value = Float.valueOf(split[0]);
 			}
 			else
 			{
-				value = Integer.parseInt(split[0]);
+				value = Integer.valueOf(split[0]);
 			}
 		}
 		else
@@ -837,11 +858,11 @@ public class $
 				//this is the default. Just determine if float or int
 				if (split[0].contains("."))
 				{
-					value = Float.parseFloat(split[0]);
+					value = Float.valueOf(split[0]);
 				}
 				else
 				{
-					value = Integer.parseInt(split[0]);
+					value = Integer.valueOf(split[0]);
 				}
 			}
 			else if (split[1].equalsIgnoreCase("dip"))
@@ -940,7 +961,7 @@ public class $
 				}
 				float percent = 0;
 				if (pixels != 0)
-					percent = Float.parseFloat(split[0])/100*pixels;
+					percent = Float.valueOf(split[0])/100*pixels;
 				if (split[0].contains("."))
 				{
 					value = percent;
@@ -976,31 +997,79 @@ public class $
 		for (Entry<String, Object> entry : properties.entrySet())
 		{
 			final String key = entry.getKey();
+			//Java sometimes will interpret these Strings as Numbers, so some trickery is needed below
 			Object value = entry.getValue();
 			
 			for (final View view : this.views)
 			{
-				ObjectAnimator anim = null;
+				ValueAnimator anim = null;
 				if (value instanceof String)
 					value = getAnimationValue(view, key, (String) value);
 				if (value != null)
 				{
-					if (value instanceof Integer)
-						anim = ObjectAnimator.ofInt(view, key, (Integer) value);
-					else if (value instanceof Float)
-						anim = ObjectAnimator.ofFloat(view, key, (Float) value);
-					
-					if (options.progress() != null)
-					{
-						anim.addUpdateListener(new AnimatorUpdateListener(){
+					final ViewGroup.LayoutParams params = view.getLayoutParams();
+					try {
+						final Field field = params.getClass().getField(key);
+						if (field != null)
+						{
+							if (value instanceof Integer || value.getClass() == int.class)
+								anim = ValueAnimator.ofInt((Integer) field.get(params), (Integer) value);
+							else if (value instanceof Float || value.getClass() == float.class)
+								anim = ValueAnimator.ofFloat((Float) field.get(params), (Float) value);
+							else if (value instanceof Long || value.getClass() == long.class)
+								anim = ValueAnimator.ofFloat((Float) field.get(params), new Float((Long) value));
+							else if (value instanceof Double || value.getClass() == double.class)
+								anim = ValueAnimator.ofFloat((Float) field.get(params), new Float((Double) value));
+							anim.addUpdateListener(new AnimatorUpdateListener(){
 
-							@Override
-							public void onAnimationUpdate(ValueAnimator animation) {
-								options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
-							}
-							
-						});
+								@Override
+								public void onAnimationUpdate(ValueAnimator animation) {
+									try {
+										field.set(params, animation.getAnimatedValue());
+										view.requestLayout();
+									} catch (Throwable t)
+									{
+										//error
+									}
+									if (options.progress() != null)
+									{
+										options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+									}
+									
+								}
+								
+							});
+						}
+						
+					} catch (Throwable t) {
+						
+						//t.printStackTrace();
 					}
+					
+					if (anim == null)
+					{
+						if (value instanceof Integer || value.getClass() == int.class)
+							anim = ObjectAnimator.ofInt(view, key, (Integer) value);
+						else if (value instanceof Float || value.getClass() == float.class)
+							anim = ObjectAnimator.ofFloat(view, key, (Float) value);
+						else if (value instanceof Long || value.getClass() == long.class)
+							anim = ObjectAnimator.ofFloat(view, key, new Float((Long) value));
+						else if (value instanceof Double || value.getClass() == double.class)
+							anim = ObjectAnimator.ofFloat(view, key, new Float((Double) value));
+						
+						if (options.progress() != null)
+						{
+							anim.addUpdateListener(new AnimatorUpdateListener(){
+
+								@Override
+								public void onAnimationUpdate(ValueAnimator animation) {
+									options.progress().invoke($.with(view), key, animation.getAnimatedValue(), animation.getDuration() - animation.getCurrentPlayTime());
+								}
+								
+							});
+						}
+					}
+					
 					
 					animations.add(anim);
 				}
@@ -3425,7 +3494,7 @@ public class $
 	 * @return a Key-Value mapping of the Objects set in the JSONObject
 	 * @throws JSONException if the JSON is malformed
 	 */
-	public static Map<String, Object> map(JSONObject json) throws JSONException
+	public static Map<String, ?> map(JSONObject json) throws JSONException
 	{
 		@SuppressWarnings("unchecked")
 		Iterator<String> iterator = json.keys();

@@ -1,0 +1,7 @@
+*.class
+*.o
+*.so
+*.DS_Store
+gen/
+.metadata/
+doc/

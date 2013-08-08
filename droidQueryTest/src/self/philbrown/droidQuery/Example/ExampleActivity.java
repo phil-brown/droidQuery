@@ -28,8 +28,6 @@ import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.AjaxOptions;
 import self.philbrown.droidQuery.AnimationOptions;
 import self.philbrown.droidQuery.Function;
-import self.philbrown.droidQuery.QuickEntry;
-import self.philbrown.droidQuery.QuickMap;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -65,15 +63,15 @@ public class ExampleActivity extends Activity
         	//this is the quickest way to make a Map of Objects:
         	extensions = (Map<String, String>) $.map("{" +
         			                                   "progress: 'self.philbrown.droidProgress.Progress', " +
-        			                                   "mail:     'self.philbrown.droidMail.$Mail'" +
+        			                                   "mail:     'self.philbrown.droidMail.Mail'" +
         			                                  "}");
         }
         catch (Throwable t)
         {
         	//if you mess up the JSON, you may just want to stick with this, which is also fairly simple:
-        	extensions = new QuickMap<String, String>(
-            		new QuickEntry<String, String>("progress", "self.philbrown.droidProgress.Progress"),
-            		new QuickEntry<String, String>("mail", "self.philbrown.droidMail.$Mail"));
+        	extensions = (Map<String, String>) $.map(
+            		$.entry("progress", "self.philbrown.droidProgress.Progress"),
+            		$.entry("mail", "self.philbrown.droidMail.Mail"));
         }
         
         
@@ -279,7 +277,7 @@ public class ExampleActivity extends Activity
 														$.with(fimage).val(src);
 														try 
 														{
-															$.with(fimage).fadeIn(new AnimationOptions("{duration: 400}"));
+															$.with(fimage).fadeIn(new AnimationOptions("{ duration: 400 }"));
 														} catch (Throwable e) 
 														{
 															e.printStackTrace();
