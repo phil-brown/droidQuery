@@ -23,6 +23,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -122,7 +123,16 @@ public class Script
 		{
 			$.with(context).write(s.getBytes(), FileLocation.CACHE, file.getName(), true, true);
 		}
-		file.setExecutable(true);
+		if (android.os.Build.VERSION.SDK_INT >= 11)
+		{
+			try {
+				Method m = file.getClass().getMethod("setExecutable", new Class<?>[]{boolean.class});
+				m.invoke(file, true);
+			} catch (Throwable t)
+			{
+				//unknown error
+			}
+		}
 		
 		List<String> command = new ArrayList<String>();
 		command.add(file.getAbsolutePath());

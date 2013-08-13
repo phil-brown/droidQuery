@@ -199,7 +199,8 @@ output.
 **Special Thanks**
 
 This project uses [AsyncTaskEx](https://github.com/commonsguy/cwac-wakeful) to allow an unlimited number
-of simultaneous network tasks. This project also would not exist if it were not for the excellent *jQuery*
-library, and its excellent documentation.
+of simultaneous network tasks. It also uses [NineOldAndroids](http://nineoldandroids.com) to provide 
+animation support for Pre-Honeycomb versions of Android. Finally, this project would not exist if it 
+were not for the excellent *jQuery* library, and its excellent documentation.
 
     

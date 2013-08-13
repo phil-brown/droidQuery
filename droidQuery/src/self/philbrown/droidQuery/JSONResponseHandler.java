@@ -72,7 +72,7 @@ public class JSONResponseHandler implements ResponseHandler<Object>
 		} 
         catch (JSONException e) 
         {
-        	throw new IOException("Received malformed JSON", e);
+        	throw new IOException("Received malformed JSON");
         	
 		}
 	}

@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -43,13 +44,6 @@ import org.json.JSONObject;
 import org.w3c.dom.Document;
 
 import self.philbrown.droidQuery.SwipeDetector.SwipeListener;
-import android.animation.Animator;
-import android.animation.Animator.AnimatorListener;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
-import android.animation.TimeInterpolator;
-import android.animation.ValueAnimator;
-import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -85,6 +79,7 @@ import android.view.animation.AnticipateInterpolator;
 import android.view.animation.AnticipateOvershootInterpolator;
 import android.view.animation.BounceInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.webkit.URLUtil;
@@ -97,6 +92,14 @@ import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.Animator.AnimatorListener;
+import com.nineoldandroids.animation.AnimatorSet;
+import com.nineoldandroids.animation.ObjectAnimator;
+import com.nineoldandroids.animation.ValueAnimator;
+import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
+import com.nineoldandroids.view.ViewHelper;
+
 
 /** 
  * <h1>droidQuery</h1>
@@ -104,7 +107,7 @@ import android.widget.Toast;
  * <a href="https://github.com/jquery/jquery">jQuery</a>.
  * @author Phil Brown
  */
-public class $ 
+public class $
 {
 	/**
 	 * Data types for <em>ajax</em> request responses
@@ -200,23 +203,6 @@ public class $
 	    return map;
 	}
 	
-	/** Used to correctly call methods that use wrapper type parameters via reflection */
-	private static final Map<Class<?>, Class<?>> WRAPPER_TYPE_MAP = buildWrapperTypeMap();
-	
-	/** Inflates the mapping of wrapper classes to primitive classes */
-	private static Map<Class<?>, Class<?>> buildWrapperTypeMap()
-	{
-	    Map<Class<?>, Class<?>> map = new HashMap<Class<?>, Class<?>>();
-	    map.put(float.class, Float.class);
-	    map.put(double.class, Double.class);
-	    map.put(int.class, Integer.class);
-	    map.put(boolean.class, Boolean.class);
-	    map.put(long.class, Long.class);
-	    map.put(short.class, Short.class);
-	    map.put(byte.class, Byte.class);
-	    return map;
-	}
-	
 	/** 
 	 * Keeps track of {@link LogFileObserver}s so they are not freed by garbage collection 
 	 * before they are used 
@@ -293,6 +279,7 @@ public class $
 		View view = new View(context);//if view operations are attempted without the view set, this prevents null pointer exceptions
 		this.rootView = view;
 		this.views.add(view);
+		
 	}
 	
 	/**
@@ -774,7 +761,7 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 			
 		});
-		TimeInterpolator interpolator = null;
+		Interpolator interpolator = null;
 		if (options.easing() == null)
 			options.easing(Easing.LINEAR);
 		final Easing easing = options.easing();
@@ -1249,7 +1236,7 @@ public class $
 		List<View> ones = new ArrayList<View>();
 		for (View view : this.views)
 		{
-			if (view.getAlpha() < 0.5)
+			if (ViewHelper.getAlpha(view) < 0.5)
 				zeros.add(view);
 			else
 				ones.add(view);
@@ -1269,7 +1256,7 @@ public class $
 		List<View> ones = new ArrayList<View>();
 		for (View view : this.views)
 		{
-			if (view.getAlpha() < 0.5)
+			if (ViewHelper.getAlpha(view) < 0.5)
 				zeros.add(view);
 			else
 				ones.add(view);
@@ -2024,19 +2011,28 @@ public class $
 					
 				});
 			}
-			else
+			else if (android.os.Build.VERSION.SDK_INT >= 11)
 			{
-				//default to size
-				view.addOnLayoutChangeListener(new View.OnLayoutChangeListener(){
+				//default to size for API 11+
+				try {
+					Class<?> eventInterface = Class.forName("android.view.View.OnLayoutChangeListener");
+					Method addOnLayoutChangeListener = view.getClass().getMethod("addOnLayoutChangeListener", new Class<?>[]{eventInterface});
+					InvocationHandler proxy = new InvocationHandler() {
 
-					@Override
-					public void onLayoutChange(View v, int left, int top,
-							int right, int bottom, int oldLeft, int oldTop,
-							int oldRight, int oldBottom) {
-						function.invoke($.with($.this.views.get(index)));
-					}
-					
-				});
+						@Override
+						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+							function.invoke($.with($.this.views.get(index)));
+							return null;
+						}
+						
+					};
+					Object eventHandler = Proxy.newProxyInstance(eventInterface.getClassLoader(), new Class<?>[]{eventInterface}, proxy);
+					addOnLayoutChangeListener.invoke(view, eventInterface.cast(eventHandler));
+				}
+				catch (Throwable t)
+				{
+					//unknown error
+				}
 			}
 		}
 		
@@ -2901,7 +2897,7 @@ public class $
 				list.addAll(recursivelySelectHidden(((ViewGroup) v).getChildAt(i)));
 			}
 		}
-		if (v.getVisibility() == View.INVISIBLE || v.getVisibility() == View.GONE || v.getAlpha() == 0)
+		if (v.getVisibility() == View.INVISIBLE || v.getVisibility() == View.GONE || ViewHelper.getAlpha(v) == 0)
 			list.add(v);
 		return list;
 	}
@@ -2921,7 +2917,7 @@ public class $
 				list.addAll(recursivelySelectVisible(((ViewGroup) v).getChildAt(i)));
 			}
 		}
-		if (v.getVisibility() == View.VISIBLE || v.getAlpha() == 1)
+		if (v.getVisibility() == View.VISIBLE || ViewHelper.getAlpha(v) == 1)
 			list.add(v);
 		return list;
 	}
@@ -4778,8 +4774,8 @@ public class $
 			int offsetX = x - offset.x;
 			int offsetY = y - offset.y;
 			Point position = position(view);
-			view.setX(position.x + offsetX);
-			view.setY(position.y + offsetY);
+			ViewHelper.setX(view, position.x + offsetX);
+			ViewHelper.setY(view, position.y + offsetY);
 		}
 		
 		return this;
@@ -4814,8 +4810,8 @@ public class $
 	{
 		for (View view : this.views)
 		{
-			view.setLeft(x);
-			view.setTop(y);
+			ViewHelper.setX(view, x);
+			ViewHelper.setY(view, y);
 		}
 		return this;
 	}
@@ -4920,7 +4916,7 @@ public class $
 	 */
 	private String capitalize(String string)
 	{
-		if (string == null || string.isEmpty())
+		if (string == null || string.trim().length() == 0)
 			throw new NullPointerException("Cannot handle null or empty string");
 		
 		StringBuilder strBuilder = new StringBuilder(string);
