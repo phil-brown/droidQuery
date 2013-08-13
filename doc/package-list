@@ -1,2 +1,6 @@
 com.commonsware.cwac.task
+com.nineoldandroids.animation
+com.nineoldandroids.util
+com.nineoldandroids.view
+com.nineoldandroids.view.animation
 self.philbrown.droidQuery
