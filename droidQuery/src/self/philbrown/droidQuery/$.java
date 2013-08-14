@@ -104,7 +104,7 @@ import com.nineoldandroids.view.ViewHelper;
 /** 
  * <h1>droidQuery</h1>
  * An <a href="https://github.com/github/android">Android</a> <i>port</i> of 
- * <a href="https://github.com/jquery/jquery">jQuery</a>.
+ * <a href="https://github.com/jquery/jquery">jQuery</a>. Supports Android API 2.2 (Froyo) and up.
  * @author Phil Brown
  */
 public class $
@@ -331,12 +331,14 @@ public class $
 		this.views = views;
 	}
 	
+	
+	
 	/**
-	 * Constructor. Accepts a {@code View[]} Object.
-	 * @param view
+	 * Constructor. Accepts a {@code View[]} Object or a Variable number of View objects (varargs).
+	 * @param views 
 	 * @see #with(View)
 	 */
-	public $(View[] views)
+	public $(View... views)
 	{
 		if (views == null)
 		{
@@ -561,12 +563,18 @@ public class $
 	 * <pre>
 	 *	View[] views = new View[10];
 	 *	//manipute the array
-	 *	$.with(views);
+	 *	$.with(views).attr("alpha", 0.5);
+	 * </pre>
+	 * or
+	 * <pre>
+	 * TextView tv = (TextView) findViewById(R.id.textview);
+	 * ImageView img = (ImageView) findViewById(R.id.img);
+	 * $.with(tv, img).attr("alpha", 0.5);
 	 * </pre>
 	 * @param views
 	 * @return a new droidQuery instance
 	 */
-	public static $ with(View[] views)
+	public static $ with(View... views)
 	{
 		return new $(views);
 	}
@@ -1602,8 +1610,15 @@ public class $
 			}
 			catch (Throwable t2)
 			{
-				Log.w("droidQuery", view(0).getClass().getSimpleName() + ".get" + capitalize(s) + "() is not a method!");
-				Log.w("droidQuery", view(0).getClass().getSimpleName() + ".is" + capitalize(s) + "() is not a method!");
+				//try using NineOldAndroids
+				try {
+					Method m = ViewHelper.class.getMethod("get" + capitalize(s), new Class<?>[]{View.class});
+					return m.invoke(null, view(0));
+				}
+				catch (Throwable t3) {
+					Log.w("droidQuery", view(0).getClass().getSimpleName() + "has no getter method for the variable " + s + ".");
+				}
+				
 				return null;
 			}
 		}
@@ -1628,8 +1643,22 @@ public class $
 				{
 					objClass = simpleClass;
 				}
-				Method m = view.getClass().getMethod("set" + capitalize(s), new Class<?>[]{objClass});
-				m.invoke(view, o);
+				try {
+					Method m = view.getClass().getMethod("set" + capitalize(s), new Class<?>[]{objClass});
+					m.invoke(view, o);
+				}
+				catch (Throwable t) {
+					//try using NineOldAndroids
+					try {
+						Method m = ViewHelper.class.getMethod("set" + capitalize(s), new Class<?>[]{View.class, objClass});
+						m.invoke(null, view(0), o);
+					}
+					catch (Throwable t2)
+					{
+						Log.w("droidQuery", view.getClass().getSimpleName() + ".set" + capitalize(s) + "(" + o.getClass().getSimpleName() + ") is not a method!");
+					}
+				}
+				
 			}
 			catch (Throwable t)
 			{
