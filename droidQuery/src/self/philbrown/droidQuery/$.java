@@ -815,6 +815,7 @@ public class $
 			interpolator = options.specialEasing();
 		
 		animation.setInterpolator(interpolator);
+		
 		return animation;
 	}
 	
@@ -1024,7 +1025,8 @@ public class $
 										view.requestLayout();
 									} catch (Throwable t)
 									{
-										//error
+										if (options.debug())
+											t.printStackTrace();
 									}
 									if (options.progress() != null)
 									{
@@ -1034,11 +1036,15 @@ public class $
 								}
 								
 							});
+							anim.setRepeatCount(options.repeatCount());
+							if (options.reverse())
+								anim.setRepeatMode(ValueAnimator.REVERSE);
 						}
 						
 					} catch (Throwable t) {
 						
-						//t.printStackTrace();
+						if (options.debug())
+							t.printStackTrace();
 					}
 					
 					if (anim == null)

@@ -291,6 +291,74 @@ public class AnimationOptions
 		return this;
 	}
 	
+	/** If {@code true}, show error messages in the logcat. */
+	private boolean debug;
+	
+	/** If {@code true}, show error messages in the logcat. */
+	public boolean debug() 
+	{
+		return debug;
+	}
+	
+	/** 
+	 * If {@code true}, show error messages in the logcat. 
+	 * @return this
+	 */
+	public AnimationOptions debug(boolean debug)
+	{
+		this.debug = debug;
+		return this;
+	}
+	
+	/**
+	 * The number of times the animation should repeat. Default is 0
+	 */
+	private int repeatCount = 0;
+	
+	/**
+	 * Get the number of times the animation will repeat
+	 * @return count
+	 */
+	public int repeatCount()
+	{
+		return repeatCount;
+	}
+	
+	/**
+	 * Set the number of times the animation should repeat. Default is 0.
+	 * @param repeatCount
+	 * @return this
+	 */
+	public AnimationOptions repeatCount(int repeatCount) 
+	{
+		this.repeatCount = repeatCount;
+		return this;
+	}
+	
+	/**
+	 * Whether or not the animation should reverse after completing
+	 */
+	private boolean reverse;
+	
+	/**
+	 * Get whether or not the animation should reverse after completing.
+	 * @return {@code true} if the animation should reverse. Otherwise {@code false}.
+	 */
+	public boolean reverse()
+	{
+		return reverse;
+	}
+	
+	/**
+	 * Set whether or not the animation should reverse after completing.
+	 * @param reverse {@code true} if the animation should reverse. Otherwise {@code false}.
+	 */
+	public AnimationOptions reverse(boolean reverse) 
+	{
+		this.reverse = reverse;
+		return this;
+	}
+	
 	/**
 	 * A function to call once the animation has completed successfully
 	 */
