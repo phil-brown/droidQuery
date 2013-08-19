@@ -740,9 +740,10 @@ public class $
 	 * @param options the options used to manipulate how the animation behaves
 	 * @return the container for placing views that will be animated using the given options
 	 */
-	private AnimatorSet animationWithOptions(final AnimationOptions options)
+	private AnimatorSet animationWithOptions(final AnimationOptions options, List<Animator> animators)
 	{
 		AnimatorSet animation = new AnimatorSet();
+		animation.playTogether(animators);
 		animation.setDuration(options.duration());
 		animation.addListener(new AnimatorListener(){
 
@@ -987,8 +988,6 @@ public class $
 	 */
 	public $ animate(Map<String, Object> properties, final AnimationOptions options)
 	{
-		AnimatorSet animation = animationWithOptions(options);
-		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (Entry<String, Object> entry : properties.entrySet())
 		{
@@ -1077,7 +1076,7 @@ public class $
 				
 			}
 		}
-		animation.playTogether(animations);
+		AnimatorSet animation = animationWithOptions(options, animations);
 		animation.start();
 		
 		return this;
@@ -1303,7 +1302,6 @@ public class $
 			@Override
 			public void onAnimationStart(Animator animation) {}
 		});
-		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
 		for (View view : this.views)
 		{
@@ -1324,6 +1322,7 @@ public class $
 			else
 				builder.with(animator);
 		}
+		anim.setDuration(duration);
 		anim.start();
 	}
 	
@@ -1333,8 +1332,6 @@ public class $
 	 */
 	public void slideDown(final AnimationOptions options)
 	{
-		AnimatorSet animation = animationWithOptions(options);
-		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
 		{
@@ -1364,7 +1361,7 @@ public class $
 			animations.add(anim);
 		}
 		
-		animation.playTogether(animations);
+		AnimatorSet animation = animationWithOptions(options, animations);
 		animation.start();
 		
 	}
@@ -1393,7 +1390,6 @@ public class $
 			@Override
 			public void onAnimationStart(Animator animation) {}
 		});
-		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
 		for (View view : this.views)
 		{
@@ -1404,6 +1400,7 @@ public class $
 			else
 				builder.with(animator);
 		}
+		anim.setDuration(duration);
 		anim.start();
 	}
 	
@@ -1412,9 +1409,7 @@ public class $
 	 * @param options use to modify the behavior of the animation
 	 */
 	public void slideUp(final AnimationOptions options)
-	{
-		AnimatorSet animation = animationWithOptions(options);
-		
+	{		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
 		{
@@ -1433,7 +1428,7 @@ public class $
 			animations.add(anim);
 		}
 		
-		animation.playTogether(animations);
+		AnimatorSet animation = animationWithOptions(options, animations);
 		animation.start();
 	}
 	
@@ -1461,7 +1456,6 @@ public class $
 			@Override
 			public void onAnimationStart(Animator animation) {}
 		});
-		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
 		for (View view : this.views)
 		{
@@ -1482,6 +1476,7 @@ public class $
 			else
 				builder.with(animator);
 		}
+		anim.setDuration(duration);
 		anim.start();
 	}
 	
@@ -1490,9 +1485,7 @@ public class $
 	 * @param options use to modify the behavior of the animation
 	 */
 	public void slideRight(final AnimationOptions options)
-	{
-		AnimatorSet animation = animationWithOptions(options);
-		
+	{		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
 		{
@@ -1522,7 +1515,7 @@ public class $
 			animations.add(anim);
 		}
 		
-		animation.playTogether(animations);
+		AnimatorSet animation = animationWithOptions(options, animations);
 		animation.start();
 	}
 	
@@ -1550,7 +1543,6 @@ public class $
 			@Override
 			public void onAnimationStart(Animator animation) {}
 		});
-		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
 		for (View view : this.views)
 		{
@@ -1560,6 +1552,7 @@ public class $
 			else
 				builder.with(animator);
 		}
+		anim.setDuration(duration);
 		anim.start();
 	}
 	
@@ -1569,8 +1562,6 @@ public class $
 	 */
 	public void slideLeft(final AnimationOptions options)
 	{
-		AnimatorSet animation = animationWithOptions(options);
-		
 		List<Animator> animations = new ArrayList<Animator>();
 		for (final View view : this.views)
 		{
@@ -1589,7 +1580,7 @@ public class $
 			animations.add(anim);
 		}
 		
-		animation.playTogether(animations);
+		AnimatorSet animation = animationWithOptions(options, animations);
 		animation.start();
 	}
 	
