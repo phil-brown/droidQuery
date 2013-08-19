@@ -2041,9 +2041,10 @@ public class $
 	 * @see #listenTo(String, Function)
 	 * @see #listenToOnce(String, Function)
 	 */
-	public void notify(String event)
+	public $ notify(String event)
 	{
 		EventCenter.trigger(this, event, null, null);
+		return this;
 	}
 	
 	/**
@@ -2053,9 +2054,10 @@ public class $
 	 * @see #listenTo(String, Function)
 	 * @see #listenToOnce(String, Function)
 	 */
-	public void notify(String event, Map<String, Object> data)
+	public $ notify(String event, Map<String, Object> data)
 	{
 		EventCenter.trigger(this, event, data, null);
+		return this;
 	}
 	
 	/**
