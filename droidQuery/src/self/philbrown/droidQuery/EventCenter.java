@@ -110,4 +110,27 @@ public class EventCenter
 		}
 	}
 	
+	/**
+	 * Trigger an event.
+	 * @param droidQuery the instance of droidQuery to pass as a parameter
+	 * @param text the name of the event
+	 * @param args the arguments to pass to the registered functions
+	 * @param scope the scope of the event
+	 */
+	public static void trigger($ droidQuery, String text, Map<String, Object> args, Object scope)
+	{
+		if (scope == null) scope = global;
+		Map<String, List<Function>> triggers = receivers.get(scope);
+		if (triggers == null)
+			return;
+		List<Function> functions = triggers.get(text);
+		if (functions == null)
+			return;
+		
+		for (Function f : functions)
+		{
+			f.invoke(droidQuery, text, args);
+		}
+	}
+	
 }

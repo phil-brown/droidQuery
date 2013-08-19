@@ -1988,6 +1988,76 @@ public class $
 		return on(event, function);
 	}
 	
+	//these listenTo methods expose the EventCenter, and provide a behavior similar to that provided
+	//by backbone.js
+	
+	/**
+	 * Listen for all events triggered using the {@link #notify(String)} or {@link #notify(String, Map)}
+	 * method
+	 * @param event the name of the event
+	 * @param callback the function to call when the event is triggered.
+	 * @see #listenToOnce(String, Function)
+	 */
+	public static void listenTo(String event, Function callback)
+	{
+		EventCenter.bind(event, callback, null);
+	}
+	
+	/**
+	 * Listen for the next event triggered using the {@link #notify(String)} or 
+	 * {@link #notify(String, Map)} method
+	 * @param event the name of the event
+	 * @param callback the function to call when the event is triggered.
+	 * @see #listenTo(String, Function)
+	 */
+	public static void listenToOnce(final String event, final Function callback)
+	{
+		EventCenter.bind(event, new Function() {
+
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				callback.invoke(droidQuery, params);
+				EventCenter.unbind(event, this, null);
+			}
+			
+		}, null);
+	}
+	
+	/**
+	 * Stop listening for events triggered using the {@link #notify(String)} and
+	 * {@link #notify(String, Map)} methods
+	 * @param event the name of the event
+	 * @param callback the function to no longer call when the event is triggered.
+	 * @see #listenTo(String, Function)
+	 */
+	public static void stopListening(String event, Function callback )
+	{
+		EventCenter.unbind(event, callback, null);
+	}
+	
+	/**
+	 * Trigger a notification for functions registered to the given event String
+	 * @param event the event string to which registered listeners will respond
+	 * @see #listenTo(String, Function)
+	 * @see #listenToOnce(String, Function)
+	 */
+	public void notify(String event)
+	{
+		EventCenter.trigger(this, event, null, null);
+	}
+	
+	/**
+	 * Trigger a notification for functions registered to the given event String
+	 * @param event the event string to which registered listeners will respond
+	 * @param data Object passed to the notified functions
+	 * @see #listenTo(String, Function)
+	 * @see #listenToOnce(String, Function)
+	 */
+	public void notify(String event, Map<String, Object> data)
+	{
+		EventCenter.trigger(this, event, data, null);
+	}
+	
 	/**
 	 * Registers change listeners for TextViews, EditTexts, and CompoundButtons. For all other
 	 * view types, this will trigger a function when the view's layout has been changed.
