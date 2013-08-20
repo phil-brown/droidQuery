@@ -1035,15 +1035,12 @@ public class $
 								}
 								
 							});
-							anim.setRepeatCount(options.repeatCount());
-							if (options.reverse())
-								anim.setRepeatMode(ValueAnimator.REVERSE);
 						}
 						
 					} catch (Throwable t) {
 						
 						if (options.debug())
-							t.printStackTrace();
+							Log.w("$", String.format(Locale.US, "%s is not a LayoutParams attribute.", key));
 					}
 					
 					if (anim == null)
@@ -1070,7 +1067,10 @@ public class $
 						}
 					}
 					
-					
+
+					anim.setRepeatCount(options.repeatCount());
+					if (options.reverse())
+						anim.setRepeatMode(ValueAnimator.REVERSE);
 					animations.add(anim);
 				}
 				
