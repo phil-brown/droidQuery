@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <issue id="DalvikOverride" severity="warning" />
+    <issue id="DuplicateActivity" severity="warning" />
+    <issue id="DuplicateDefinition" severity="warning" />
+    <issue id="ExtraTranslation" severity="warning" />
+    <issue id="GridLayout" severity="warning" />
+    <issue id="InvalidPackage" severity="warning" />
+    <issue id="JavascriptInterface" severity="warning" />
+    <issue id="LibraryCustomView" severity="warning" />
+    <issue id="LocalSuppress" severity="warning" />
+    <issue id="MangledCRLF" severity="warning" />
+    <issue id="MissingPrefix" severity="warning" />
+    <issue id="MissingRegistered" severity="warning" />
+    <issue id="MissingTranslation" severity="warning" />
+    <issue id="MultipleUsesSdk" severity="warning" />
+    <issue id="NewApi" severity="warning" />
+    <issue id="NotSibling" severity="warning" />
+    <issue id="OnClick" severity="warning" />
+    <issue id="Orientation" severity="warning" />
+    <issue id="Override" severity="warning" />
+    <issue id="PrivateResource" severity="warning" />
+    <issue id="Proguard" severity="warning" />
+    <issue id="ProtectedPermissions" severity="warning" />
+    <issue id="RequiredSize" severity="warning" />
+    <issue id="ResourceAsColor" severity="warning" />
+    <issue id="ServiceCast" severity="warning" />
+    <issue id="StringFormatInvalid" severity="warning" />
+    <issue id="StringFormatMatches" severity="warning" />
+    <issue id="StyleCycle" severity="warning" />
+    <issue id="Suspicious0dp" severity="warning" />
+    <issue id="UniquePermission" severity="warning" />
+    <issue id="UnknownId" severity="warning" />
+    <issue id="ValidFragment" severity="warning" />
+    <issue id="WrongCall" severity="warning" />
+    <issue id="WrongFolder" severity="warning" />
+    <issue id="WrongManifestParent" severity="warning" />
+    <issue id="WrongViewCast" severity="warning" />
+</lint>

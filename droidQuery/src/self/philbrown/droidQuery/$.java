@@ -4044,7 +4044,7 @@ public class $
 					{
 						//no setText method. Try a TextView
 						TextView tv = new TextView(this.context);
-						tv.setBackgroundColor(android.R.color.transparent);
+						tv.setBackgroundColor(context.getResources().getColor(android.R.color.transparent));
 						tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
 						((ViewGroup) view).addView(tv);
 						tv.setText(Html.fromHtml(html, new AsyncImageGetter(tv), null));
@@ -4098,7 +4098,7 @@ public class $
 					{
 						//no setText method. Try a TextView
 						TextView tv = new TextView(this.context);
-						tv.setBackgroundColor(android.R.color.transparent);
+						tv.setBackgroundColor(context.getResources().getColor(android.R.color.transparent));
 						tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
 						tv.setText(text);
 						((ViewGroup) view).addView(tv);

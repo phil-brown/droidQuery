@@ -28,6 +28,7 @@ import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.AjaxOptions;
 import self.philbrown.droidQuery.AnimationOptions;
 import self.philbrown.droidQuery.Function;
+import self.philbrown.droidQuery.ViewObserver.Observation;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -121,7 +122,33 @@ public class ExampleActivity extends Activity
 				Toast.makeText(ExampleActivity.this, "Refresh", Toast.LENGTH_SHORT).show();
 				refresh();
 			}
-        });
+        })
+//        .observe("selected", new Function() {
+//
+//			@Override
+//			public void invoke($ droidQuery, Object... params) {
+//				Observation observation = (Observation) params[0];
+//				Log.i("example", "button selected");
+//				if (((Boolean) observation.newValue) == true)
+//				{
+//					Log.i("example", "button selected");
+//					droidQuery.attr("backgroundColor", Color.WHITE);
+//				}
+//				else
+//				{
+//					Log.i("example", "button deselected");
+//					droidQuery.attr("backgroundColor", Color.BLACK);
+//				}
+//				
+//			}
+//        	
+//        }).observe("alpha", new Function() {
+//        	@Override
+//			public void invoke($ droidQuery, Object... params) {
+//        		Log.i("$", "Alpha Changed");
+//        	}
+//        }).attr("backgroundColor", Color.BLACK).attr("alpha", 0.5f)
+        ;
         
         //or use the "on" method to register a longClick event.
         $.with(this, R.id.btn_longrefresh).on("longClick", new Function() {
@@ -260,7 +287,7 @@ public class ExampleActivity extends Activity
 									cell.addView(checkbox);
 									
 									$.with(ExampleActivity.this, R.id.example_layout).add(cell);
-									
+									//$.with(fimage).image(avatarURL, 200, 200, $.noop());
 									$.ajax(new AjaxOptions(avatarURL)
 												.type("GET")
 												.dataType("image")
