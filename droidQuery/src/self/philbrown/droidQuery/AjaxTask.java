@@ -610,8 +610,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		else if (response instanceof Success)
 		{
 			Success s = (Success) response;
-			//cache the successful response. FIXME: this fails to work: if (options.cache())
-			AjaxCache.sharedCache().cacheResponse(s.obj, options);
+			if (options.cache())
+				AjaxCache.sharedCache().cacheResponse(s.obj, options);
 			if (options.success() != null)
 			{
 				//invoke success with parsed response and the status string
