@@ -594,6 +594,17 @@ public class $
 	}
 	
 	/**
+	 * 
+	 * @param context
+	 * @param ids
+	 * @return
+	 */
+	public static $ with(Context context, int... ids)
+	{
+		return $.with(context).ids(ids);
+	}
+	
+	/**
 	 * Finds a view that is identified by the given id
 	 * @param id
 	 * @return the found view, or {@code null} if it was not found.
@@ -3054,6 +3065,7 @@ public class $
 	 * Set the current selection to the view with the given id
 	 * @param id the id of the view to manipulate
 	 * @return this
+	 * @see #ids(int...)
 	 */
 	public $ id(int id)
 	{
@@ -3063,6 +3075,24 @@ public class $
 			this.views.clear();
 			this.rootView = view;
 			this.views.add(view);
+		}
+		return this;
+	}
+	
+	/**
+	 * Set the current selection to the set of views with the given id.
+	 * @param ids
+	 * @return
+	 * @see #id(int)
+	 */
+	public $ ids(int... ids)
+	{
+		this.views.clear();
+		this.rootView = findViewById(ids[0]);
+		views.add(rootView);
+		for (int i = 1; i < ids.length; i++) 
+		{
+			this.views.add(findViewById(ids[i]));
 		}
 		return this;
 	}

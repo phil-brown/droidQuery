@@ -91,21 +91,23 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	private static volatile List<AjaxTask> localTasks = new ArrayList<AjaxTask>();
 	/** Contains the current global tasks */
 	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
-	/** Represents a cached HTTP response */
-	class CachedResponse
-	{
-		/** The response Object */
-		public Object response;
-		/** The Last-Requested timestamp */
-		public Date timestamp;
-		/** The Last-Modified timestamp */
-		public Date lastModified;
-	}
-	/** 
-	 * Keeps track of the responses made by each URL. This cache will be used for caching and
-	 * modified headers. 
-	 */
-	private static volatile Map<String, CachedResponse> URLresponses = new HashMap<String, CachedResponse>();
+//	/** Represents a cached HTTP response */
+//	class CachedResponse
+//	{
+//		/** The response Object */
+//		public Object response;
+//		/** The Last-Requested timestamp */
+//		public Date timestamp;
+//		/** The Last-Modified timestamp */
+//		public Date lastModified;
+//	}
+//	/** 
+//	 * Keeps track of the responses made by each URL. This cache will be used for caching and
+//	 * modified headers. 
+//	 */
+//	private static volatile Map<String, CachedResponse> URLresponses = new HashMap<String, CachedResponse>();
+//	
+	private static volatile Map<String, Date> lastModifiedUrls = new HashMap<String, Date>();
 	
 	/**
 	 * Constructor
@@ -207,22 +209,15 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	protected TaskResponse doInBackground(Void... arg0) 
 	{
 		//handle cached responses
-		CachedResponse cachedResponse = URLresponses.get(String.format(Locale.US, "%s_?=%s", options.url(), options.dataType()));
+		Object cachedResponse = AjaxCache.sharedCache().getCachedResponse(options);
 		//handle ajax caching option
-		if (cachedResponse != null)
+		if (cachedResponse != null && options.cache())
 		{
-			if (options.cache())
-			{
-				if (new Date().getTime() - cachedResponse.timestamp.getTime() < options.cacheTimeout())
-				{
-					//return cached response
-					Success s = new Success();
-					s.obj = cachedResponse.response;
-					s.reason = "cached response";
-					s.headers = null;
-					return s;
-				}
-			}
+			Success s = new Success();
+			s.obj = cachedResponse;
+			s.reason = "cached response";
+			s.headers = null;
+			return s;
 			
 		}
 		
@@ -491,31 +486,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				}
 				if (success)
 				{
-					//Handle cases where successful requests still return errors (these include
-					//configurations in AjaxOptions and HTTP Headers
-					String key = String.format(Locale.US, "%s_?=%s", options.url(), options.dataType());
-					CachedResponse cache = URLresponses.get(key);
-					Date now = new Date();
-					//handle ajax caching option
-					if (cache != null)
-					{
-						if (options.cache())
-						{
-							if (now.getTime() - cache.timestamp.getTime() < options.cacheTimeout())
-							{
-								parsedResponse = cache;
-							}
-							else
-							{
-								cache.response = parsedResponse;
-								cache.timestamp = now;
-								synchronized(URLresponses) {
-									URLresponses.put(key, cache);
-								}
-							}
-						}
-						
-					}
+					
 					//handle ajax ifModified option
 					Header[] lastModifiedHeaders = response.getHeaders("last-modified");
 					if (lastModifiedHeaders.length >= 1) {
@@ -526,7 +497,13 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 							Date lastModified = format.parse(h.getValue());
 							if (options.ifModified() && lastModified != null)
 							{
-								if (cache.lastModified != null && cache.lastModified.compareTo(lastModified) == 0)
+								Date lastModifiedDate;
+								synchronized(lastModifiedUrls)
+								{
+									lastModifiedDate = lastModifiedUrls.get(options.url());
+								}
+								
+								if (lastModifiedDate != null && lastModifiedDate.compareTo(lastModified) == 0)
 								{
 									//request response has not been modified. 
 									//Causes an error instead of a success.
@@ -552,9 +529,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 								}
 								else
 								{
-									cache.lastModified = lastModified;
-									synchronized(URLresponses) {
-										URLresponses.put(key, cache);
+									synchronized(lastModifiedUrls)
+									{
+										lastModifiedUrls.put(options.url(), lastModified);
 									}
 								}
 							}
@@ -633,6 +610,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		else if (response instanceof Success)
 		{
 			Success s = (Success) response;
+			//cache the successful response. FIXME: this fails to work: if (options.cache())
+			AjaxCache.sharedCache().cacheResponse(s.obj, options);
 			if (options.success() != null)
 			{
 				//invoke success with parsed response and the status string
@@ -645,7 +624,6 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			if (options.global())
 				$.ajaxSuccess();
 		}
-		
 		
 		if (options.complete() != null)
 		{
