@@ -630,16 +630,16 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			if (response != null)
 			{
 				if (options.context() != null)
-					options.complete().invoke($.with(options.context()), response.reason);
+					options.complete().invoke($.with(options.context()), options, response.reason);
 				else
-					options.complete().invoke(null, response.reason);
+					options.complete().invoke(null, options, response.reason);
 			}
 			else
 			{
 				if (options.context() != null)
-					options.complete().invoke($.with(options.context()), "null response");
+					options.complete().invoke($.with(options.context()), options, "null response");
 				else
-					options.complete().invoke(null, "null response");
+					options.complete().invoke(null, options, "null response");
 			}
 		}
 		if (options.global())
