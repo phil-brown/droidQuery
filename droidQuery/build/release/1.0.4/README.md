@@ -25,11 +25,9 @@ with *jQuery* to get into Android development.
 
 ### How to Include droidQuery in your Project
 
-There are three ways to include *droidQuery* in your project:
-
-1. Clone the repo, import into Eclipse (`Import > Android > Existing Android Code Into Workspace`), and include a project dependency.
-2. Include the full `jar`, which includes dependencies. This is available for newer [realeases](https://github.com/phil-brown/droidQuery/releases), or can be generated using the *ant* `build.xml` script. You can tell these apart because they are named with the current version.
-3. The __best way__ is to include each dependent `jar` separately. This will allow you to include projects with the same dependencies. Do this by grabbing the latest [realease](https://github.com/phil-brown/droidQuery/releases) (this file is simply called *droidquery.jar*), then grab the dependency jars [here](https://github.com/phil-brown/droidQuery/tree/master/droidQuery/libs).
+The simplest way to include *droidQuery* in your project is to copy [droidquery.jar](https://github.com/phil-brown/droidQuery/blob/master/droidQuery/bin/droidquery.jar)
+into your project's `libs` directory. If the `libs` folder does not exist, create it (this will be
+automatically included in your build path).
 
 ### License
 
@@ -64,7 +62,7 @@ simplest way to create the instance is using the `with` static methods:
     $.with(Context);
     $.with(View);
     $.with(List<View>);
-    $.with(View...);
+    $.with(View[]);
     
 If `Context` is passed, *droidQuery* will attempt to manipulate the root view. For example, if `Context`
 is an `Activity`, the content view will be selected. There is also a way to select a `View` using it's id:
