@@ -140,7 +140,7 @@ public class AjaxOptions
 	public Function complete() { return complete; }
 	/**
 	 * Sets the function that is registered to when the task has completed. The function will receive
-	 * no varargs, 
+	 * two varargs: the original {@link AjaxOptions}, and the reason string. 
 	 * It will also receive a {@code null} Object for the
 	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
 	 * the case, {@code complete} will receive a <em>droidQuery</em> instance with that <em>context</em>.
