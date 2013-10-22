@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -643,6 +644,8 @@ public class AjaxOptions
 	 * The function will receive a {@code null} Object for the
 	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
 	 * the case, {@code statusCode} will receive a <em>droidQuery</em> instance with that <em>context</em>.
+	 * It will receive the int status code as the first parameter and a 
+	 * {@link org.apache.http.StatusLine StatusLine} Object as the second parameter.
 	 * @param statusCode the mapping
 	 * @return this
 	 * @see #statusCode(Integer, Function)
@@ -672,6 +675,22 @@ public class AjaxOptions
 	public AjaxOptions statusCode(Integer code, Function function)
 	{
 		this.statusCode.put(code, function);
+		return this;
+	}
+	
+	/**
+	 * Shortcut for calling {@link #statusCode(Integer, Function)} and using one {@code Function}
+	 * for all codes.
+	 * @param codes
+	 * @param function
+	 * @return
+	 */
+	public AjaxOptions statusCode(List<Integer> codes, Function function)
+	{
+		for (int code : codes)
+		{
+			this.statusCode.put(code, function);
+		}
 		return this;
 	}
 	

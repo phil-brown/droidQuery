@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
@@ -70,6 +69,7 @@ import self.philbrown.droidQuery.AjaxTask.TaskResponse;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.os.Handler;
 import android.util.Log;
 
 import com.commonsware.cwac.task.AsyncTaskEx;
@@ -84,6 +84,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	private AjaxOptions options;
 	/** The HTTP Request to perform */
 	private HttpUriRequest request = null;
+	/** Used to run functions in the thread in which this task was started. */
+	private Handler mHandler;
 	
 	/** Used for synchronous operations. */
 	private static Semaphore mutex = new Semaphore(1);
@@ -91,22 +93,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	private static volatile List<AjaxTask> localTasks = new ArrayList<AjaxTask>();
 	/** Contains the current global tasks */
 	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
-//	/** Represents a cached HTTP response */
-//	class CachedResponse
-//	{
-//		/** The response Object */
-//		public Object response;
-//		/** The Last-Requested timestamp */
-//		public Date timestamp;
-//		/** The Last-Modified timestamp */
-//		public Date lastModified;
-//	}
-//	/** 
-//	 * Keeps track of the responses made by each URL. This cache will be used for caching and
-//	 * modified headers. 
-//	 */
-//	private static volatile Map<String, CachedResponse> URLresponses = new HashMap<String, CachedResponse>();
-//	
+	/** Used to keep track of the last modified dates for specific URLs */
 	private static volatile Map<String, Date> lastModifiedUrls = new HashMap<String, Date>();
 	
 	/**
@@ -141,7 +128,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		{
 			throw new NullPointerException("Cannot call Ajax with null URL!");
 		}
-		
+		mHandler = new Handler();
 	}
 	
 	/**
@@ -365,15 +352,23 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					options.dataFilter().invoke(null, response, options.dataType());
 			}
 			
-			StatusLine statusLine = response.getStatusLine();
+			final StatusLine statusLine = response.getStatusLine();
 			
-			Function function = options.statusCode().get(statusLine);
+			final Function function = options.statusCode().get(statusLine.getStatusCode());
 			if (function != null)
 			{
-				if (options.context() != null)
-					function.invoke($.with(options.context()));
-				else
-					function.invoke(null);
+				mHandler.post(new Runnable() {
+
+					@Override
+					public void run() {
+						if (options.context() != null)
+							function.invoke($.with(options.context()), statusLine.getStatusCode(), statusLine);
+						else
+							function.invoke(null, statusLine.getStatusCode(), statusLine);
+					}
+					
+				});
+				
 			}
 			
 			if (statusLine.getStatusCode() >= 300)
