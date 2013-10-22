@@ -680,12 +680,29 @@ public class AjaxOptions
 	
 	/**
 	 * Shortcut for calling {@link #statusCode(Integer, Function)} and using one {@code Function}
-	 * for all codes.
+	 * for all codes. For example:
+	 * <pre>
+	 * new AjaxOptions().url("http://www.example.com").statusCode(new Integer[]{500, 408, 508}, new Function() {
+	 * 	public void invoke($ d, Object... args) {
+	 *  	int code = (Integer) args[0];
+	 *      switch(code) {
+	 *           case 500:
+	 *           	break;
+	 *           case 408:
+	 *           	break;
+	 *           case 508:
+	 *           	break;
+	 *           default:
+	 *           	break;
+	 *      }
+	 * 	}
+	 * });
+	 * </pre>
 	 * @param codes
 	 * @param function
 	 * @return
 	 */
-	public AjaxOptions statusCode(List<Integer> codes, Function function)
+	public AjaxOptions statusCode(Integer[] codes, Function function)
 	{
 		for (int code : codes)
 		{
