@@ -35,21 +35,7 @@ import android.view.animation.Interpolator;
  */
 public class AnimationOptions implements Cloneable
 {
-	/** Contains the methods found in this Class */
-	private static Method[] methods = AnimationOptions.class.getMethods();
-	/** Used privately for reflection */
-	private static Map<String, Method> setters = new HashMap<String, Method>(),
-			                           getters = new HashMap<String, Method>();
-	static
-	{
-		for (Method m : methods)
-		{
-			if (m.getParameterTypes().length != 0)
-				setters.put(m.getName(), m);
-			else
-				getters.put(m.getName(), m);
-		}
-	}
+	
 	
 	/** Used for reflection */
 	private static Field[] fields = AnimationOptions.class.getDeclaredFields();
@@ -98,11 +84,11 @@ public class AnimationOptions implements Cloneable
 	        String key = iterator.next();
 	        try {
 	            Object value = options.get(key);
-	            for (Method m : methods)
+	            for (Field f : fields)
 	            {
-	            	if (m.getName().equalsIgnoreCase(key) && m.getGenericParameterTypes().length != 0)
+	            	if (f.getName().equalsIgnoreCase(key))
 	            	{
-	            		m.invoke(this, value);
+	            		f.set(this, value);
 	            		break;
 	            	}
 	            }
@@ -446,15 +432,9 @@ public class AnimationOptions implements Cloneable
 		AnimationOptions clone = new AnimationOptions();
 		for (Field f : fields)
 		{
-			Method setter = setters.get(f.getName());
-			Method getter = getters.get(f.getName());
-			if (setter != null && getter != null)
-			{
-				try {
-					setter.invoke(clone, getter.invoke(this));
-				} catch (Throwable t) {}
-			}
-			
+			try {
+				f.set(clone, f.get(this));
+			} catch (Throwable t) {}
 		}
 		return clone;
 	}

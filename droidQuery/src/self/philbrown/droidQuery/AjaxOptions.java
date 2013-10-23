@@ -21,7 +21,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -42,22 +41,6 @@ import android.webkit.URLUtil;
  */
 public class AjaxOptions implements Cloneable
 {
-	
-	/** Used privately for reflection */
-	private static Method[] methods = AjaxOptions.class.getMethods();
-	/** Used privately for reflection */
-	private static Map<String, Method> setters = new HashMap<String, Method>(),
-			                           getters = new HashMap<String, Method>();
-	static
-	{
-		for (Method m : methods)
-		{
-			if (m.getParameterTypes().length != 0)
-				setters.put(m.getName(), m);
-			else
-				getters.put(m.getName(), m);
-		}
-	}
 	
 	/** Used for reflection */
 	private static Field[] fields = AjaxOptions.class.getDeclaredFields();
@@ -954,14 +937,17 @@ public class AjaxOptions implements Cloneable
 		{
 			for (Field f : fields)
 			{
-				Method setter = setters.get(f.getName());
-				Method getter = getters.get(f.getName());
-				if (setter != null && getter != null)
-				{
-					try {
-						setter.invoke(this, getter.invoke(globalOptions));
-					} catch (Throwable t) {}
-				}
+//				Method setter = setters.get(f.getName());
+//				Method getter = getters.get(f.getName());
+//				if (setter != null && getter != null)
+//				{
+//					try {
+//						setter.invoke(this, getter.invoke(globalOptions));
+//					} catch (Throwable t) {}
+//				}
+				try {
+					f.set(this, f.get(globalOptions));
+				} catch (Throwable t) {}
 				
 			}
 		}
@@ -1042,13 +1028,10 @@ public class AjaxOptions implements Cloneable
 	        String key = iterator.next();
 	        try {
 	            Object value = json.get(key);
-	            for (Method m : methods)
+	            for (Field f : fields)
 	            {
-	            	if (m.getName().equalsIgnoreCase(key) && m.getGenericParameterTypes().length != 0)
-	            	{
-	            		m.invoke(this, value);
-	            		break;
-	            	}
+	            	if (f.getName().equalsIgnoreCase(key))
+	            		f.set(this, value);
 	            }
 	            
 	        } catch (JSONException e) {
@@ -1092,15 +1075,9 @@ public class AjaxOptions implements Cloneable
 		AjaxOptions clone = new AjaxOptions();
 		for (Field f : fields)
 		{
-			Method setter = setters.get(f.getName());
-			Method getter = getters.get(f.getName());
-			if (setter != null && getter != null)
-			{
-				try {
-					setter.invoke(clone, getter.invoke(this));
-				} catch (Throwable t) {}
-			}
-			
+			try {
+				f.set(clone, f.get(this));
+			} catch (Throwable t) {}
 		}
 		return clone;
 	}
