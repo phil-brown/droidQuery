@@ -615,18 +615,28 @@ public class $
 	 */
 	private View findViewById(int id)
 	{
-		View v = rootView.findViewById(id);
-		if (v == null)
+		//first check within the current selection
+		for (View view : views)
 		{
-			for (View view : views)
+			if (view != null)
 			{
 				if (view.getId() == id) 
 				{
-					v = view;
-					break;
+					return view;
 				}
 			}
+			
 		}
+		View v = null;
+		
+		//if not found, check the current scope (rootView)
+		if (rootView != null)
+			v = rootView.findViewById(id);
+		
+		//if not found, check the Activity's scope
+		if (v == null && context instanceof Activity)
+			v = ((Activity) context).findViewById(id);
+		
 		return v;
 	}
 	
