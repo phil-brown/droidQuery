@@ -16,7 +16,9 @@
 
 package self.philbrown.droidQuery;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,10 +33,26 @@ import android.view.animation.Interpolator;
  * Effect (Animation) Options for droidQuery
  * @author Phil Brown
  */
-public class AnimationOptions 
+public class AnimationOptions implements Cloneable
 {
 	/** Contains the methods found in this Class */
 	private static Method[] methods = AnimationOptions.class.getMethods();
+	/** Used privately for reflection */
+	private static Map<String, Method> setters = new HashMap<String, Method>(),
+			                           getters = new HashMap<String, Method>();
+	static
+	{
+		for (Method m : methods)
+		{
+			if (m.getParameterTypes().length != 0)
+				setters.put(m.getName(), m);
+			else
+				getters.put(m.getName(), m);
+		}
+	}
+	
+	/** Used for reflection */
+	private static Field[] fields = AnimationOptions.class.getDeclaredFields();
 
 	/**
 	 * Default constructor
@@ -419,6 +437,26 @@ public class AnimationOptions
 	{
 		this.complete = complete;
 		return this;
+	}
+	
+	@Override
+	public Object clone()
+	{
+		//custom clone implementation
+		AnimationOptions clone = new AnimationOptions();
+		for (Field f : fields)
+		{
+			Method setter = setters.get(f.getName());
+			Method getter = getters.get(f.getName());
+			if (setter != null && getter != null)
+			{
+				try {
+					setter.invoke(clone, getter.invoke(this));
+				} catch (Throwable t) {}
+			}
+			
+		}
+		return clone;
 	}
 	
 }

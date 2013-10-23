@@ -40,7 +40,7 @@ import android.webkit.URLUtil;
  * Build an Ajax Request
  * @author Phil Brown
  */
-public class AjaxOptions 
+public class AjaxOptions implements Cloneable
 {
 	
 	/** Used privately for reflection */
@@ -644,8 +644,8 @@ public class AjaxOptions
 	 * The function will receive a {@code null} Object for the
 	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
 	 * the case, {@code statusCode} will receive a <em>droidQuery</em> instance with that <em>context</em>.
-	 * It will receive the int status code as the first parameter and a 
-	 * {@link org.apache.http.StatusLine StatusLine} Object as the second parameter.
+	 * It will receive the int status code as the first parameter and a {@code clone} of this {@code AjaxOptions}
+	 * object as the second parameter.
 	 * @param statusCode the mapping
 	 * @return this
 	 * @see #statusCode(Integer, Function)
@@ -1083,6 +1083,26 @@ public class AjaxOptions
 			auth.append(":").append(password);
 		}
 		return Base64.encode(auth.toString().getBytes(), Base64.NO_WRAP);
+	}
+	
+	@Override
+	public Object clone()
+	{
+		//custom clone implementation
+		AjaxOptions clone = new AjaxOptions();
+		for (Field f : fields)
+		{
+			Method setter = setters.get(f.getName());
+			Method getter = getters.get(f.getName());
+			if (setter != null && getter != null)
+			{
+				try {
+					setter.invoke(clone, getter.invoke(this));
+				} catch (Throwable t) {}
+			}
+			
+		}
+		return clone;
 	}
 	
 }

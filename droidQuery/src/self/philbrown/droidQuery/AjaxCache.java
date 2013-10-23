@@ -23,7 +23,7 @@ public class AjaxCache
 	private static Map<String, ? super Object> data;
 	/** Stores dates */
 	private static Map<String, Date> dates;
-	
+	/** {@code true} to show verbose output. Otherwise {@code false}. */
 	private boolean verbose;
 	
 	/**

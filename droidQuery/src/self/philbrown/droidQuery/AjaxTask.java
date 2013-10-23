@@ -362,9 +362,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					@Override
 					public void run() {
 						if (options.context() != null)
-							function.invoke($.with(options.context()), statusLine.getStatusCode(), statusLine);
+							function.invoke($.with(options.context()), statusLine.getStatusCode(), options.clone());
 						else
-							function.invoke(null, statusLine.getStatusCode(), statusLine);
+							function.invoke(null, statusLine.getStatusCode(), options.clone());
 					}
 					
 				});

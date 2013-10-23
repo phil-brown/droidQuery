@@ -276,9 +276,13 @@ public class $
 				this.views.add(view);
 			}
 		}
-		View view = new View(context);//if view operations are attempted without the view set, this prevents null pointer exceptions
-		this.rootView = view;
-		this.views.add(view);
+		else
+		{
+			View view = new View(context);//if view operations are attempted without the view set, this prevents null pointer exceptions
+			this.rootView = view;
+			this.views.add(view);
+		}
+		
 		
 	}
 	
@@ -611,11 +615,7 @@ public class $
 	 */
 	private View findViewById(int id)
 	{
-		View v = null;
-		if (context instanceof Activity)
-			v = ((Activity) context).findViewById(id);
-		else	
-			v = rootView.findViewById(id);
+		View v = rootView.findViewById(id);
 		if (v == null)
 		{
 			for (View view : views)
