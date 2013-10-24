@@ -59,12 +59,12 @@ public class AjaxCache
 	
 	/**
 	 * Get the cached response for the given options
-	 * @param options the options used to store the cache entry, or an options with the same data type, type, and url.
+	 * @param options the options used to store the cache entry, or an options with the same data type, type, url, and data.
 	 * @return the cached Object
 	 */
 	public Object getCachedResponse(AjaxOptions options)
 	{
-		String key = String.format(Locale.US, "%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url());
+		String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
 
 		Object response;
 		Date date;
@@ -118,7 +118,7 @@ public class AjaxCache
 	 */
 	public void cacheResponse(Object response, AjaxOptions options)
 	{
-		String key = String.format(Locale.US, "%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url());
+		String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
 		if (verbose)
 		{
 			Log.i("cacheResponse", "Key = " + key);
