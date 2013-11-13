@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HTML-Style Form Layout Object. This can be used with {@link self.philbrown.droidQuery.$ droidQuery} 
+    to simplify form validation and encoding. -->
+    <declare-styleable name="Form">
+        <!-- Specifies the form action. This is a method in the {@link Activity} that accepts a 
+        {@link Form} and a {@code boolean} value as parameters. The {@code boolean} value is set to whether or not the 
+        form was successfully validated. -->
+        <attr name="action" format="string" required="true" />
+        <!-- Specifies whether or not the form should be validated. Default is {@code true}. -->
+        <attr name="validate" format="boolean" />
+        <!-- Set to {@code true} to print debug output to logcat. -->
+        <attr name="debug" format="boolean" />
+    </declare-styleable>
+    
+    <!-- ======================================= -->
+    <!-- Widget package parent layout attributes -->
+    <!-- ======================================= -->
+    <eat-comment />
+    
+    <declare-styleable name="Form_Layout">
+        <!-- Wether or not the input is required. Default is {@code false}. -->
+        <attr name="form_required" format="boolean" />
+        <!-- Specifies the field that should be tested for simple validation. -->
+        <attr name="form_field" format="string" />
+        <!-- Specifies that the view should submit the form if clicked. -->
+        <attr name="form_submit_onclick" format="boolean" />
+        <!-- Specifies the view name. This is used for URL serialization. -->
+        <attr name="form_name" format="string" />
+    </declare-styleable>
+    
+</resources>

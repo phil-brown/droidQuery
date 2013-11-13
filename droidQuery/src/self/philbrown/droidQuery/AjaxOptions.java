@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import javax.xml.parsers.SAXParser;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xml.sax.helpers.DefaultHandler;
@@ -207,6 +208,85 @@ public class AjaxOptions implements Cloneable
 	{
 		this.data = data;
 		return this;
+	}
+	
+	/**
+	 * Set the data to be sent to the server. Will be treated like JSON by taking declared fields 
+	 * and converting them to JSON fields, recursively. For example:
+	 * <pre>
+	 * new AjaxOptions().data(new JSONModel() {
+	 *     public int number = 0;
+	 *     public String name = "foobar"
+	 *     public int id = 12345;
+	 *     public boolean isMale = true;
+	 * });
+	 * </pre>
+	 * Complex Objects are converted to String using its {@code toString()} method.
+	 * @param data
+	 * @return this
+	 */
+	public AjaxOptions data(JSONModel data)
+	{
+		this.data = encodeToJSON(data);
+		return this;
+	}
+	
+	/**
+	 * Recursively encodes a model object to JSON.
+	 * @param data
+	 * @return
+	 * @see #data(JSONModel)
+	 */
+	private JSONObject encodeToJSON(Object data)
+	{
+		JSONObject json = new JSONObject();
+		try {
+			Field[] fields = data.getClass().getDeclaredFields();
+			for (Field f : fields)
+			{
+				try {
+					Object obj = f.get(data);
+					//check valid JSONObject data fields
+					if (obj == null || 
+						obj instanceof JSONObject || 
+						obj instanceof JSONArray || 
+						obj == JSONObject.NULL || 
+						obj instanceof String ||
+						obj instanceof Boolean||
+						obj instanceof Integer||
+						obj instanceof Double||
+						obj instanceof Long)
+					{
+						json.put(f.getName(), obj);
+					}
+					else
+					{
+						try {
+							json.put(f.getName(), encodeToJSON(obj));
+						}
+						catch (Throwable t)
+						{
+							if (debug())
+								t.printStackTrace();
+							//otherwise it must be toString-ed.
+							json.put(f.getName(), obj.toString());
+						}
+						
+					}
+				}
+				catch (Throwable t)
+				{
+					if (debug())
+						t.printStackTrace();
+				}
+			}
+		}
+		catch (Throwable t)
+		{
+			if (debug())
+				t.printStackTrace();
+		}
+		return json;
 	}
 	
 	/**
@@ -1080,6 +1160,22 @@ public class AjaxOptions implements Cloneable
 			} catch (Throwable t) {}
 		}
 		return clone;
+	}
+	
+	/**
+	 * This empty interface can be used for passing custom data to requests using {@link #data(Model)}.
+	 * This works by converting the object into JSON based on what fields it contains. For example:
+	 * <pre>
+	 * new AjaxOptions().data(new JSONModel(){
+	 *     public String foo = "bar";
+	 *     public int number = 200;
+	 * });
+	 * </pre>
+	 * @author Phil Brown
+	 * @since 6:38:28 PM Nov 12, 2013
+	 *
+	 */
+	public interface JSONModel {
 	}
 	
 }

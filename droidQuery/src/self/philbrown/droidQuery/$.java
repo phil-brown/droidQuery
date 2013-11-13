@@ -3718,10 +3718,10 @@ public class $
 	 * @param json the String to parse
 	 * @return JSONObject or JSONArray (depending on the given string) if parse succeeds. Otherwise {@code null}.
 	 */
-	public Object parseJSON(String json)
+	public static Object parseJSON(String json)
 	{
 		try {
-			if (json.startsWith("{"))
+			if (json.trim().startsWith("{"))
         		return new JSONObject(json);
         	else
         		return new JSONArray(json);
@@ -3735,7 +3735,7 @@ public class $
 	 * @param xml the XML to parse
 	 * @return XML Document if parse succeeds. Otherwise {@code null}.
 	 */
-	public Document parseXML(String xml)
+	public static Document parseXML(String xml)
 	{
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
@@ -3750,7 +3750,7 @@ public class $
 	 * @param html the HTML to parse
 	 * @return the Spanned Object created from the given HTML
 	 */
-	public Spanned parseHTML(String html)
+	public static Spanned parseHTML(String html)
 	{
 		return Html.fromHtml(html);
 	}

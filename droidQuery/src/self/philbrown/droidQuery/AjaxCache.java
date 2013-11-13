@@ -115,8 +115,9 @@ public class AjaxCache
 	 * Cache a response
 	 * @param response the response value
 	 * @param options the options used to get the value. This is used as the key.
+	 * @return the key used to cache the response.
 	 */
-	public void cacheResponse(Object response, AjaxOptions options)
+	public String cacheResponse(Object response, AjaxOptions options)
 	{
 		String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
 		if (verbose)
@@ -132,6 +133,7 @@ public class AjaxCache
 				dates.put(key, new Date());
 			}
 		}
+		return key;
 	}
 	
 	/**
