@@ -43,6 +43,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 
+import self.philbrown.css.CSSSelector;
 import self.philbrown.droidQuery.SwipeDetector.SwipeListener;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -59,6 +60,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import android.os.FileObserver;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
@@ -358,6 +360,38 @@ public class $
 	}
 	
 	/**
+	 * Uses css selector to make a selection within the scope of the given parent view.
+	 * @param parent
+	 * @param selector
+	 */
+	public $(View parent, String selector)
+	{
+		this(parent);
+		$ query = CSSSelector.makeSelection(parent, selector);
+		this.rootView = query.rootView;
+		this.context = query.context;
+		this.views = query.views;
+	}
+	
+	/**
+	 * Use css selectors to make selection
+	 * <pre>
+	 * new $(this, ".TextEdit");
+	 * </pre>
+	 * @param context
+	 * @param resources
+	 */
+	public $(Context context, String selector)
+	{
+		this(context);
+		$ query = CSSSelector.makeSelection(this.rootView, selector);
+		this.rootView = query.rootView;
+		this.context = query.context;
+		this.views = query.views;
+		
+	}
+	
+	/**
 	 * Refreshes the listeners for focus changes
 	 */
 	private void setupFocusListener()
@@ -606,6 +640,30 @@ public class $
 	public static $ with(Context context, int... ids)
 	{
 		return $.with(context).ids(ids);
+	}
+	
+	/**
+	 * Initiate new droidQuery with the given selector
+	 * @param context
+	 * @param selector
+	 * @return
+	 * @see $#$(Context, String)
+	 */
+	public static $ with(Context context, String selector)
+	{
+		return new $(context, selector);
+	}
+	
+	/**
+	 * Initiate new droidQuery with the given selector
+	 * @param parent view scope
+	 * @param selector
+	 * @return
+	 * @see $#$(Context, String)
+	 */
+	public static $ with(View parent, String selector)
+	{
+		return new $(parent, selector);
 	}
 	
 	/**
@@ -2881,13 +2939,23 @@ public class $
 			return null;
 		}
 		
+		return selectByType(clazz);
+		
+	}
+	
+	/**
+	 * Select all subviews of the currently-selected views that are subclasses of the given class.
+	 * @param clazz class
+	 * @return all the selected views in a droidQuery wrapper
+	 */
+	public $ selectByType(Class<?> clazz)
+	{
 		List<View> subviews = new ArrayList<View>();
 		for (View view : this.views)
 		{
 			subviews.addAll(recursivelySelectByType(view, clazz));
 		}
 		return $.with(context, subviews);
-		
 	}
 	
 	/**
@@ -4249,7 +4317,7 @@ public class $
 	 * @return this
 	 * @see AjaxOptions#error(Function)
 	 */
-	public $ image(String source, int width, int height, Function error)
+	public $ image(final String source, int width, int height, final Function error)
 	{
 		if (source.startsWith("file://"))
 		{
@@ -4265,7 +4333,15 @@ public class $
 				{
 					if (v instanceof ImageView)
 					{
-						((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+						try
+						{
+							((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+						}
+						catch (Throwable t)
+						{
+							if (error != null)
+								error.invoke($.with(context), t);
+						}
 					}
 					else
 					{
@@ -4282,11 +4358,11 @@ public class $
 		else if (URLUtil.isValidUrl(source))
 		{
 			AjaxOptions options = new AjaxOptions().url(source)
-					                               .type("GET")
-					                               .dataType("image")
-					                               .context(context)
-					                               .global(false)
-					                               .success(new Function() {
+				                                   .type("GET")
+				                                   .dataType("image")
+				                                   .context(context)
+				                                   .global(false)
+				                                   .success(new Function() {
 				@Override
 				public void invoke($ droidQuery, Object... params) {
 					Bitmap bitmap = (Bitmap) params[0];
@@ -4294,7 +4370,14 @@ public class $
 					{
 						if (v instanceof ImageView)
 						{
-							((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+							try {
+								((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+							}
+							catch (Throwable t)
+							{
+								if (error != null)
+									error.invoke($.with(context), t);
+							}
 						}
 						else
 						{
@@ -4333,7 +4416,15 @@ public class $
 				{
 					if (v instanceof ImageView)
 					{
-						((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+						try
+						{
+							((ImageView) v).setImageBitmap(Bitmap.createBitmap(bitmap));
+						}
+						catch (Throwable t)
+						{
+							if (error != null)
+								error.invoke($.with(context), t);
+						}
 					}
 					else
 					{
@@ -5007,18 +5098,26 @@ public class $
 	/**
 	 * Schedule a task for single execution after a specified delay.
 	 * @param function the task to schedule. Receives no args. Note that the function will be
-	 * run on a Timer thread, and not the UI Thread.
+	 * run on the thread on this method was called.
 	 * @param delay amount of time in milliseconds before execution.
 	 * @return the created Timer
 	 */
 	public static Timer setTimeout(final Function function, long delay)
 	{
 		Timer t = new Timer();
+		final Handler h = new Handler();
 		t.schedule(new TimerTask(){
 
 			@Override
 			public void run() {
-				function.invoke(null);
+				h.post(new Runnable() {
+					@Override
+					public void run()
+					{
+						function.invoke(null);
+					}
+				});
+				
 			}
 			
 		}, delay);
@@ -5028,18 +5127,26 @@ public class $
 	/**
 	 * Schedule a task for repeated fixed-rate execution after a specific delay has passed.
 	 * @param the task to schedule. Receives no args. Note that the function will be
-	 * run on a Timer thread, and not the UI Thread.
+	 * run on a the thread on which this method was called.
 	 * @param delay amount of time in milliseconds before execution.
 	 * @return the created Timer
 	 */
 	public static Timer setInterval(final Function function, long delay)
 	{
 		Timer t = new Timer();
+		final Handler h = new Handler();
 		t.scheduleAtFixedRate(new TimerTask(){
 
 			@Override
 			public void run() {
-				function.invoke(null);
+				h.post(new Runnable() {
+					@Override
+					public void run()
+					{
+						function.invoke(null);
+					}
+				});
+				
 			}
 			
 		}, 0, delay);

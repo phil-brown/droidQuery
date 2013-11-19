@@ -16,11 +16,25 @@ import android.util.Log;
  */
 public class AjaxCache
 {
+	/**
+	 * Timeout to use in {@link AjaxOptions#cacheTimeout(long)} in order to specify that the cached
+	 * response will only be timed out when {@link #clearCache()} is called.
+	 */
+	public static final int TIMEOUT_NEVER = -1;
+	/**
+	 * Timeout to use in {@link AjaxOptions#cacheTimeout(long)} in order to specify that the cached
+	 * response will never be cleared unless {@link #removeEntry(AjaxOptions)} or {@link #removeEntry(String)}
+	 * is specifically called.
+	 */
+	public static final int TIMEOUT_NEVER_CLEAR_FROM_CACHE = -2;
+	
 	/** singleton instance */
 	private static AjaxCache self;
 	
 	/** Stores data */
 	private static Map<String, ? super Object> data;
+	/** Stores always-cached */
+	private static Map<String, ? super Object> alwaysData;
 	/** Stores dates */
 	private static Map<String, Date> dates;
 	/** {@code true} to show verbose output. Otherwise {@code false}. */
@@ -33,6 +47,7 @@ public class AjaxCache
 	{
 		data = new HashMap<String, Object>();
 		dates = new HashMap<String, Date>();
+		alwaysData = new HashMap<String, Object>();
 	}
 	
 	/**
@@ -88,7 +103,7 @@ public class AjaxCache
 			long cacheTime = date.getTime();
 			long now = new Date().getTime();
 			long cacheTimeout = options.cacheTimeout();
-			if (now < cacheTime + cacheTimeout)
+			if (cacheTimeout == TIMEOUT_NEVER || cacheTimeout == TIMEOUT_NEVER_CLEAR_FROM_CACHE || now < cacheTime + cacheTimeout)
 			{
 				if (verbose) Log.i("getCachedResponse", "Returning cached response");
 				return response;
@@ -131,6 +146,13 @@ public class AjaxCache
 			synchronized(dates)
 			{
 				dates.put(key, new Date());
+			}
+		}
+		if (options.cacheTimeout() == TIMEOUT_NEVER_CLEAR_FROM_CACHE)
+		{
+			synchronized(alwaysData)
+			{
+				alwaysData.put(key, response);
 			}
 		}
 		return key;
@@ -180,6 +202,10 @@ public class AjaxCache
 				dates.remove(key);
 			}
 		}
+		synchronized(alwaysData)
+		{
+			alwaysData.remove(key);
+		}
 	}
 	
 	/**
@@ -197,6 +223,10 @@ public class AjaxCache
 				dates.remove(key);
 			}
 		}
+		synchronized(alwaysData)
+		{
+			alwaysData.remove(key);
+		}
 	}
 	
 	/**
@@ -210,6 +240,10 @@ public class AjaxCache
 			synchronized(dates)
 			{
 				dates.clear();
+			}
+			synchronized(alwaysData)
+			{
+				data.putAll(alwaysData);
 			}
 		}
 	}

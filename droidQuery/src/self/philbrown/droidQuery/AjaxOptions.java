@@ -553,8 +553,10 @@ public class AjaxOptions implements Cloneable
 	 * Set the amount of time required, in milliseconds, between the current response and a cached
 	 * response, in order to update the response data and cache the new response. This is only
 	 * used when the {@link #cache() cache} option is set to {@code true}.
-	 * @param cacheTimeout the time, in milliseconds
+	 * @param cacheTimeout the time, in milliseconds.
 	 * @return this
+	 * @see AjaxCache#TIMEOUT_NEVER
+	 * @see AjaxCache#TIMEOUT_NEVER_CLEAR_FROM_CACHE
 	 */
 	public AjaxOptions cacheTimeout(long cacheTimeout)
 	{
