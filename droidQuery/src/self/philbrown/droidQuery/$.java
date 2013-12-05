@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +45,7 @@ import org.json.JSONObject;
 import org.w3c.dom.Document;
 
 import self.philbrown.css.CSSSelector;
+import self.philbrown.css.StyleSheet;
 import self.philbrown.droidQuery.SwipeDetector.SwipeListener;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -374,6 +376,18 @@ public class $
 	}
 	
 	/**
+	 * Constructor that clones the selection and the data of another droidQuery instance.
+	 * @param droidQuery
+	 */
+	public $($ droidQuery)
+	{
+		this.rootView = droidQuery.rootView;
+		this.views = new ArrayList<View>(droidQuery.views);
+		this.context = droidQuery.context;
+		this.data = droidQuery.data;
+	}
+	
+	/**
 	 * Use css selectors to make selection
 	 * <pre>
 	 * new $(this, ".TextEdit");
@@ -667,6 +681,16 @@ public class $
 	}
 	
 	/**
+	 * Create a copy of a droidQuery object that contains the same {@link #data()} and selection.
+	 * @param droidQuery
+	 * @return
+	 */
+	public static $ with($ droidQuery)
+	{
+		return new $(droidQuery);
+	}
+	
+	/**
 	 * Finds a view that is identified by the given id
 	 * @param id
 	 * @return the found view, or {@code null} if it was not found.
@@ -906,7 +930,7 @@ public class $
 	 * @param _value the end animation value
 	 * @return the computed value
 	 */
-	private Object getAnimationValue(View view, String key, String _value)
+	public Object getAnimationValue(View view, String key, String _value)
 	{
 		Object value = null;
 		
@@ -1706,6 +1730,7 @@ public class $
 	 * @param s the name of the attribute to set
 	 * @param o the value to set to the given attribute
 	 * @return this
+	 * TODO add additional support for common CSS syntax
 	 */
 	public $ attr(String s, Object o)
 	{
@@ -1814,6 +1839,21 @@ public class $
 		if (view(0) instanceof ViewGroup)
 		{
 			((ViewGroup) view(0)).addView(v);
+		}
+		return this;
+	}
+	
+	/**
+	 * Applies the CSS-style rules to the selection
+	 * @param css
+	 * @return
+	 */
+	public $ css(String css)
+	{
+		try {
+			StyleSheet.fromString(css).applyRules(this);
+		} catch (Exception e) {
+			Log.w("droidQuery", "Could not load css", e);
 		}
 		return this;
 	}
@@ -2936,7 +2976,21 @@ public class $
 		}
 		catch (Throwable t)
 		{
-			return null;
+			try
+			{
+				clazz = Class.forName(String.format(Locale.US, "android.widget.%s", className));
+			}
+			catch (Throwable t2)
+			{
+				try
+				{
+					clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", className));
+				}
+				catch (Throwable t3)
+				{
+					return null;
+				}
+			}
 		}
 		
 		return selectByType(clazz);
@@ -3026,11 +3080,11 @@ public class $
 	
 	/**
 	 * Searches the view hierarchy rooted at the given view in order to find the currently
-	 * selected view
+	 * focused view
 	 * @param view the view to search within
-	 * @return the selected view, or null if no view in the given hierarchy was found.
+	 * @return the selected view, or null if no view in the given hierarchy was focused.
 	 */
-	private View recursivelyFindSelectedSubView(View view)
+	private View recursivelyFindFocusedSubView(View view)
 	{
 		if (view.isFocused())
 			return view;
@@ -3039,7 +3093,7 @@ public class $
 			View v = null;
 			for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++)
 			{
-				v = recursivelyFindSelectedSubView(((ViewGroup) view).getChildAt(i));
+				v = recursivelyFindFocusedSubView(((ViewGroup) view).getChildAt(i));
 				if (v != null)
 					return v;
 			}
@@ -3051,21 +3105,60 @@ public class $
 	
 	/**
 	 * Selects the currently-focused view.
-	 * @return a droidQuery Object created with the currently-selected View, if there is one
+	 * @return a droidQuery Object created with the currently-focused View, if there is one
 	 */
 	public $ selectFocused()
 	{
-		View focused = recursivelyFindSelectedSubView(rootView);
+		View focused = recursivelyFindFocusedSubView(rootView);
 		if (focused != null)
 			return $.with(focused);
 		for (View view : this.views)
 		{
-			focused = recursivelyFindSelectedSubView(view);
+			focused = recursivelyFindFocusedSubView(view);
 			if (focused != null)
 				return $.with(focused);
 		}
 		
 		return $.with(view(0).getContext());
+	}
+	
+	/**
+	 * Selects the currently-selected views.
+	 * @return a droidQuery Object created with the currently-selected View, if there is one
+	 */
+	public $ selectSelected()
+	{
+		List<View> selected = recursivelyFindSelectedSubView(rootView);
+		if (selected != null)
+			return $.with(selected);
+		selected = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			selected.addAll(recursivelyFindSelectedSubView(view));
+		}
+		
+		return $.with(view(0).getContext());
+	}
+	
+	/**
+	 * Searches the view hierarchy rooted at the given view in order to find the currently
+	 * selected views
+	 * @param view the view to search within
+	 * @return the selected views, or null if no view in the given hierarchy was selected.
+	 */
+	private static List<View> recursivelyFindSelectedSubView(View view)
+	{
+		List<View> views = new ArrayList<View>();
+		if (view.isSelected())
+			views.add(view);
+		else if (view instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++)
+			{
+				views.addAll(recursivelyFindSelectedSubView(((ViewGroup) view).getChildAt(i)));
+			}
+		}
+		return views;
 	}
 	
 	/**
@@ -3226,6 +3319,321 @@ public class $
 	}
 	
 	/**
+	 * Selects all views within the given current selection that are the nth 
+	 * child of their parent views
+	 * @param v the view whose hierarchy will be checked
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @return a list of the found views.
+	 */
+	private List<View> recursivelySelectNthChilds(View v, final int n)
+	{
+		final List<View> list = new ArrayList<View>();
+		if (v instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
+			{
+				list.addAll(recursivelySelectNthChilds(((ViewGroup) v).getChildAt(i), n));
+			}
+		}
+		$.with(v).siblings(new Function() {
+			
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				int index = (Integer) params[0];
+				if (index == n)
+					list.add(droidQuery.view(0));
+			}
+		});
+		return list;
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the nth child of their parent views
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectNthChilds(int n)
+	{
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectNthChilds(view, n));
+		}
+		return $.with(context, subviews);
+	}
+	
+	/**
+	 * Selects all views within the given current selection that are the nth-from-the-end 
+	 * child of their parent views
+	 * @param v the view whose hierarchy will be checked
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @return a list of the found views.
+	 */
+	private List<View> recursivelySelectNthFromEndChilds(View v, final int n)
+	{
+		final List<View> list = new ArrayList<View>();
+		if (v instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
+			{
+				list.addAll(recursivelySelectNthFromEndChilds(((ViewGroup) v).getChildAt(i), n));
+			}
+		}
+		final List<View> siblings = new ArrayList<View>();
+		$.with(v).siblings(new Function() {
+			
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				siblings.add(droidQuery.view(0));
+			}
+		});
+		Collections.reverse(siblings);
+		if (siblings.size() >= n)
+			list.add(siblings.get(n));
+		return list;
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the nth-from-the-end 
+	 * child of their parent views
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectNthFromEndChilds(int n)
+	{
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectNthFromEndChilds(view, n));
+		}
+		return $.with(context, subviews);
+	}
+	
+	/**
+	 * Selects all views within the given current selection that are the nth 
+	 * child of type {@code type} of their parent views
+	 * @param v the view whose hierarchy will be checked
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @param type the type of view to select
+	 * @return a list of the found views.
+	 */
+	private List<View> recursivelySelectNthChildsOfType(View v, final int n, final Class<?> type)
+	{
+		final List<View> list = new ArrayList<View>();
+		if (v instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
+			{
+				list.addAll(recursivelySelectNthChildsOfType(((ViewGroup) v).getChildAt(i), n, type));
+			}
+		}
+		final Count count = new Count();
+		$.with(v).siblings(new Function() {
+			
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				if (type.isInstance(droidQuery.view(0)))
+					count.index++;
+				if (count.index == n)
+					list.add(droidQuery.view(0));
+			}
+		});
+		return list;
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the nth child of type {@code type} of 
+	 * their parent views
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @param type the type of view to select
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectNthChildsOfType(int n, Class<?> type)
+	{
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectNthChildsOfType(view, n, type));
+		}
+		return $.with(context, subviews);
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the nth child of type {@code type} 
+	 * of their parent views
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @param className the name of the type of view to select
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectNthChildsOfType(int n, String className)
+	{
+		Class<?> clazz = null;
+		try
+		{
+			clazz = Class.forName(className);
+		}
+		catch (Throwable t)
+		{
+			try
+			{
+				clazz = Class.forName(String.format(Locale.US, "android.widget.%s", className));
+			}
+			catch (Throwable t2)
+			{
+				try
+				{
+					clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", className));
+				}
+				catch (Throwable t3)
+				{
+					return null;
+				}
+			}
+		}
+		
+		return selectNthChildsOfType(n, clazz);
+	}
+	
+	/**
+	 * Selects all views within the given current selection that are the nth-from-the-end 
+	 * child of type {@code type} of their parent views
+	 * @param v the view whose hierarchy will be checked
+	 * @param n the index to search. 
+	 * @param type the type of view to select
+	 * @return a list of the found views.
+	 */
+	private List<View> recursivelySelectNthFromEndChildsOfType(View v, final int n, final Class<?> type)
+	{
+		final List<View> list = new ArrayList<View>();
+		if (v instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
+			{
+				list.addAll(recursivelySelectNthFromEndChildsOfType(((ViewGroup) v).getChildAt(i), n, type));
+			}
+		}
+		final List<View> siblings = new ArrayList<View>();
+		$.with(v).siblings(new Function() {
+			
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				siblings.add(droidQuery.view(0));
+			}
+		});
+		Collections.reverse(siblings);
+		int count = 0;
+		for (int i = 0; i < siblings.size(); i++)
+		{
+			if (type.isInstance(siblings.get(i)))
+				count++;
+			if (count == n)
+			{
+				list.add(siblings.get(i));
+				break;
+			}
+			
+		}
+		return list;
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the nth-from-the-end 
+	 * child of type {@code type} of their parent views
+	 * @param n the index to search. 
+	 * @param type the type of view to select
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectNthFromEndChildsOfType(int n, Class<?> type)
+	{
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectNthFromEndChildsOfType(view, n, type));
+		}
+		return $.with(context, subviews);
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the nth-from-the-end 
+	 * child of type {@code type} of their parent views
+	 * @param n the index to search. Note that a value of 1 will search the 0th child.
+	 * @param className the name of the type of view to select
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectNthFromEndChildsOfType(int n, String className)
+	{
+		Class<?> clazz = null;
+		try
+		{
+			clazz = Class.forName(className);
+		}
+		catch (Throwable t)
+		{
+			try
+			{
+				clazz = Class.forName(String.format(Locale.US, "android.widget.%s", className));
+			}
+			catch (Throwable t2)
+			{
+				try
+				{
+					clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", className));
+				}
+				catch (Throwable t3)
+				{
+					return null;
+				}
+			}
+		}
+		
+		return selectNthFromEndChildsOfType(n, clazz);
+	}
+	
+	/**
+	 * Selects all views within the given current selection that are the last 
+	 * child of their parent views
+	 * @param v the view whose hierarchy will be checked
+	 * @return a list of the found views.
+	 */
+	private List<View> recursivelySelectLastChilds(View v, final int n)
+	{
+		final List<View> list = new ArrayList<View>();
+		if (v instanceof ViewGroup)
+		{
+			for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++)
+			{
+				list.addAll(recursivelySelectLastChilds(((ViewGroup) v).getChildAt(i), n));
+			}
+		}
+		
+		final List<View> siblings = new ArrayList<View>();
+		$.with(v).siblings(new Function() {
+			
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				siblings.add(droidQuery.view(0));
+			}
+		});
+		if (siblings.size() > 0)
+			list.add(siblings.get(siblings.size()-1));
+		return list;
+	}
+	
+	/**
+	 * Selects all views within the current selection that are the last child of their parent views
+	 * @return a droidQuery Object containing the found views.
+	 */
+	public $ selectLastChilds(int n)
+	{
+		List<View> subviews = new ArrayList<View>();
+		for (View view : this.views)
+		{
+			subviews.addAll(recursivelySelectLastChilds(view, n));
+		}
+		return $.with(context, subviews);
+	}
+	
+	/**
 	 * Selects all views in the current selection that can contain other child views
 	 * @return a droidQuery Object containing the found ViewGroups
 	 */
@@ -3239,7 +3647,91 @@ public class $
 		return $.with(context, subviews);
 	}
 	
+	/**
+	 * Select the intersection of this droidQuery's selection with another droidQuery's selection.
+	 * This is a costly operation, with a time-complexity of O(n^2).
+	 * @param other$ the droidQuery which which to intersect
+	 * @return a new droidQuery instance containing a selection of Views only found in both droidQuery instances.
+	 */
+	public $ intersect($ other$)
+	{
+		List<View> a = new ArrayList<View>(views);
+		List<View> b = new ArrayList<View>(other$.views);
+		List<View> x = new ArrayList<View>();
+		for (View v0 : a)
+		{
+			for (View v1 : b)
+			{
+				if (v0.equals(v1))
+				{
+					x.add(v0);
+					continue;
+				}
+			}
+		}
+		return $.with(x);
+	}
 	
+	/**
+	 * Select the union of this droidQuery's selection with another droidQuery's selection.
+	 * @param other$ the droidQuery which which to merge
+	 * @return a new droidQuery instance containing a selection of all Views found in each droidQuery instances.
+	 */
+	public $ union($ other$)
+	{
+		List<View> a = new ArrayList<View>(views);
+		List<View> b = new ArrayList<View>(other$.views);
+		for (View v : b)
+		{
+			if (!a.contains(v))
+				a.add(v);
+		}
+		return $.with(a);
+	}
+	
+	/**
+	 * Select the intersection two droidQuery's selections.
+	 * This is a costly operation, with a time-complexity of O(n^2).
+	 * @param a
+	 * @param b
+	 * @return a new droidQuery instance containing a selection of Views only found in both droidQuery instances.
+	 */
+	public static $ intersect($ a, $ b)
+	{
+		List<View> _a = new ArrayList<View>(a.views);
+		List<View> _b = new ArrayList<View>(b.views);
+		List<View> x = new ArrayList<View>();
+		for (View v0 : _a)
+		{
+			for (View v1 : _b)
+			{
+				if (v0.equals(v1))
+				{
+					x.add(v0);
+					continue;
+				}
+			}
+		}
+		return $.with(x);
+	}
+	
+	/**
+	 * Select the union of two droidQuery's selections
+	 * @param a
+	 * @param b
+	 * @return a new droidQuery instance containing a selection of all Views found in each droidQuery instances.
+	 */
+	public static $ union($ a, $ b)
+	{
+		List<View> _a = new ArrayList<View>(a.views);
+		List<View> _b = new ArrayList<View>(b.views);
+		for (View v : _b)
+		{
+			if (!_a.contains(v))
+				_a.add(v);
+		}
+		return $.with(_a);
+	}
 	
 	/////Extensions
 	
@@ -5212,4 +5704,22 @@ public class $
 		
 	}
 
+	/**
+	 * Simple class for allowing final access to an int
+	 * @author Phil Brown
+	 * @since 3:24:53 PM Dec 5, 2013
+	 *
+	 */
+	private class Count
+	{
+		public int index;
+		public Count()
+		{
+			index = 0;
+		}
+		public Count(int startingIndex)
+		{
+			index = startingIndex;
+		}
+	}
 }

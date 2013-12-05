@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Phil Brown
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package self.philbrown.droidQuery;
 
 import java.util.Date;
@@ -40,6 +56,9 @@ public class AjaxCache
 	/** {@code true} to show verbose output. Otherwise {@code false}. */
 	private boolean verbose;
 	
+	/** Callback for cache-cleared events. */
+	private OnCacheClearedListener onCacheClearedListener;
+	
 	/**
 	 * Constructor.
 	 */
@@ -59,6 +78,15 @@ public class AjaxCache
 		if (self == null)
 			self = new AjaxCache();
 		return self;
+	}
+	
+	/**
+	 * Sets the callback that is invoked when the cache is cleared.
+	 * @param listener the callback to invoke
+	 */
+	public void setOnCacheClearedListener(OnCacheClearedListener listener)
+	{
+		this.onCacheClearedListener = listener;
 	}
 	
 	/**
@@ -246,6 +274,20 @@ public class AjaxCache
 				data.putAll(alwaysData);
 			}
 		}
+		if (this.onCacheClearedListener != null)
+			this.onCacheClearedListener.onCacheCleared();
+	}
+	
+	/**
+	 * Callback for clearing the Ajax Cache
+	 * @author Phil Brown
+	 * @since 1:01:24 PM Dec 3, 2013
+	 *
+	 */
+	public interface OnCacheClearedListener
+	{
+		/** Called after the cache has been cleared. */
+		public void onCacheCleared();
 	}
 	
 }

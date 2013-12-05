@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
@@ -49,10 +50,16 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
@@ -93,8 +100,12 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	private static volatile List<AjaxTask> localTasks = new ArrayList<AjaxTask>();
 	/** Contains the current global tasks */
 	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
+	/** Contains all AjaxOptions for current tasks. This is used to handle redundancy.*/
+	private static volatile List<AjaxOptions> redundancyChecker = new ArrayList<AjaxOptions>();
 	/** Used to keep track of the last modified dates for specific URLs */
 	private static volatile Map<String, Date> lastModifiedUrls = new HashMap<String, Date>();
+	
+	//TODO: handle redundancy
 	
 	/**
 	 * Constructor
@@ -160,6 +171,20 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			}
 		}
 		
+		if (options.beforeSend() != null)
+		{
+			if (options.context() != null)
+				options.beforeSend().invoke($.with(options.context()), options);
+			else
+				options.beforeSend().invoke(null, options);
+		}
+		
+		if (options.isAborted())
+		{
+			cancel(true);
+			return;
+		}
+		
 		if (options.global())
 		{
 			synchronized(globalTasks)
@@ -170,6 +195,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				}
 				globalTasks.add(this);
 			}
+			$.ajaxSend();
 		}
 		else
 		{
@@ -178,23 +204,14 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				localTasks.add(this);
 			}
 		}
-		
-		if (options.beforeSend() != null)
-		{
-			if (options.context() != null)
-				options.beforeSend().invoke($.with(options.context()), options);
-			else
-				options.beforeSend().invoke(null, options);
-		} 
-		
-		if (options.global())
-			$.ajaxSend();
-		
 	}
 
 	@Override
 	protected TaskResponse doInBackground(Void... arg0) 
 	{
+		if (this.isCancelled())
+			return null;
+		
 		//handle cached responses
 		Object cachedResponse = AjaxCache.sharedCache().getCachedResponse(options);
 		//handle ajax caching option
@@ -320,7 +337,23 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			HttpConnectionParams.setSoTimeout(params, options.timeout());
 		}
 		
-		HttpClient client = new DefaultHttpClient(params);
+		SchemeRegistry schemeRegistry = new SchemeRegistry();
+		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+		if (options.trustAllSSLCertificates())
+		{
+			X509HostnameVerifier hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+			SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
+			socketFactory.setHostnameVerifier(hostnameVerifier);
+			schemeRegistry.register(new Scheme("https", socketFactory, 443));
+			Log.w("Ajax", "Warning: All SSL Certificates have been trusted!");
+		}
+		else
+		{
+			schemeRegistry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+		}
+		
+		SingleClientConnManager mgr = new SingleClientConnManager(params, schemeRegistry);
+		HttpClient client = new DefaultHttpClient(mgr, params);
 		
 		
 		try {
@@ -488,7 +521,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 						try
 						{
 							Header h = lastModifiedHeaders[0];
-							SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+							SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
 							Date lastModified = format.parse(h.getValue());
 							if (options.ifModified() && lastModified != null)
 							{
@@ -570,6 +603,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		}
 		if (response == null)
 		{
+			if (this.isCancelled())
+				return;
+			
 			if (options.error() != null)
 			{
 				AjaxError error = new AjaxError();

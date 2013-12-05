@@ -42,6 +42,22 @@ import android.webkit.URLUtil;
  */
 public class AjaxOptions implements Cloneable
 {
+	/**
+	 * Used to determine how to handle redundant Ajax Requests. This optimization is used 
+	 * for minimizing network traffic.
+	 */
+	public static enum Redundancy
+	{
+		/** Do nothing special.*/
+		DO_NOTHING,
+		/** Abort redundant requests. */
+		ABORT_REDUNDANT_REQUESTS,
+		/** 
+		 * Respond to all listeners during events for the first request. This is the default, as
+		 * it provides the most optimal solution.
+		 */
+		RESPOND_TO_ALL_LISTENERS
+	}
 	
 	/** Used for reflection */
 	private static Field[] fields = AjaxOptions.class.getDeclaredFields();
@@ -997,6 +1013,84 @@ public class AjaxOptions implements Cloneable
 	{
 		this.customRequestClass = customRequestClass;
 		return this;
+	}
+	
+	/** 
+	 * If {@code true}, all SSL certificates will be trusted (for HTTPS requests). Default is 
+	 * {@code false}, since allowing this poses a security threat. Never allow this for production 
+	 * applications.
+	 */
+	private boolean trustAllSSLCertificates = false;
+	
+	/**
+	 * Allows all SSL certificates to be trusted (for HTTPS requests). This should <b>never</b> be
+	 * {@code true} in a production application, as it poses a security threat.
+	 * @return {@code true} if all SSL certificates are trusted, otherwise {@code false}.
+	 */
+	public boolean trustAllSSLCertificates()
+	{
+		return this.trustAllSSLCertificates;
+	}
+	
+	/**
+	 * Allows all SSL certificates to be trusted (for HTTPS requests). This should <b>never</b> be
+	 * {@code true} in a production application, as it poses a security threat.
+	 * @param trustAllSSLCertificates {@code true} to trust all SSL certificates. Note that setting
+	 * as {@code true} will cause the logcat to output this setting on every Ajax call. This is helpful
+	 * for ensuring this is not forgotten in production applications. Default is {@code false}.
+	 * @return this
+	 */
+	public AjaxOptions trustAllSSLCertificates(boolean trustAllSSLCertificates)
+	{
+		this.trustAllSSLCertificates = trustAllSSLCertificates;
+		return this;
+	}
+	
+	/** Defines how redundant Ajax Requests are handled. */
+	private Redundancy redundancy = Redundancy.RESPOND_TO_ALL_LISTENERS;
+	
+	/**
+	 * Set how redundant Ajax Requests are handled.
+	 * @param redundancy
+	 * @return this
+	 */
+	public AjaxOptions redundancy(Redundancy redundancy)
+	{
+		this.redundancy = redundancy;
+		return this;
+	}
+	
+	/**
+	 * Get how redundant Ajax Requests are handled.
+	 * @return the method used for handling redundant requests
+	 */
+	public Redundancy redundancy()
+	{
+		return this.redundancy;
+	}
+	
+	/** 
+	 * Variable that can be set in {@link #beforeSend}  to abort an
+	 * Ajax Request before it begins.
+	 */
+	private boolean aborted = false;
+	
+	/**
+	 * Causes the Ajax Request to be aborted. This must be called in {@link #beforeSend} in order to
+	 * take affect.
+	 */
+	public void abort()
+	{
+		this.aborted = true;
+	}
+	
+	/**
+	 * Get whether or not the task has been aborted.
+	 * @return {@code true} if {@link #abort()} was called. Otherwise, {@code false}.
+	 */
+	public boolean isAborted()
+	{
+		return this.aborted;
 	}
 	
 	/**
