@@ -19,13 +19,16 @@ package self.philbrown.css;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import self.philbrown.droidQuery.$;
-import self.philbrown.droidQuery.AnimationOptions;
 import self.philbrown.droidQuery.Function;
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 
 import com.osbcp.cssparser.CSSParser;
@@ -33,8 +36,31 @@ import com.osbcp.cssparser.PropertyValue;
 import com.osbcp.cssparser.Rule;
 import com.osbcp.cssparser.Selector;
 
-public class StyleSheet {
-
+/**
+ * CSS StyleSheets
+ * @author Phil Brown
+ * @since 3:46:46 PM Dec 6, 2013
+ *
+ */
+@SuppressWarnings("unused")
+public class StyleSheet 
+{
+	/** All methods declared in this class. Used for reflection for handling CSS Property values. */
+	private static Map<String, Method> methods = new HashMap<String, Method>();
+	static
+	{
+		 Method[] _methods = StyleSheet.class.getDeclaredMethods();
+		for (Method m : _methods)
+		{
+			methods.put(m.getName(), m);
+		}
+	}
+	
+	/**
+	 * Keeps track of the keyframes used for each animation.
+	 */
+	private Map<String, KeyFrames> animationKeyFrames;
+	
 	/**
 	 * keeps track of styles by type
 	 */
@@ -86,7 +112,10 @@ public class StyleSheet {
 			List<Selector> selectors = r.getSelectors();
 			for (Selector s : selectors)
 			{
-				applyProperties(CSSSelector.makeSelection(layout, s.toString()), r.getPropertyValues());
+				CSSSelector cssSelector = new CSSSelector();
+				$ droidQuery = cssSelector.makeSelection(layout, s.toString());
+				animationKeyFrames = cssSelector.getAnimationKeyFrames();
+				applyProperties(droidQuery, r.getPropertyValues());
 			}
 			
 		}
@@ -107,7 +136,10 @@ public class StyleSheet {
 			List<Selector> selectors = r.getSelectors();
 			for (Selector s : selectors)
 			{
-				applyProperties(CSSSelector.makeSelection(droidQuery, s.toString()), r.getPropertyValues());
+				CSSSelector cssSelector = new CSSSelector();
+				$ d = cssSelector.makeSelection(droidQuery, s.toString());
+				animationKeyFrames = cssSelector.getAnimationKeyFrames();
+				applyProperties(d, r.getPropertyValues());
 			}
 			
 		}
@@ -129,10 +161,109 @@ public class StyleSheet {
 				
 				@Override
 				public void invoke($ droidQuery, Object... params) {
-					Object attribute = droidQuery.getAnimationValue(droidQuery.view(0), property, value);
-					droidQuery.attr(property, attribute);
+					
+					//need to fix this... 
+					try
+					{
+						String _value = value.replace("-", "_");
+						_value = value.replace("@", "at_symbol_");
+						//these methods must be propert($, value)
+						methods.get(property).invoke(StyleSheet.this, droidQuery, _value);
+					}
+					catch (Throwable t)
+					{
+						Log.w("CSS", String.format(Locale.US, "Could not set property named %s with value %s!", property, value));
+					}
 				}
 			});
+		}
+	}
+	
+	private void background($ droidQuery, String value)
+	{
+		
+	}
+	
+	
+	
+	/**
+	 * <h1>@keyframes<h1>
+	 * <h3>CSS 3</h1>
+	 * {@literal @}keyframes animationname {keyframes-selector {css-styles;}}
+	 * @param aniationname			Required. Defines the name of the animation.
+	 * 
+	 * @param keyframes-selector	Required. Percentage of the animation duration.
+	 * 
+	 * 								Legal values:
+	 * 
+	 * 								0-100%
+	 * 								from (same as 0%)
+	 * 								to (same as 100%)
+	 * 
+	 * 								<b>Note:<b> you can have many keyframes-selectors in one animation
+	 * 
+	 * @param css-styles			Required. One or more legal CSS style properties
+	 */
+	private void at_symbol_keyframes($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation_duration($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation_timing_function($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation_delay($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation_iteration_count($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation_direction($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animation_play_state($ droidQuery, String value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	/**
+	 * Used for handling the CSS Selector {@literal @}keyframes.
+	 * @author Phil Brown
+	 * @since 4:39:31 PM Dec 6, 2013
+	 *
+	 */
+	public static class KeyFrames
+	{
+		private Map<Integer, String> frames = new HashMap<Integer, String>();
+		public void addKeyFrame(int percent, String frame)
+		{
+			frames.put(percent, frame);
+		}
+		/**
+		 * Get the frames. The key is a percent, and the value is a CSS-style string. 
+		 * @return
+		 */
+		public Map<Integer, String> getFrames()
+		{
+			return frames;
 		}
 	}
 

@@ -369,7 +369,7 @@ public class $
 	public $(View parent, String selector)
 	{
 		this(parent);
-		$ query = CSSSelector.makeSelection(parent, selector);
+		$ query = new CSSSelector().makeSelection(parent, selector);
 		this.rootView = query.rootView;
 		this.context = query.context;
 		this.views = query.views;
@@ -398,7 +398,7 @@ public class $
 	public $(Context context, String selector)
 	{
 		this(context);
-		$ query = CSSSelector.makeSelection(this.rootView, selector);
+		$ query = new CSSSelector().makeSelection(this.rootView, selector);
 		this.rootView = query.rootView;
 		this.context = query.context;
 		this.views = query.views;

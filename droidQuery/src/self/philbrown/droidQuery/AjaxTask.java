@@ -72,6 +72,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
+import self.philbrown.droidQuery.AjaxOptions.Redundancy;
 import self.philbrown.droidQuery.AjaxTask.TaskResponse;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -93,6 +94,11 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	private HttpUriRequest request = null;
 	/** Used to run functions in the thread in which this task was started. */
 	private Handler mHandler;
+	/** 
+	 * This value is set in {@link #onPreExecute()} then accessed in
+	 * {@link #onPostExecute(TaskResponse)}, and is used to properly handle redundancy checking.
+	 */
+	private Redundancy redundancyType = Redundancy.DO_NOTHING;
 	
 	/** Used for synchronous operations. */
 	private static Semaphore mutex = new Semaphore(1);
@@ -101,11 +107,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	/** Contains the current global tasks */
 	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
 	/** Contains all AjaxOptions for current tasks. This is used to handle redundancy.*/
-	private static volatile List<AjaxOptions> redundancyChecker = new ArrayList<AjaxOptions>();
+	private static volatile Map<String, AjaxOptions> redundancyHelper = new HashMap<String, AjaxOptions>();
 	/** Used to keep track of the last modified dates for specific URLs */
 	private static volatile Map<String, Date> lastModifiedUrls = new HashMap<String, Date>();
-	
-	//TODO: handle redundancy
 	
 	/**
 	 * Constructor
@@ -162,6 +166,89 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	@Override
 	protected void onPreExecute()
 	{
+		//handle redundacy options
+		redundancyType = options.redundancy();
+		if (redundancyType != null)
+		{
+			switch(redundancyType)
+			{
+				case DO_NOTHING :
+					break;
+				case ABORT_REDUNDANT_REQUESTS :
+					synchronized(redundancyHelper)
+					{
+						if (this.isRedundant())
+						{
+							cancel(true);
+							return;
+						}
+						else
+						{
+							String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
+							redundancyHelper.put(key, options);
+						}
+					}
+					break;
+				case RESPOND_TO_ALL_LISTENERS :
+					synchronized(redundancyHelper)
+					{
+						String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
+						AjaxOptions taskOptions = redundancyHelper.get(key);
+						if (taskOptions != null)
+						{
+							//add this options' callbacks to the callbacks for the request already taking place.
+							synchronized(taskOptions)
+							{
+								if (options.success() != null)
+								{
+									final Function _success = taskOptions.success();
+									taskOptions.success(new Function() {
+										
+										@Override
+										public void invoke($ droidQuery, Object... params) {
+											if (_success != null)
+												_success.invoke(droidQuery, params);
+											options.success().invoke(droidQuery, params);
+										}
+									});
+								}
+								if (options.error() != null)
+								{
+									final Function _error = taskOptions.error();
+									taskOptions.error(new Function() {
+										
+										@Override
+										public void invoke($ droidQuery, Object... params) {
+											if (_error != null)
+												_error.invoke(droidQuery, params);
+											options.error().invoke(droidQuery, params);
+										}
+									});
+								}
+								if (options.complete() != null)
+								{
+									final Function _complete = taskOptions.complete();
+									taskOptions.complete(new Function() {
+										
+										@Override
+										public void invoke($ droidQuery, Object... params) {
+											if (_complete != null)
+												_complete.invoke(droidQuery, params);
+											options.complete().invoke(droidQuery, params);
+										}
+									});
+								}
+							}
+						}
+						else
+						{
+							redundancyHelper.put(key, options);
+						}
+					}
+					break;
+			}
+		}
+		
 		if (!options.async())
 		{
 			try {
@@ -694,6 +781,24 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				localTasks.remove(this);
 			}
 		}
+		
+		//remove request from redundancy helper
+		if (redundancyType != null)
+		{
+			switch(redundancyType)
+			{
+				case DO_NOTHING :
+					break;
+				case ABORT_REDUNDANT_REQUESTS :
+				case RESPOND_TO_ALL_LISTENERS :
+					synchronized(redundancyHelper)
+					{
+						String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
+						redundancyHelper.remove(key);
+					}
+					break;
+			}
+		}
 	}
 	
 	/**
@@ -778,6 +883,17 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
         
         is.close();
         return bitmap.get();
+	}
+	
+	/**
+	 * Checks to see if a request is redundant. This is only used for Redundancy Types 
+	 * {@link AjaxOptions.Redundancy#ABORT_REDUNDANT_REQUESTS} and {@link AjaxOptions.Redundancy#RESPOND_TO_ALL_LISTENERS}.
+	 * @return {@code true} if the same request is already taking place. Otherwise {@code false}.
+	 */
+	private boolean isRedundant()
+	{
+		String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
+		return redundancyHelper.containsKey(key);
 	}
 	
 	/**
