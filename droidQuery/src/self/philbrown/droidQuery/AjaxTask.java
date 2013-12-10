@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -102,6 +103,15 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	
 	/** Used for synchronous operations. */
 	private static Semaphore mutex = new Semaphore(1);
+	/** 
+	 * Used to ensure beforeSend Function is not called twice if the user changes the async status in
+	 * beforeSend() when the original options object is set to not async.
+	 */
+	private boolean beforeSendIsAsync = true;
+	/**
+	 * {@code true} if the current thread is locked. This is used for synchronous requests.
+	 */
+	private volatile boolean isLocked = false;
 	/** Contains the current non-global tasks */
 	private static volatile List<AjaxTask> localTasks = new ArrayList<AjaxTask>();
 	/** Contains the current global tasks */
@@ -249,48 +259,44 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			}
 		}
 		
-		if (!options.async())
+		beforeSendIsAsync = options.async();
+		if (options.async())
 		{
-			try {
-				mutex.acquire();
-			} catch (InterruptedException e) {
-				Log.w("AjaxTask", "Synchronization Error. Running Task Async");
-			}
-		}
-		
-		if (options.beforeSend() != null)
-		{
-			if (options.context() != null)
-				options.beforeSend().invoke($.with(options.context()), options);
-			else
-				options.beforeSend().invoke(null, options);
-		}
-		
-		if (options.isAborted())
-		{
-			cancel(true);
-			return;
-		}
-		
-		if (options.global())
-		{
-			synchronized(globalTasks)
+			if (options.beforeSend() != null)
 			{
-				if (globalTasks.isEmpty())
+				if (options.context() != null)
+					options.beforeSend().invoke($.with(options.context()), options);
+				else
+					options.beforeSend().invoke(null, options);
+			}
+			
+			if (options.isAborted())
+			{
+				cancel(true);
+				return;
+			}
+			
+			if (options.global())
+			{
+				synchronized(globalTasks)
 				{
-					$.ajaxStart();
+					if (globalTasks.isEmpty())
+					{
+						$.ajaxStart();
+					}
+					globalTasks.add(this);
 				}
-				globalTasks.add(this);
+				$.ajaxSend();
 			}
-			$.ajaxSend();
-		}
-		else
-		{
-			synchronized(localTasks)
+			else
 			{
-				localTasks.add(this);
+				synchronized(localTasks)
+				{
+					localTasks.add(this);
+				}
 			}
 		}
+		
 	}
 
 	@Override
@@ -298,6 +304,63 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	{
 		if (this.isCancelled())
 			return null;
+		
+		//if synchronous, block on the background thread until ready. Then call beforeSend, etc, before resuming.
+		if (!beforeSendIsAsync)
+		{
+			try {
+				mutex.acquire();
+			} catch (InterruptedException e) {
+				Log.w("AjaxTask", "Synchronization Error. Running Task Async");
+			}
+			final Thread asyncThread = Thread.currentThread();
+			isLocked = true;
+			mHandler.post(new Runnable() {
+				@Override
+				public void run() {
+					if (options.beforeSend() != null)
+					{
+						if (options.context() != null)
+							options.beforeSend().invoke($.with(options.context()), options);
+						else
+							options.beforeSend().invoke(null, options);
+					}
+					
+					if (options.isAborted())
+					{
+						cancel(true);
+						return;
+					}
+					
+					if (options.global())
+					{
+						synchronized(globalTasks)
+						{
+							if (globalTasks.isEmpty())
+							{
+								$.ajaxStart();
+							}
+							globalTasks.add(AjaxTask.this);
+						}
+						$.ajaxSend();
+					}
+					else
+					{
+						synchronized(localTasks)
+						{
+							localTasks.add(AjaxTask.this);
+						}
+					}
+					isLocked = false;
+					LockSupport.unpark(asyncThread);
+				}
+			});
+			if (isLocked)
+				LockSupport.park();
+		}
+		
+		
+		//here is where to use the mutex
 		
 		//handle cached responses
 		Object cachedResponse = AjaxCache.sharedCache().getCachedResponse(options);
