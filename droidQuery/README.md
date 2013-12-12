@@ -59,7 +59,7 @@ You may also browse the *javadocs* [here](http://phil-brown.github.io/droidQuery
 Finally, most of the [jQuery API Documentation](http://api.jquery.com) is sufficient to explain the *droidQuery* API.
 
 To **instantiate** a new *droidQuery*, you need to pass in a `Context`, a `View`, or set of `View`s. The
-simplest way to create the instance is using the `with` static methods:
+simplest way to create the instance is using the `with` static methods, such as:
 
     $.with(Context);
     $.with(View);
