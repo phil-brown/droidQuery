@@ -46,6 +46,7 @@ import org.w3c.dom.Document;
 
 import self.philbrown.css.CSSSelector;
 import self.philbrown.css.StyleSheet;
+import self.philbrown.droidQuery.AjaxOptions.Redundancy;
 import self.philbrown.droidQuery.SwipeDetector.SwipeListener;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -4854,6 +4855,7 @@ public class $
 				                                   .dataType("image")
 				                                   .context(context)
 				                                   .global(false)
+				                                   .redundancy(Redundancy.RESPOND_TO_ALL_LISTENERS)
 				                                   .success(new Function() {
 				@Override
 				public void invoke($ droidQuery, Object... params) {

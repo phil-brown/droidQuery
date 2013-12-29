@@ -19,22 +19,14 @@ package self.philbrown.css;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
-import self.philbrown.css.StyleSheet.KeyFrames;
 import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.Function;
 import android.content.Context;
 import android.util.Log;
 import android.view.View;
-
-import com.osbcp.cssparser.CSSParser;
-import com.osbcp.cssparser.PropertyValue;
-import com.osbcp.cssparser.Rule;
-import com.osbcp.cssparser.Selector;
 
 /**
  * 
@@ -321,21 +313,6 @@ import com.osbcp.cssparser.Selector;
  */
 public class CSSSelector 
 {
-
-	/**
-	 * Keeps track of the keyframes used for each animation.
-	 */
-	private Map<String, KeyFrames> animationKeyFrames = new HashMap<String, KeyFrames>();
-	
-	/**
-	 * Get the animation keyframes parsed. 
-	 * @return
-	 */
-	public Map<String, KeyFrames> getAnimationKeyFrames()
-	{
-		return animationKeyFrames;
-	}
-	
 	public $ makeSelection(Context context, String selector)
 	{
 		return makeSelection($.with(context), selector);
@@ -1142,62 +1119,6 @@ public class CSSSelector
 							Log.w("droidQuery", String.format(Locale.US, "Could not 'not select' class %s.", sel));
 						}
 					}
-				}
-			}
-		}
-		else if (selector.startsWith("@"))
-		{
-			if (selector.startsWith("@keyframes"))
-			{
-				String body = selector.substring(10).trim();
-				int start = body.indexOf("{");
-				String animationName = body.substring(0, start);
-				KeyFrames kf = new KeyFrames();
-				body = body.substring(start, body.length()-1);
-				try
-				{
-					List<Rule> keyframes = CSSParser.parse(body);
-					for (Rule rule : keyframes)
-					{
-						for (Selector sel : rule.getSelectors())
-						{
-							int percentage = 0;
-							if (sel.equals("from"))
-								percentage = 0;
-							else if (sel.equals("to"))
-								percentage = 100;
-							else if (sel.toString().endsWith("%"))
-							{
-								try {
-									percentage = Integer.parseInt(sel.toString().replace("%", ""));
-								}
-								catch (Throwable t)
-								{
-									//invalid value
-									Log.w("CSS", "Cannot use invalid keyframe with key " + sel);
-									continue;
-								}
-							}
-							else
-							{
-								//invalid value
-								Log.w("CSS", "Cannot use invalid keyframe with key " + sel);
-								continue;
-							}
-							
-							StringBuilder css = new StringBuilder();
-							for (PropertyValue pv : rule.getPropertyValues())
-							{
-								css.append(" ").append(pv.toString());
-							}
-							kf.addKeyFrame(percentage, css.toString());
-						}
-					}
-					animationKeyFrames.put(animationName, kf);
-				}
-				catch (Throwable t)
-				{
-					Log.w("CSS", "Could not parse Keyframes");
 				}
 			}
 		}

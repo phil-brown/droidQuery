@@ -28,6 +28,8 @@ import java.util.Map;
 import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.Function;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.util.Log;
 import android.view.View;
 
@@ -60,6 +62,11 @@ public class StyleSheet
 	 * Keeps track of the keyframes used for each animation.
 	 */
 	private Map<String, KeyFrames> animationKeyFrames;
+	
+	/**
+	 * Keeps track of fonts declared in css.
+	 */
+	private List<FontFace> fonts;
 	
 	/**
 	 * keeps track of styles by type
@@ -112,10 +119,17 @@ public class StyleSheet
 			List<Selector> selectors = r.getSelectors();
 			for (Selector s : selectors)
 			{
-				CSSSelector cssSelector = new CSSSelector();
-				$ droidQuery = cssSelector.makeSelection(layout, s.toString());
-				animationKeyFrames = cssSelector.getAnimationKeyFrames();
-				applyProperties(droidQuery, r.getPropertyValues());
+				if (s.toString().startsWith("@"))
+				{
+					handleSpecialSelectors(s.toString(), r.getPropertyValues());
+				}
+				else
+				{
+					CSSSelector cssSelector = new CSSSelector();
+					$ droidQuery = cssSelector.makeSelection(layout, s.toString());
+					applyProperties(droidQuery, r.getPropertyValues());
+				}
+				
 			}
 			
 		}
@@ -136,13 +150,92 @@ public class StyleSheet
 			List<Selector> selectors = r.getSelectors();
 			for (Selector s : selectors)
 			{
-				CSSSelector cssSelector = new CSSSelector();
-				$ d = cssSelector.makeSelection(droidQuery, s.toString());
-				animationKeyFrames = cssSelector.getAnimationKeyFrames();
-				applyProperties(d, r.getPropertyValues());
+				if (s.toString().startsWith("@"))
+				{
+					handleSpecialSelectors(s.toString(), r.getPropertyValues());
+				}
+				else
+				{
+					CSSSelector cssSelector = new CSSSelector();
+					$ d = cssSelector.makeSelection(droidQuery, s.toString());
+					applyProperties(d, r.getPropertyValues());
+				}
+				
 			}
 			
 		}
+	}
+	
+	/**
+	 * Handles special selectors that contain information, such as keyframes or fonts
+	 * @param selector
+	 */
+	private void handleSpecialSelectors(String selector, List<PropertyValue> propertyValues)
+	{
+		//FIXME: these are probably not supported by the parser currently! 
+		Log.e("CSS", String.format(Locale.US, "Cannot handle special selector %s! Functionality coming soon.", selector));
+//		if (selector.startsWith("@"))
+//		{
+//			if (selector.startsWith("@keyframes"))
+//			{
+//				
+//				String body = selector.substring(10).trim();//FIXME: does this work???
+//				int start = body.indexOf("{");//FIXME: is this even present after parsed by css parser?
+//				String animationName = body.substring(0, start).trim();
+//				KeyFrames kf = new KeyFrames();
+//				body = body.substring(start, body.length()-1);
+//				try
+//				{
+//					List<Rule> keyframes = CSSParser.parse(body);
+//					for (Rule rule : keyframes)
+//					{
+//						for (Selector sel : rule.getSelectors())
+//						{
+//							int percentage = 0;
+//							if (sel.equals("from"))
+//								percentage = 0;
+//							else if (sel.equals("to"))
+//								percentage = 100;
+//							else if (sel.toString().endsWith("%"))
+//							{
+//								try {
+//									percentage = Integer.parseInt(sel.toString().replace("%", ""));
+//								}
+//								catch (Throwable t)
+//								{
+//									//invalid value
+//									Log.w("CSS", "Cannot use invalid keyframe with key " + sel);
+//									continue;
+//								}
+//							}
+//							else
+//							{
+//								//invalid value
+//								Log.w("CSS", "Cannot use invalid keyframe with key " + sel);
+//								continue;
+//							}
+//							
+//							StringBuilder css = new StringBuilder();
+//							for (PropertyValue pv : rule.getPropertyValues())
+//							{
+//								css.append(" ").append(pv.toString());
+//							}
+//							kf.addKeyFrame(percentage, css.toString());
+//						}
+//					}
+//					animationKeyFrames.put(animationName, kf);
+//				}
+//				catch (Throwable t)
+//				{
+//					Log.w("CSS", "Could not parse Keyframes");
+//				}
+//			}
+//			else if (selector.startsWith("@font-face"))
+//			{
+//				//TODO: handle fonts!!!
+//				
+//			}
+//		}
 	}
 	
 	/**
@@ -166,7 +259,6 @@ public class StyleSheet
 					try
 					{
 						String _value = value.replace("-", "_");
-						_value = value.replace("@", "at_symbol_");
 						//these methods must be propert($, value)
 						methods.get(property).invoke(StyleSheet.this, droidQuery, _value);
 					}
@@ -179,34 +271,132 @@ public class StyleSheet
 		}
 	}
 	
-	private void background($ droidQuery, String value)
+	private void background($ droidQuery, final String value)
 	{
-		
+		//TODO all background_* properties
+		Log.w("CSS", "CSS \"background\" not supported yet. Use each attribute separately, such as \"background-color\".");
 	}
 	
-	
+	/**
+	 * Sets the background color
+	 * @param droidQuery
+	 * @param value
+	 */
+	private void background_color($ droidQuery, final String value)
+	{
+		droidQuery.each(new Function() {
+			
+			@Override
+			public void invoke($ droidQuery, Object... params) {
+				droidQuery.view(0).setBackgroundColor(Color.parseColor(value));
+			}
+		});
+	}
+
 	
 	/**
-	 * <h1>@keyframes<h1>
-	 * <h3>CSS 3</h1>
-	 * {@literal @}keyframes animationname {keyframes-selector {css-styles;}}
-	 * @param aniationname			Required. Defines the name of the animation.
+	 * Sets the background image. To use a drawable, set as R.drawable.myDrawable. To use a url, use
+	 * "background-image:url('http://www.example.com/img.jpg')". To use a asset, use asset(), and to
+	 * use a local file, use file(). For example, the following CSS will work:
+	 * <pre>
+	 * #myButton {
+	 *     background-image: R.drawable.background;/*also, just background will work - but using R prefix allows access to raw resources too *\/
+	 *     /*also note that you can specify the package using something like: android:R.drawable.ic_menu_search. * /
+	 * }
 	 * 
-	 * @param keyframes-selector	Required. Percentage of the animation duration.
+	 * .TextView {
+	 *     background-image: asset("images/white.9.png");
+	 * }
 	 * 
-	 * 								Legal values:
+	 * #myImage {
+	 *     background-image: url("http://www.example.com/example.png");
+	 * }
 	 * 
-	 * 								0-100%
-	 * 								from (same as 0%)
-	 * 								to (same as 100%)
+	 * #myView {
+	 *     background-image: file("/sdcard/com.myapp.android/someImage.png");
+	 * }
+	 * </pre>
 	 * 
-	 * 								<b>Note:<b> you can have many keyframes-selectors in one animation
-	 * 
-	 * @param css-styles			Required. One or more legal CSS style properties
+	 * @param droidQuery
+	 * @param value
 	 */
-	private void at_symbol_keyframes($ droidQuery, String value)
+	private void background_image($ droidQuery, final String value)
 	{
-		Log.w("CSS", "CSS Animations not implemented.");
+		Context context = droidQuery.view(0).getContext();
+		if (value.startsWith("R."))
+		{
+			String[] split = value.split(".");
+			
+			final int resourceID = context.getResources().getIdentifier(split[2], split[1], null);
+			if (resourceID == 0)
+			{
+				Log.w("CSS", "Could not find Resource " + value);
+				return;
+			}
+			
+			droidQuery.each(new Function() {
+				
+				@Override
+				public void invoke($ droidQuery, Object... params) {
+					droidQuery.view(0).setBackgroundResource(resourceID);
+				}
+			});
+		}
+		else if (value.startsWith("asset("))
+		{
+			droidQuery.image(value.substring(6, value.length()-1));
+		}
+		else if (value.startsWith("url("))
+		{
+			droidQuery.image(value.substring(4, value.length()-1));
+		}
+		else if (value.startsWith("file("))
+		{
+			droidQuery.image("file://" + value.substring(5, value.length()-1));
+		}
+		else if (value.contains(":R"))
+		{
+			//drawable with package specified.
+			String[] split = value.split(":");
+
+			String namespace = split[0];
+			split = split[1].split(".");
+			
+			final int resourceID = context.getResources().getIdentifier(split[2], split[1], namespace);
+			if (resourceID == 0)
+			{
+				Log.w("CSS", "Could not find Resource " + value);
+				return;
+			}
+			
+			droidQuery.each(new Function() {
+				
+				@Override
+				public void invoke($ droidQuery, Object... params) {
+					droidQuery.view(0).setBackgroundResource(resourceID);
+				}
+			});
+		}
+		else
+		{
+			//assume R.drawable
+			final int resourceID = context.getResources().getIdentifier(value, "drawable", null);
+			if (resourceID == 0)
+			{
+				Log.w("CSS", "Could not find Resource " + value);
+				return;
+			}
+			
+			droidQuery.each(new Function() {
+				
+				@Override
+				public void invoke($ droidQuery, Object... params) {
+					droidQuery.view(0).setBackgroundResource(resourceID);
+				}
+			});
+		}
+		
+		
 	}
 	
 	private void animation($ droidQuery, String value)
@@ -264,6 +454,25 @@ public class StyleSheet
 		public Map<Integer, String> getFrames()
 		{
 			return frames;
+		}
+	}
+	
+	/**
+	 * Used for handling the CSS Selector {@literal @}font-face
+	 * @author Phil Brown
+	 * @since 1:15:27 PM Dec 11, 2013
+	 *
+	 */
+	public static class FontFace
+	{
+		Map<String, String> fonts = new HashMap<String, String>();
+		public void addFontFace(String font_family, String src)
+		{
+			fonts.put(font_family, src);
+		}
+		public Map<String, String> getFonts()
+		{
+			return fonts;
 		}
 	}
 

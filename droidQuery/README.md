@@ -59,7 +59,7 @@ You may also browse the *javadocs* [here](http://phil-brown.github.io/droidQuery
 Finally, most of the [jQuery API Documentation](http://api.jquery.com) is sufficient to explain the *droidQuery* API.
 
 To **instantiate** a new *droidQuery*, you need to pass in a `Context`, a `View`, or set of `View`s. The
-simplest way to create the instance is using the `with` static methods, such as:
+simplest way to create the instance is using the `with` static methods:
 
     $.with(Context);
     $.with(View);
@@ -204,5 +204,7 @@ This project uses [AsyncTaskEx](https://github.com/commonsguy/cwac-task) to allo
 of simultaneous network tasks. It also uses [NineOldAndroids](http://nineoldandroids.com) to provide 
 animation support for Pre-Honeycomb versions of Android. Finally, this project would not exist if it 
 were not for the excellent *jQuery* library, and its excellent documentation.
+
+    on.
 
     
