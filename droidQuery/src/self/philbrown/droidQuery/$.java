@@ -46,6 +46,7 @@ import org.w3c.dom.Document;
 
 import self.philbrown.css.CSSSelector;
 import self.philbrown.css.StyleSheet;
+import self.philbrown.cssparser.TokenSequence;
 import self.philbrown.droidQuery.AjaxOptions.Redundancy;
 import self.philbrown.droidQuery.SwipeDetector.SwipeListener;
 import android.app.Activity;
@@ -370,10 +371,17 @@ public class $
 	public $(View parent, String selector)
 	{
 		this(parent);
-		$ query = new CSSSelector().makeSelection(parent, selector);
-		this.rootView = query.rootView;
-		this.context = query.context;
-		this.views = query.views;
+		try
+		{
+			$ query = new CSSSelector().makeSelection(parent, TokenSequence.parse(selector));
+			this.rootView = query.rootView;
+			this.context = query.context;
+			this.views = query.views;
+		}
+		catch(Throwable t)
+		{
+			t.printStackTrace();
+		}
 	}
 	
 	/**
@@ -399,10 +407,17 @@ public class $
 	public $(Context context, String selector)
 	{
 		this(context);
-		$ query = new CSSSelector().makeSelection(this.rootView, selector);
-		this.rootView = query.rootView;
-		this.context = query.context;
-		this.views = query.views;
+		try
+		{
+			$ query = new CSSSelector().makeSelection(this.rootView, TokenSequence.parse(selector));
+			this.rootView = query.rootView;
+			this.context = query.context;
+			this.views = query.views;
+		}
+		catch (Throwable t)
+		{
+			t.printStackTrace();
+		}
 		
 	}
 	

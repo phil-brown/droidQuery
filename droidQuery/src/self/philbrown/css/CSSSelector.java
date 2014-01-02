@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import self.philbrown.cssparser.ParserConstants;
+import self.philbrown.cssparser.Token;
+import self.philbrown.cssparser.TokenSequence;
 import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.Function;
 import android.content.Context;
@@ -239,12 +242,6 @@ import android.view.View;
  * 		<td>Selects all <i>Button</i> elements where the parent is a <i>LinearLayout</i>.</td>
  * 		<td>2</td>
  * 	</tr>
- * 	<tr>
- * 		<td>{@literal @}keyframes</td>
- * 		<td>@keyframes myAnimation { 0% {0px} 100% {200px}}</td>
- * 		<td>Specifies that the keyframes for myAnimation start at 0px and end at 200px.</td>
- * 		<td>2</td>
- * 	</tr>
  * </table>
  * <br>
  * <h1>The following selectors are known CSS Selectors that are not currently implemented:</h1>
@@ -311,55 +308,75 @@ import android.view.View;
  * 	</tr>
  * </table>
  */
-public class CSSSelector 
+public class CSSSelector implements ParserConstants
 {
-	public $ makeSelection(Context context, String selector)
+	private static Token DOT_TOKEN = new Token(DOT);
+	private static Token HASH_TOKEN = new Token(HASH);
+	private static Token TIMES_TOKEN = new Token(TIMES);
+	private static Token LEFTSQ_TOKEN = new Token(LEFTSQ);
+	private static Token DBL_COLON_TOKEN = new Token(DOUBLE_COLON);
+	private static Token COLON_TOKEN = new Token(COLON);
+	private static Token COMMA_TOKEN = new Token(COMMA);
+	private static Token SPACE_TOKEN = new Token(SPACE);
+	private static Token GT_TOKEN = new Token(GT);
+	
+	private static Token EQ = new Token(EQUAL);
+	private static Token OR_EQ = new Token(OR_EQUAL);
+	private static Token CARET_EQ = new Token(CARET_EQUAL);
+	private static Token NOT_EQ = new Token(NOT_EQUAL);
+	private static Token TIMES_EQ = new Token(TIMES_EQUAL);
+	private static Token DOLLAR_EQ = new Token(DOLLAR_EQUAL);
+	
+	private static Token LEFTPAREN_TOKEN = new Token(LEFTPAREN);
+	private static Token RIGHTPAREN_TOKEN = new Token(RIGHTPAREN);
+	
+	public $ makeSelection(Context context, TokenSequence selector)
 	{
 		return makeSelection($.with(context), selector);
 	}
 	
-	public $ makeSelection(View parent, String selector)
+	public $ makeSelection(View parent, TokenSequence selector)
 	{
 		return makeSelection($.with(parent.getContext()), selector);
 	}
 	
-	public $ makeSelection($ droidQuery, String selector)
+	public $ makeSelection($ droidQuery, TokenSequence selector)
 	{
 		//### class selector
-		if (selector.startsWith("."))
+		if (selector.startsWith(DOT_TOKEN))
 		{
-			String sel = selector.substring(1);
-			if (sel == null) sel = "";
-			if (sel.contains("."))
+			TokenSequence sel = selector.subSequence(1);
+			if (sel == null) sel = new TokenSequence(new ArrayList<Token>(), null);
+			if (sel.contains(new Token(DOT, null)))
 			{
 				//expected that the full class is provided
-				droidQuery.selectByType(sel);
+				droidQuery.selectByType(sel.toString());
 			}
 			else
 			{
 				//check android.view
 				try {
-					Class<?> clazz = Class.forName(String.format(Locale.US, "android.view%s", selector));
+					Class<?> clazz = Class.forName(String.format(Locale.US, "android.view%s", selector.toString()));
 					droidQuery.selectByType(clazz);
 				}
 				catch (Throwable t)
 				{
 					//check android.widget
 					try {
-						Class<?> clazz = Class.forName(String.format(Locale.US, "android.widget%s", selector));
+						Class<?> clazz = Class.forName(String.format(Locale.US, "android.widget%s", selector.toString()));
 						droidQuery.selectByType(clazz);
 					}
 					catch (Throwable t2)
 					{
 						//check android.webkit
 						try {
-							Class<?> clazz = Class.forName(String.format(Locale.US, "android.webkit%s", selector));
+							Class<?> clazz = Class.forName(String.format(Locale.US, "android.webkit%s", selector.toString()));
 							droidQuery.selectByType(clazz);
 						}
 						catch (Throwable t3)
 						{
 							//could not select class
-							Log.w("droidQuery", String.format(Locale.US, "Could not select class %s.", sel));
+							Log.w("droidQuery", String.format(Locale.US, "Could not select class %s.", sel.toString()));
 						}
 					}
 				}
@@ -369,24 +386,24 @@ public class CSSSelector
 			
 		}
 		//### id selector
-		else if (selector.startsWith("#"))
+		else if (selector.startsWith(HASH_TOKEN))
 		{
 			String classname = "";
 			try
 			{
 				classname = String.format(Locale.US, "%s.R.id", droidQuery.context().getPackageName());
 				Class<?> clazz = Class.forName(classname);
-				String sel = selector.substring(1);
-				if (sel == null) sel = "";
+				TokenSequence sel = selector.subSequence(1);
+				if (sel == null) sel = new TokenSequence(new ArrayList<Token>(), null);
 				try
 				{
-					Field f = clazz.getField(sel);
+					Field f = clazz.getField(sel.toString());
 					int id = (Integer) f.get(null);
 					droidQuery.id(id);
 				}
 				catch (Throwable t)
 				{
-					Log.w("droidQuery", String.format(Locale.US, "No resource found for R.id.%s", sel));
+					Log.w("droidQuery", String.format(Locale.US, "No resource found for R.id.%s", sel.toString()));
 				}
 			}
 			catch (Throwable t)
@@ -395,28 +412,28 @@ public class CSSSelector
 			}
 		}
 		//### all selector
-		else if (selector.equals("*"))
+		else if (selector.equals(TIMES_TOKEN))
 		{
 			droidQuery.selectAll();
 		}
 		//### attribute selectors. Added for android: attributes can be named like: @color/green
-		else if (selector.startsWith("["))
+		else if (selector.startsWith(LEFTSQ_TOKEN))
 		{
-			if (!selector.endsWith("]"))
+			if (!selector.endsWith(new Token(RIGHTSQ)))
 			{
-				Log.w("droidQuery", String.format(Locale.US, "Invalid css selector: %s", selector));
+				Log.w("droidQuery", String.format(Locale.US, "Invalid css selector: %s", selector.toString()));
 				return droidQuery;
 			}
-			String sel = selector.substring(1, selector.length()-1);
+			TokenSequence sel = selector.subSequence(1, selector.length()-1);
 			
 			List<View> selection = new ArrayList<View>();
 			
 			//### startsWith (|=)
-			if (sel.contains("|="))
+			if (sel.contains(OR_EQ))
 			{
-				String[] split = sel.split("|=");
-				String attribute = split[0];
-				String value = split[1];
+				TokenSequence[] split = sel.split(OR_EQ);
+				TokenSequence attribute = split[0];
+				TokenSequence value = split[1];
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -424,14 +441,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -441,7 +458,7 @@ public class CSSSelector
 					}
 					if (val != null)
 					{
-						if (val.toString().startsWith(value))
+						if (val.toString().startsWith(value.toString()))
 						{
 							selection.add(v);
 						}
@@ -452,11 +469,11 @@ public class CSSSelector
 				
 			}
 			//### startsWith (^=)
-			else if (sel.contains("^="))
+			else if (sel.contains(CARET_EQ))
 			{
-				String[] split = sel.split("^=");
-				String attribute = split[0];
-				String value = split[1];
+				TokenSequence[] split = sel.split(CARET_EQ);
+				TokenSequence attribute = split[0];
+				TokenSequence value = split[1];
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -464,14 +481,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -481,7 +498,7 @@ public class CSSSelector
 					}
 					if (val != null)
 					{
-						if (val.toString().startsWith(value))
+						if (val.toString().startsWith(value.toString()))
 						{
 							selection.add(v);
 						}
@@ -492,11 +509,11 @@ public class CSSSelector
 				
 			}
 			//### contains (~=)
-			else if (sel.contains("~="))
+			else if (sel.contains(NOT_EQ))
 			{
-				String[] split = sel.split("~=");
-				String attribute = split[0];
-				String value = split[1];
+				TokenSequence[] split = sel.split(NOT_EQ);
+				TokenSequence attribute = split[0];
+				TokenSequence value = split[1];
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -504,14 +521,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -521,7 +538,7 @@ public class CSSSelector
 					}
 					if (val != null)
 					{
-						if (value.contains(val.toString()))
+						if (value.toString().contains(val.toString()))
 						{
 							selection.add(v);
 						}
@@ -531,11 +548,11 @@ public class CSSSelector
 				droidQuery = $.with(selection);
 			}
 			//### contains (*=)
-			else if (sel.contains("*="))
+			else if (sel.contains(TIMES_EQ))
 			{
-				String[] split = sel.split("*=");
-				String attribute = split[0];
-				String value = split[1];
+				TokenSequence[] split = sel.split(TIMES_EQ);
+				TokenSequence attribute = split[0];
+				TokenSequence value = split[1];
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -543,14 +560,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -560,7 +577,7 @@ public class CSSSelector
 					}
 					if (val != null)
 					{
-						if (value.contains(val.toString()))
+						if (value.toString().contains(val.toString()))
 						{
 							selection.add(v);
 						}
@@ -570,11 +587,11 @@ public class CSSSelector
 				droidQuery = $.with(selection);
 			}
 			//### equals
-			else if (sel.contains("="))
+			else if (sel.contains(EQ))
 			{
-				String[] split = sel.split("=");
-				String attribute = split[0];
-				String value = split[1];
+				TokenSequence[] split = sel.split(EQ);
+				TokenSequence attribute = split[0];
+				TokenSequence value = split[1];
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -582,14 +599,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -599,7 +616,7 @@ public class CSSSelector
 					}
 					if (val != null)
 					{
-						if (val.toString().equals(value))
+						if (val.toString().equals(value.toString()))
 						{
 							selection.add(v);
 						}
@@ -609,11 +626,11 @@ public class CSSSelector
 				droidQuery = $.with(selection);
 			}
 			//### ends with
-			else if (sel.contains("$="))
+			else if (sel.contains(DOLLAR_EQ))
 			{
-				String[] split = sel.split("$=");
-				String attribute = split[0];
-				String value = split[1];
+				TokenSequence[] split = sel.split(DOLLAR_EQ);
+				TokenSequence attribute = split[0];
+				TokenSequence value = split[1];
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -621,14 +638,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -638,7 +655,7 @@ public class CSSSelector
 					}
 					if (val != null)
 					{
-						if (val.toString().endsWith(value))
+						if (val.toString().endsWith(value.toString()))
 						{
 							selection.add(v);
 						}
@@ -650,7 +667,7 @@ public class CSSSelector
 			//### has attribute
 			else
 			{
-				String attribute = sel;
+				TokenSequence attribute = sel;
 				$ d = $.with(droidQuery.view(0)).selectAll();
 				for (int i = 0; i < d.size(); i++)
 				{
@@ -658,14 +675,14 @@ public class CSSSelector
 					Object val = null;
 					try {
 						//check getters
-						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute)));
+						Method m = v.getClass().getMethod(String.format("get%s", capitalize(attribute.toString())));
 						val = m.invoke(v);
 					}
 					catch (Throwable t)
 					{
 						try {
 							//check fields
-							Field f = v.getClass().getField(attribute);
+							Field f = v.getClass().getField(attribute.toString());
 							val = f.get(v);
 						}
 						catch (Throwable t2)
@@ -683,51 +700,33 @@ public class CSSSelector
 			}
 			
 		}
-		else if (selector.contains("::"))
+		else if (selector.contains(COLON_TOKEN) || selector.contains(DBL_COLON_TOKEN))
 		{
-			//check the left side
-			String[] split = selector.split("::");
-			if (split.length > 1)
+			if (selector.startsWith(COLON_TOKEN) || selector.contains(DBL_COLON_TOKEN))
 			{
-				//if the left side is its own selector, then make that selection first to narrow down the filter
-				if (split.length == 2)
-					droidQuery = makeSelection(droidQuery, split[0]);
+				TokenSequence sel = null;
+				if (selector.contains(COLON_TOKEN))
+					sel = selector.subSequence(1);
 				else
-				{
-					StringBuilder sel = new StringBuilder();
-					for (int i = 0; i < split.length-1; i++)
-					{
-						sel.append(split[i]).append("::");
-					}
-					droidQuery = makeSelection(droidQuery, sel.toString());
-				}
-			}
-			
-			//then make selection
-			droidQuery.selectSelected();
-		}
-		else if (selector.contains(":"))
-		{
-			if (selector.startsWith(":"))
-			{
-				String sel = selector.substring(1);
+					sel = selector.subSequence(2);
+				
 				if (sel.equals("first-child"))
 				{
 					return droidQuery.selectNthChilds(0);
 				}
 				else if (sel.startsWith("nth-child"))
 				{
-					if (sel.contains("(") && sel.contains(")"))
+					if (sel.contains(LEFTPAREN_TOKEN) && sel.contains(RIGHTPAREN_TOKEN))
 					{
-						String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+						TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 						int n = 0;
 						try
 						{
-							n = Integer.parseInt(_sel);
+							n = Integer.parseInt(_sel.toString());
 						}
 						catch (Throwable t)
 						{
-							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 						}
 						n = n-1;
 						if (n < 0)
@@ -737,23 +736,23 @@ public class CSSSelector
 					else
 					{
 						//not a valid format.
-						Log.w("CSS", "Invalid selector " + selector);
+						Log.w("CSS", "Invalid selector " + selector.toString());
 					}
 					
 				}
 				else if (sel.startsWith("nth-last-child"))
 				{
-					if (sel.contains("(") && sel.contains(")"))
+					if (sel.contains(LEFTPAREN_TOKEN) && sel.contains(RIGHTPAREN_TOKEN))
 					{
-						String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+						TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 						int n = 0;
 						try
 						{
-							n = Integer.parseInt(_sel);
+							n = Integer.parseInt(_sel.toString());
 						}
 						catch (Throwable t)
 						{
-							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 						}
 						n = n-1;
 						if (n < 0)
@@ -763,22 +762,22 @@ public class CSSSelector
 					else
 					{
 						//not a valid format.
-						Log.w("CSS", "Invalid selector " + selector);
+						Log.w("CSS", "Invalid selector " + selector.toString());
 					}
 				}
 				else if (sel.equals("last-child"))
 				{
-					if (sel.contains("(") && sel.contains(")"))
+					if (sel.contains(LEFTPAREN_TOKEN) && sel.contains(RIGHTPAREN_TOKEN))
 					{
-						String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+						TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 						int n = 0;
 						try
 						{
-							n = Integer.parseInt(_sel);
+							n = Integer.parseInt(_sel.toString());
 						}
 						catch (Throwable t)
 						{
-							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 						}
 						n = n-1;
 						if (n < 0)
@@ -788,13 +787,14 @@ public class CSSSelector
 					else
 					{
 						//not a valid format.
-						Log.w("CSS", "Invalid selector " + selector);
+						Log.w("CSS", "Invalid selector " + selector.toString());
 					}
 				}
 			}
 			
-			String[] split = selector.split(":");
-			String sel = split[1];
+			TokenSequence[] split = selector.splitOnAny(new Token[]{COLON_TOKEN, DBL_COLON_TOKEN});
+			
+			TokenSequence sel = split[1];
 			if (split.length == 2)
 			{
 				if (sel.equals("first-child"))
@@ -804,25 +804,25 @@ public class CSSSelector
 				}
 				else if (sel.equals("first-of-type"))
 				{
-					return droidQuery.selectNthChildsOfType(0, split[0]);
+					return droidQuery.selectNthChildsOfType(0, split[0].toString());
 				}
 				else if (sel.equals("last-of-type"))
 				{
-					return droidQuery.selectNthFromEndChildsOfType(0, split[0]);
+					return droidQuery.selectNthFromEndChildsOfType(0, split[0].toString());
 				}
 				else if (sel.startsWith("nth-child"))
 				{
-					if (sel.contains("(") && sel.contains(")"))
+					if (sel.contains(LEFTPAREN_TOKEN) && sel.contains(RIGHTPAREN_TOKEN))
 					{
-						String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+						TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 						int n = 0;
 						try
 						{
-							n = Integer.parseInt(_sel);
+							n = Integer.parseInt(_sel.toString());
 						}
 						catch (Throwable t)
 						{
-							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 						}
 						n = n-1;
 						if (n < 0)
@@ -833,23 +833,23 @@ public class CSSSelector
 					else
 					{
 						//not a valid format.
-						Log.w("CSS", "Invalid selector " + selector);
+						Log.w("CSS", "Invalid selector " + selector.toString());
 					}
 					
 				}
 				else if (sel.startsWith("nth-last-child"))
 				{
-					if (sel.contains("(") && sel.contains(")"))
+					if (sel.contains(LEFTPAREN_TOKEN) && sel.contains(RIGHTPAREN_TOKEN))
 					{
-						String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+						TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 						int n = 0;
 						try
 						{
-							n = Integer.parseInt(_sel);
+							n = Integer.parseInt(_sel.toString());
 						}
 						catch (Throwable t)
 						{
-							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 						}
 						n = n-1;
 						if (n < 0)
@@ -860,56 +860,56 @@ public class CSSSelector
 					else
 					{
 						//not a valid format.
-						Log.w("CSS", "Invalid selector " + selector);
+						Log.w("CSS", "Invalid selector " + selector.toString());
 					}
 				}
 				else if (sel.startsWith("nth-of-type"))
 				{
-					String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+					TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 					int n = 0;
 					try
 					{
-						n = Integer.parseInt(_sel);
+						n = Integer.parseInt(_sel.toString());
 					}
 					catch (Throwable t)
 					{
-						Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+						Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 					}
 					n = n-1;
 					if (n < 0)
 						n = 0;
-					return droidQuery.selectNthChildsOfType(n, split[0]);
+					return droidQuery.selectNthChildsOfType(n, split[0].toString());
 				}
 				else if (sel.startsWith("nth-last-of-type"))
 				{
-					String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+					TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 					int n = 0;
 					try
 					{
-						n = Integer.parseInt(_sel);
+						n = Integer.parseInt(_sel.toString());
 					}
 					catch (Throwable t)
 					{
-						Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+						Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 					}
 					n = n-1;
 					if (n < 0)
 						n = 0;
-					return droidQuery.selectNthChildsOfType(n, split[0]);
+					return droidQuery.selectNthChildsOfType(n, split[0].toString());
 				}
 				else if (sel.equals("last-child"))
 				{
-					if (sel.contains("(") && sel.contains(")"))
+					if (sel.contains(LEFTPAREN_TOKEN) && sel.contains(RIGHTPAREN_TOKEN))
 					{
-						String _sel = sel.substring(sel.indexOf("("), sel.indexOf(")"));
+						TokenSequence _sel = sel.subSequence(sel.indexOf(LEFTPAREN_TOKEN), sel.indexOf(RIGHTPAREN_TOKEN));
 						int n = 0;
 						try
 						{
-							n = Integer.parseInt(_sel);
+							n = Integer.parseInt(_sel.toString());
 						}
 						catch (Throwable t)
 						{
-							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector, _sel));
+							Log.w("CSS", String.format(Locale.US, "Invalid selector %s (can't parse Integer \"%s\").", selector.toString(), _sel.toString()));
 						}
 						n = n-1;
 						if (n < 0)
@@ -920,7 +920,7 @@ public class CSSSelector
 					else
 					{
 						//not a valid format.
-						Log.w("CSS", "Invalid selector " + selector);
+						Log.w("CSS", "Invalid selector " + selector.toString());
 					}
 				}
 				//first handle first half
@@ -1043,19 +1043,19 @@ public class CSSSelector
 			}
 			else if (sel.startsWith("not"))
 			{
-				if (sel.contains("("))
+				if (sel.contains(LEFTPAREN_TOKEN))
 				{
-					if (sel.endsWith(")"))
+					if (sel.endsWith(RIGHTPAREN_TOKEN))
 					{
-						sel = sel.split("(")[1];
-						sel = sel.substring(0, sel.length());
+						sel = sel.split(LEFTPAREN_TOKEN)[1];
+						sel = sel.subSequence(0, sel.length());
 						
 						Class<?> clazz = null;
-						if (sel.contains("."))
+						if (sel.contains(DOT_TOKEN))
 						{
 							//expected that the full class is provided
 							try {
-								clazz = Class.forName(sel);
+								clazz = Class.forName(sel.toString());
 							}
 							catch (Throwable t)
 							{
@@ -1066,20 +1066,20 @@ public class CSSSelector
 						{
 							//check android.view
 							try {
-								clazz = Class.forName(String.format(Locale.US, "android.view.%s", sel));
+								clazz = Class.forName(String.format(Locale.US, "android.view.%s", sel.toString()));
 								
 							}
 							catch (Throwable t)
 							{
 								//check android.widget
 								try {
-									clazz = Class.forName(String.format(Locale.US, "android.widget.%s", sel));
+									clazz = Class.forName(String.format(Locale.US, "android.widget.%s", sel.toString()));
 								}
 								catch (Throwable t2)
 								{
 									//check android.webkit
 									try {
-										clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", sel));
+										clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", sel.toString()));
 									}
 									catch (Throwable t3)
 									{
@@ -1116,25 +1116,26 @@ public class CSSSelector
 						else
 						{
 							//could not select class
-							Log.w("droidQuery", String.format(Locale.US, "Could not 'not select' class %s.", sel));
+							Log.w("droidQuery", String.format(Locale.US, "Could not 'not select' class %s.", sel.toString()));
 						}
 					}
 				}
 			}
 		}
-		else if (selector.contains("["))
+		else if (selector.contains(LEFTSQ_TOKEN))
 		{
-			String[] split = selector.split("[");
-			String element = split[0];
-			String brackets = split[1];
+			TokenSequence[] split = selector.split(LEFTSQ_TOKEN);
+			TokenSequence element = split[0];
+			TokenSequence brackets = split[1];
 			//first select the class
 			makeSelection(droidQuery, element);
 			//then handle the bracketed selection
-			makeSelection(droidQuery, String.format(Locale.US, "[%s", brackets));
+			TokenSequence seq = new TokenSequence.Builder().append(LEFTSQ_TOKEN).append(brackets).create();
+			makeSelection(droidQuery, seq);
 		}
-		else if (selector.contains(","))
+		else if (selector.contains(COMMA_TOKEN))
 		{
-			String[] split = selector.split(",");
+			TokenSequence[] split = selector.split(COMMA_TOKEN);
 			$[] array = new $[split.length];
 			for (int i = 0; i < split.length; i++)
 			{
@@ -1150,18 +1151,18 @@ public class CSSSelector
 //		{
 //			//TODO elements
 //		}
-		else if (selector.contains(" "))
+		else if (selector.contains(SPACE_TOKEN))
 		{
-			String[] split = selector.split(" ");
-			for (String sel : split)
+			TokenSequence[] split = selector.split(SPACE_TOKEN);
+			for (TokenSequence sel : split)
 			{
 				makeSelection(droidQuery, sel);
 			}
 		}
-		else if (selector.contains(">"))
+		else if (selector.contains(GT_TOKEN))
 		{
-			String[] split = selector.split(">");
-			String sel = split[0];
+			TokenSequence[] split = selector.split(GT_TOKEN);
+			TokenSequence sel = split[0];
 			makeSelection(droidQuery, sel);
 			for (int i = 1; i < split.length; i++)
 			{
@@ -1176,36 +1177,36 @@ public class CSSSelector
 		else
 		{
 			//no special characters.
-			if (selector.contains("."))
+			if (selector.contains(DOT_TOKEN))
 			{
 				//expected that the full class is provided
-				droidQuery.selectByType(selector);
+				droidQuery.selectByType(selector.toString());
 			}
 			else
 			{
 				//check android.view
 				try {
-					Class<?> clazz = Class.forName(String.format(Locale.US, "android.view.%s", selector));
+					Class<?> clazz = Class.forName(String.format(Locale.US, "android.view.%s", selector.toString()));
 					droidQuery.selectByType(clazz);
 				}
 				catch (Throwable t)
 				{
 					//check android.widget
 					try {
-						Class<?> clazz = Class.forName(String.format(Locale.US, "android.widget.%s", selector));
+						Class<?> clazz = Class.forName(String.format(Locale.US, "android.widget.%s", selector.toString()));
 						droidQuery.selectByType(clazz);
 					}
 					catch (Throwable t2)
 					{
 						//check android.webkit
 						try {
-							Class<?> clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", selector));
+							Class<?> clazz = Class.forName(String.format(Locale.US, "android.webkit.%s", selector.toString()));
 							droidQuery.selectByType(clazz);
 						}
 						catch (Throwable t3)
 						{
 							//could not select class
-							Log.w("droidQuery", String.format(Locale.US, "Could not select class %s.", selector));
+							Log.w("droidQuery", String.format(Locale.US, "Could not select class %s.", selector.toString()));
 						}
 					}
 				}

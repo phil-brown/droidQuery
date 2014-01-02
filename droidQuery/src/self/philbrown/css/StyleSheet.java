@@ -16,27 +16,32 @@
 
 package self.philbrown.css;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import self.philbrown.cssparser.CSSParser;
+import self.philbrown.cssparser.Declaration;
+import self.philbrown.cssparser.DefaultCSSHandler;
+import self.philbrown.cssparser.FontFace;
+import self.philbrown.cssparser.KeyFrame;
+import self.philbrown.cssparser.ParserConstants;
+import self.philbrown.cssparser.RuleSet;
+import self.philbrown.cssparser.Token;
+import self.philbrown.cssparser.TokenSequence;
 import self.philbrown.droidQuery.$;
 import self.philbrown.droidQuery.Function;
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.util.Log;
 import android.view.View;
-
-import com.osbcp.cssparser.CSSParser;
-import com.osbcp.cssparser.PropertyValue;
-import com.osbcp.cssparser.Rule;
-import com.osbcp.cssparser.Selector;
 
 /**
  * CSS StyleSheets
@@ -45,65 +50,85 @@ import com.osbcp.cssparser.Selector;
  *
  */
 @SuppressWarnings("unused")
-public class StyleSheet 
+public class StyleSheet implements ParserConstants
 {
-	/** All methods declared in this class. Used for reflection for handling CSS Property values. */
-	private static Map<String, Method> methods = new HashMap<String, Method>();
-	static
-	{
-		 Method[] _methods = StyleSheet.class.getDeclaredMethods();
-		for (Method m : _methods)
-		{
-			methods.put(m.getName(), m);
-		}
-	}
-	
+	/**
+	 * keeps track of styles by type
+	 */
+	private List<RuleSet> rules;
 	/**
 	 * Keeps track of the keyframes used for each animation.
 	 */
-	private Map<String, KeyFrames> animationKeyFrames;
+	private Map<String, List<KeyFrame>> animationKeyFrames;
 	
 	/**
 	 * Keeps track of fonts declared in css.
 	 */
 	private List<FontFace> fonts;
 	
-	/**
-	 * keeps track of styles by type
-	 */
-	private List<Rule> rules;
+	/** All methods declared in this class. Used for reflection for handling CSS Property values. */
+	private static Map<String, Method> methods = new HashMap<String, Method>();
+	static
+	{
+		Method[] _methods = StyleSheet.class.getDeclaredMethods();
+		for (Method m : _methods)
+		{
+			methods.put(m.getName(), m);
+		}
+	}
 	
-	private StyleSheet(List<Rule> rules){
+	public StyleSheet(List<RuleSet> rules)
+	{
+		this(rules, null, null);
+	}
+	
+	public StyleSheet(List<RuleSet> rules, Map<String, List<KeyFrame>> animationKeyFrames, List<FontFace> fonts)
+	{
 		this.rules = rules;
-		//TODO: add optimization by setting all values now
+		this.animationKeyFrames = animationKeyFrames;
+		this.fonts = fonts;
+	}
+	
+	private static StyleSheet fromInputStream(InputStream in) throws Exception
+	{
+		final List<RuleSet> rules = new ArrayList<RuleSet>();
+		final Map<String, List<KeyFrame>> animationKeyFrames = new HashMap<String, List<KeyFrame>>();
+		final List<FontFace> fonts = new ArrayList<FontFace>();
+		DefaultCSSHandler handler = new DefaultCSSHandler() {
+			@Override
+			public void handleRuleSet(RuleSet set)
+			{
+				rules.add(set);
+			}
+			@Override
+			public void handleKeyframes(String identifier, List<KeyFrame> keyframes)
+			{
+				animationKeyFrames.put(identifier, keyframes);
+			}
+			@Override
+			public void handleFontFace(FontFace font)
+			{
+				fonts.add(font);
+			}
+		};
+		CSSParser parser = new CSSParser(in, handler);
+		parser.parse();
+		
+        return new StyleSheet(rules, animationKeyFrames, fonts);
 	}
 	
 	public static StyleSheet fromAsset(Context context, String assetPath) throws Exception
 	{
 		InputStream in = context.getAssets().open(assetPath);
+		return fromInputStream(in);
 		
-		InputStreamReader stream = new InputStreamReader(in);
-		
-		BufferedReader inputReader = new BufferedReader(stream);
-		String line = null;
-		
-		StringBuilder builder = new StringBuilder();
-        while ((line = inputReader.readLine()) != null) 
-        {
-        	builder.append(line);
-        }
-        inputReader.close();
-        stream.close();
-        in.close();
-
-        return new StyleSheet(CSSParser.parse(builder.toString()));
 	}
 	
 	public static StyleSheet fromString(String css) throws Exception
 	{
-		return new StyleSheet(CSSParser.parse(css));
+		return fromInputStream(new ByteArrayInputStream(css.getBytes()));
 	}
-	
+
 	/**
 	 * Recursively apply rules to view and subviews
 	 * @param layout
@@ -114,27 +139,17 @@ public class StyleSheet
 	{
 		//clean approach using CSSSelector.java
 		
-		for (Rule r : rules)
+		for (int i = 0; i < rules.size(); i++)
 		{
-			List<Selector> selectors = r.getSelectors();
-			for (Selector s : selectors)
-			{
-				if (s.toString().startsWith("@"))
-				{
-					handleSpecialSelectors(s.toString(), r.getPropertyValues());
-				}
-				else
-				{
-					CSSSelector cssSelector = new CSSSelector();
-					$ droidQuery = cssSelector.makeSelection(layout, s.toString());
-					applyProperties(droidQuery, r.getPropertyValues());
-				}
-				
-			}
-			
+			RuleSet rule = rules.get(i);
+			TokenSequence selector = rule.getSelector();
+			CSSSelector cssSelector = new CSSSelector();
+			$ d = cssSelector.makeSelection(layout, selector);
+			List<Declaration> declarations = rule.getDeclarationBlock();
+			applyProperties(d, declarations);
 		}
 	}
-	
+//	
 	/**
 	 * Recursively apply rules to view and subviews
 	 * @param layout
@@ -145,97 +160,15 @@ public class StyleSheet
 	{
 		//clean approach using CSSSelector.java
 		
-		for (Rule r : rules)
+		for (int i = 0; i < rules.size(); i++)
 		{
-			List<Selector> selectors = r.getSelectors();
-			for (Selector s : selectors)
-			{
-				if (s.toString().startsWith("@"))
-				{
-					handleSpecialSelectors(s.toString(), r.getPropertyValues());
-				}
-				else
-				{
-					CSSSelector cssSelector = new CSSSelector();
-					$ d = cssSelector.makeSelection(droidQuery, s.toString());
-					applyProperties(d, r.getPropertyValues());
-				}
-				
-			}
-			
+			RuleSet rule = rules.get(i);
+			TokenSequence selector = rule.getSelector();
+			CSSSelector cssSelector = new CSSSelector();
+			$ d = cssSelector.makeSelection(droidQuery, selector);
+			List<Declaration> declarations = rule.getDeclarationBlock();
+			applyProperties(d, declarations);
 		}
-	}
-	
-	/**
-	 * Handles special selectors that contain information, such as keyframes or fonts
-	 * @param selector
-	 */
-	private void handleSpecialSelectors(String selector, List<PropertyValue> propertyValues)
-	{
-		//FIXME: these are probably not supported by the parser currently! 
-		Log.e("CSS", String.format(Locale.US, "Cannot handle special selector %s! Functionality coming soon.", selector));
-//		if (selector.startsWith("@"))
-//		{
-//			if (selector.startsWith("@keyframes"))
-//			{
-//				
-//				String body = selector.substring(10).trim();//FIXME: does this work???
-//				int start = body.indexOf("{");//FIXME: is this even present after parsed by css parser?
-//				String animationName = body.substring(0, start).trim();
-//				KeyFrames kf = new KeyFrames();
-//				body = body.substring(start, body.length()-1);
-//				try
-//				{
-//					List<Rule> keyframes = CSSParser.parse(body);
-//					for (Rule rule : keyframes)
-//					{
-//						for (Selector sel : rule.getSelectors())
-//						{
-//							int percentage = 0;
-//							if (sel.equals("from"))
-//								percentage = 0;
-//							else if (sel.equals("to"))
-//								percentage = 100;
-//							else if (sel.toString().endsWith("%"))
-//							{
-//								try {
-//									percentage = Integer.parseInt(sel.toString().replace("%", ""));
-//								}
-//								catch (Throwable t)
-//								{
-//									//invalid value
-//									Log.w("CSS", "Cannot use invalid keyframe with key " + sel);
-//									continue;
-//								}
-//							}
-//							else
-//							{
-//								//invalid value
-//								Log.w("CSS", "Cannot use invalid keyframe with key " + sel);
-//								continue;
-//							}
-//							
-//							StringBuilder css = new StringBuilder();
-//							for (PropertyValue pv : rule.getPropertyValues())
-//							{
-//								css.append(" ").append(pv.toString());
-//							}
-//							kf.addKeyFrame(percentage, css.toString());
-//						}
-//					}
-//					animationKeyFrames.put(animationName, kf);
-//				}
-//				catch (Throwable t)
-//				{
-//					Log.w("CSS", "Could not parse Keyframes");
-//				}
-//			}
-//			else if (selector.startsWith("@font-face"))
-//			{
-//				//TODO: handle fonts!!!
-//				
-//			}
-//		}
 	}
 	
 	/**
@@ -243,13 +176,14 @@ public class StyleSheet
 	 * @param v
 	 * @param properties
 	 */
-	public void applyProperties($ droidQuery, List<PropertyValue> properties)
+	public void applyProperties($ droidQuery, List<Declaration> declarations)
 	{
 		//apply actual css properties (big step here)
-		for (PropertyValue prop : properties)
+		for (int i = 0; i < declarations.size(); i++)
 		{
-			final String property = prop.getProperty();
-			final String value = prop.getValue();
+			Declaration prop = declarations.get(i);
+			final TokenSequence property = prop.getProperty();
+			final TokenSequence value = prop.getValue();
 			droidQuery.each(new Function() {
 				
 				@Override
@@ -258,20 +192,19 @@ public class StyleSheet
 					//need to fix this... 
 					try
 					{
-						String _value = value.replace("-", "_");
 						//these methods must be propert($, value)
-						methods.get(property).invoke(StyleSheet.this, droidQuery, _value);
+						methods.get(property.toString().replace("-", "_")).invoke(StyleSheet.this, droidQuery, value);
 					}
 					catch (Throwable t)
 					{
-						Log.w("CSS", String.format(Locale.US, "Could not set property named %s with value %s!", property, value));
+						Log.w("CSS", String.format(Locale.US, "Could not set property named %s with value %s!", property, value), t);
 					}
 				}
 			});
 		}
 	}
 	
-	private void background($ droidQuery, final String value)
+	private void background($ droidQuery, final TokenSequence value)
 	{
 		//TODO all background_* properties
 		Log.w("CSS", "CSS \"background\" not supported yet. Use each attribute separately, such as \"background-color\".");
@@ -282,13 +215,13 @@ public class StyleSheet
 	 * @param droidQuery
 	 * @param value
 	 */
-	private void background_color($ droidQuery, final String value)
+	private void background_color($ droidQuery, final TokenSequence value)
 	{
 		droidQuery.each(new Function() {
 			
 			@Override
 			public void invoke($ droidQuery, Object... params) {
-				droidQuery.view(0).setBackgroundColor(Color.parseColor(value));
+				droidQuery.view(0).setBackgroundColor(Color.parseColor(value.toString()));
 			}
 		});
 	}
@@ -319,15 +252,17 @@ public class StyleSheet
 	 * 
 	 * @param droidQuery
 	 * @param value
+	 * @throws IOException 
 	 */
-	private void background_image($ droidQuery, final String value)
+	private void background_image($ droidQuery, final TokenSequence value) throws IOException
 	{
 		Context context = droidQuery.view(0).getContext();
+		Enumeration<Token> tokens = value.enumerate();
 		if (value.startsWith("R."))
 		{
-			String[] split = value.split(".");
+			TokenSequence[] split = value.split(new Token(DOT, null));
 			
-			final int resourceID = context.getResources().getIdentifier(split[2], split[1], null);
+			final int resourceID = context.getResources().getIdentifier(split[2].toString(), split[1].toString(), null);
 			if (resourceID == 0)
 			{
 				Log.w("CSS", "Could not find Resource " + value);
@@ -344,25 +279,25 @@ public class StyleSheet
 		}
 		else if (value.startsWith("asset("))
 		{
-			droidQuery.image(value.substring(6, value.length()-1));
+			droidQuery.image(value.subSequence(6, value.length()-1).toString());
 		}
 		else if (value.startsWith("url("))
 		{
-			droidQuery.image(value.substring(4, value.length()-1));
+			droidQuery.image(value.subSequence(4, value.length()-1).toString());
 		}
 		else if (value.startsWith("file("))
 		{
-			droidQuery.image("file://" + value.substring(5, value.length()-1));
+			droidQuery.image("file://" + value.subSequence(5, value.length()-1).toString());
 		}
-		else if (value.contains(":R"))
+		else if (value.contains(TokenSequence.parse(":R")))
 		{
 			//drawable with package specified.
-			String[] split = value.split(":");
+			TokenSequence[] split = value.split(new Token(COLON, null));
 
-			String namespace = split[0];
-			split = split[1].split(".");
+			String namespace = split[0].toString();
+			split = split[1].split(new Token(DOT, null));
 			
-			final int resourceID = context.getResources().getIdentifier(split[2], split[1], namespace);
+			final int resourceID = context.getResources().getIdentifier(split[2].toString(), split[1].toString(), namespace);
 			if (resourceID == 0)
 			{
 				Log.w("CSS", "Could not find Resource " + value);
@@ -380,7 +315,7 @@ public class StyleSheet
 		else
 		{
 			//assume R.drawable
-			final int resourceID = context.getResources().getIdentifier(value, "drawable", null);
+			final int resourceID = context.getResources().getIdentifier(value.toString(), "drawable", null);
 			if (resourceID == 0)
 			{
 				Log.w("CSS", "Could not find Resource " + value);
@@ -399,81 +334,39 @@ public class StyleSheet
 		
 	}
 	
-	private void animation($ droidQuery, String value)
+	private void animation($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
 	}
 	
-	private void animation_duration($ droidQuery, String value)
+	private void animation_duration($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
 	}
 	
-	private void animation_timing_function($ droidQuery, String value)
+	private void animation_timing_function($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
 	}
 	
-	private void animation_delay($ droidQuery, String value)
+	private void animation_delay($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
 	}
 	
-	private void animation_iteration_count($ droidQuery, String value)
+	private void animation_iteration_count($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
 	}
 	
-	private void animation_direction($ droidQuery, String value)
+	private void animation_direction($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
 	}
 	
-	private void animation_play_state($ droidQuery, String value)
+	private void animation_play_state($ droidQuery, TokenSequence value)
 	{
 		Log.w("CSS", "CSS Animations not implemented.");
-	}
-	
-	/**
-	 * Used for handling the CSS Selector {@literal @}keyframes.
-	 * @author Phil Brown
-	 * @since 4:39:31 PM Dec 6, 2013
-	 *
-	 */
-	public static class KeyFrames
-	{
-		private Map<Integer, String> frames = new HashMap<Integer, String>();
-		public void addKeyFrame(int percent, String frame)
-		{
-			frames.put(percent, frame);
-		}
-		/**
-		 * Get the frames. The key is a percent, and the value is a CSS-style string. 
-		 * @return
-		 */
-		public Map<Integer, String> getFrames()
-		{
-			return frames;
-		}
-	}
-	
-	/**
-	 * Used for handling the CSS Selector {@literal @}font-face
-	 * @author Phil Brown
-	 * @since 1:15:27 PM Dec 11, 2013
-	 *
-	 */
-	public static class FontFace
-	{
-		Map<String, String> fonts = new HashMap<String, String>();
-		public void addFontFace(String font_family, String src)
-		{
-			fonts.put(font_family, src);
-		}
-		public Map<String, String> getFonts()
-		{
-			return fonts;
-		}
 	}
 
 }

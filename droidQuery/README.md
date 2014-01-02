@@ -205,6 +205,4 @@ of simultaneous network tasks. It also uses [NineOldAndroids](http://nineoldandr
 animation support for Pre-Honeycomb versions of Android. Finally, this project would not exist if it 
 were not for the excellent *jQuery* library, and its excellent documentation.
 
-    on.
-
     
