@@ -841,7 +841,10 @@ public class $
 	}
 	
 	/**
-	 * Animate the currently selected views
+	 * Animate the currently selected views. For example:
+	 * <pre>
+	 * $.with(myView).animate(new QuickMap(QuickEntry.qe("alpha", .8f), QuickEntry.qe("width", 50%)), 400, Easing.LINEAR, null);
+	 * </pre>
 	 * @param properties mapping of {@link AnimationOptions} attributes
 	 * @param duration the length of time for the animation to last
 	 * @param easing the Easing to use to interpolate the animation
@@ -1097,9 +1100,9 @@ public class $
 	}
 	
 	/**
-	 * Animate multiple view properties at the same time. Example:
+	 * Animate multiple view properties at the same time. For example:
 	 * <pre>
-	 * $.with(myView).animate(new QuickMap(QuickEntry.qe("alpha", .8f), QuickEntry.qe("width", 50%)), 400, Easing.LINEAR, null);
+	 * $.with(myView).animate(new QuickMap(QuickEntry.qe("alpha", .8f), QuickEntry.qe("width", 50%)), new AnimationOptions());
 	 * </pre>
 	 * @param properties mapping of property names and final values to animate
 	 * @param options the options for setting the duration, easing, etc of the animation
@@ -1859,20 +1862,63 @@ public class $
 		return this;
 	}
 	
-	/**
-	 * Applies the CSS-style rules to the selection
-	 * @param css
-	 * @return
-	 */
-	public $ css(String css)
-	{
-		try {
-			StyleSheet.fromString(css).applyRules(this);
-		} catch (Exception e) {
-			Log.w("droidQuery", "Could not load css", e);
-		}
-		return this;
-	}
+	/* TODO include these CSS methods once css parsing and handling is complete! */
+//	
+//	/**
+//	 * Get a key-value mapping of the css values for the given property names, for the first selected view.
+//	 * @param propertyNames
+//	 * @return
+//	 */
+//	public Map<String, Object> css(String[] propertyNames)
+//	{
+//		//TODO
+//	}
+//	
+//	/**
+//	 * Set a CSS property for the set of matched elements
+//	 * @param propertyName
+//	 * @param value
+//	 * @return
+//	 */
+//	public $ css(String propertyName, Object value)
+//	{
+//		//TODO
+//	}
+//	
+//	/**
+//	 * Handle getting/setting each CSS property
+//	 * @param propertyName the name of the property
+//	 * @param function includes a droidQuery selected with each element, and args that include the index and the property's value
+//	 * @return
+//	 */
+//	public $ css(String propertyName, Function function)
+//	{
+//		//TODO
+//	}
+//	
+//	/**
+//	 * Set the css for the selected views
+//	 * @param properties json object as string
+//	 */
+//	public $ css(String properties)
+//	{
+//		try {
+//			StyleSheet.fromString(properties).applyRules(this);
+//		} catch (Exception e) {
+//			Log.w("droidQuery", "Could not load css", e);
+//		}
+//		return this;
+//	}
+//	
+//	/**
+//	 * Applies the CSS-style rules to the selection. 
+//	 * @param css
+//	 * @return
+//	 */
+//	public $ css(JSONObject properties)
+//	{
+//		return css(properties.toString());
+//	}
 	
 	/**
 	 * Removes a subview from the first view in the current selection

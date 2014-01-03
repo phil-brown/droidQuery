@@ -37,6 +37,7 @@ import self.philbrown.cssparser.RuleSet;
 import self.philbrown.cssparser.Token;
 import self.philbrown.cssparser.TokenSequence;
 import self.philbrown.droidQuery.$;
+import self.philbrown.droidQuery.AnimationOptions;
 import self.philbrown.droidQuery.Function;
 import android.content.Context;
 import android.graphics.Color;
@@ -76,8 +77,25 @@ public class StyleSheet implements ParserConstants
 			methods.put(m.getName(), m);
 		}
 	}
+	/**
+	 * Most efficient way to apply the CSS one time. This uses the css parser's stream parsing ability
+	 * to optimize performance
+	 * @param droidQuery
+	 * @param in
+	 */
+	public static void applyCSS($ droidQuery, InputStream in)
+	{
+		//TODO: make this the only way to apply CSS
+		
+		//This may be the best way to handle things like keyframe animation, since it would require keeping
+		//track of one animation at a time - so the current animation-name is only for the current element
+		
+		//it is also more efficient.
+		//THIS COULD ALSO BE DONE IN A SEPARATE THREAD!!!!
+		
+	}
 	
-	public StyleSheet(List<RuleSet> rules)
+	protected StyleSheet(List<RuleSet> rules)
 	{
 		this(rules, null, null);
 	}
@@ -184,16 +202,21 @@ public class StyleSheet implements ParserConstants
 			Declaration prop = declarations.get(i);
 			final TokenSequence property = prop.getProperty();
 			final TokenSequence value = prop.getValue();
+			final AnimationOptions animation = new AnimationOptions();
 			droidQuery.each(new Function() {
 				
 				@Override
 				public void invoke($ droidQuery, Object... params) {
 					
-					//need to fix this... 
 					try
 					{
 						//these methods must be propert($, value)
-						methods.get(property.toString().replace("-", "_")).invoke(StyleSheet.this, droidQuery, value);
+						Object result = methods.get(property.toString().replace("-", "_")).invoke(StyleSheet.this, droidQuery, value);
+						if (property.startsWith("animation"))
+						{
+							//animation.
+							//result will be AnimationOptions method?
+						}
 					}
 					catch (Throwable t)
 					{
@@ -204,9 +227,57 @@ public class StyleSheet implements ParserConstants
 		}
 	}
 	
+	//////////////////////////////////////////
+	///       Animation Properties         ///
+	//////////////////////////////////////////
+	
+	private void animation($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animationDuration($ droidQuery, TokenSequence value) { animation_duration(droidQuery, value); }
+	private void animation_duration($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animationTimingFunction($ droidQuery, TokenSequence value) { animation_timing_function(droidQuery, value); }
+	private void animation_timing_function($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animationDelay($ droidQuery, TokenSequence value) { animation_delay(droidQuery, value); }
+	private void animation_delay($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animationIterationCount($ droidQuery, TokenSequence value) { animation_iteration_count(droidQuery, value); }
+	private void animation_iteration_count($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animationDirection($ droidQuery, TokenSequence value) { animation_direction(droidQuery, value); }
+	private void animation_direction($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	private void animationPlayState($ droidQuery, TokenSequence value) { animation_play_state(droidQuery, value); }
+	private void animation_play_state($ droidQuery, TokenSequence value)
+	{
+		Log.w("CSS", "CSS Animations not implemented.");
+	}
+	
+	//////////////////////////////////////////
+	///      Background Properties         ///
+	//////////////////////////////////////////
+	
 	private void background($ droidQuery, final TokenSequence value)
 	{
-		//TODO all background_* properties
 		Log.w("CSS", "CSS \"background\" not supported yet. Use each attribute separately, such as \"background-color\".");
 	}
 	
@@ -215,13 +286,25 @@ public class StyleSheet implements ParserConstants
 	 * @param droidQuery
 	 * @param value
 	 */
+	private void backgroundColor($ droidQuery, TokenSequence value) { background_color(droidQuery, value); }
 	private void background_color($ droidQuery, final TokenSequence value)
 	{
+		int backgroundColor = Color.BLACK;
+		try
+		{
+			backgroundColor = Color.parseColor(value.toString());
+			
+		}
+		catch (IllegalArgumentException e)
+		{
+			Log.w("CSS", "Could not parse color \"" + value.toString() + "\". Defaulting to BLACK.");
+		}
+		final int color = backgroundColor;
 		droidQuery.each(new Function() {
 			
 			@Override
 			public void invoke($ droidQuery, Object... params) {
-				droidQuery.view(0).setBackgroundColor(Color.parseColor(value.toString()));
+				droidQuery.view(0).setBackgroundColor(color);
 			}
 		});
 	}
@@ -254,6 +337,7 @@ public class StyleSheet implements ParserConstants
 	 * @param value
 	 * @throws IOException 
 	 */
+	private void backgroundImage($ droidQuery, TokenSequence value) throws IOException { background_image(droidQuery, value); }
 	private void background_image($ droidQuery, final TokenSequence value) throws IOException
 	{
 		Context context = droidQuery.view(0).getContext();
@@ -334,39 +418,10 @@ public class StyleSheet implements ParserConstants
 		
 	}
 	
-	private void animation($ droidQuery, TokenSequence value)
+	private void backgroundPosition($ droidQuery, TokenSequence value) { background_position(droidQuery, value); }
+	public void background_position($ droidQuery, final TokenSequence value)
 	{
-		Log.w("CSS", "CSS Animations not implemented.");
+		Log.w("CSS", "CSS \"background-position\" not supported yet. Use padding or margins.");
 	}
 	
-	private void animation_duration($ droidQuery, TokenSequence value)
-	{
-		Log.w("CSS", "CSS Animations not implemented.");
-	}
-	
-	private void animation_timing_function($ droidQuery, TokenSequence value)
-	{
-		Log.w("CSS", "CSS Animations not implemented.");
-	}
-	
-	private void animation_delay($ droidQuery, TokenSequence value)
-	{
-		Log.w("CSS", "CSS Animations not implemented.");
-	}
-	
-	private void animation_iteration_count($ droidQuery, TokenSequence value)
-	{
-		Log.w("CSS", "CSS Animations not implemented.");
-	}
-	
-	private void animation_direction($ droidQuery, TokenSequence value)
-	{
-		Log.w("CSS", "CSS Animations not implemented.");
-	}
-	
-	private void animation_play_state($ droidQuery, TokenSequence value)
-	{
-		Log.w("CSS", "CSS Animations not implemented.");
-	}
-
 }
