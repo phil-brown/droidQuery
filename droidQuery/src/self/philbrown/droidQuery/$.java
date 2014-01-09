@@ -949,9 +949,9 @@ public class $
 	 * @param _value the end animation value
 	 * @return the computed value
 	 */
-	public Object getAnimationValue(View view, String key, String _value)
+	public Number getAnimationValue(View view, String key, String _value)
 	{
-		Object value = null;
+		Number value = null;
 		
 		String[] split = (_value).split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)");
 		if (split.length == 1)

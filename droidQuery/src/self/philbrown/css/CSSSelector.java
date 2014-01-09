@@ -932,6 +932,10 @@ public class CSSSelector implements ParserConstants
 			{
 				droidQuery.selectFocused();
 			}
+			else if (sel.equals("selection"))
+			{
+				droidQuery.selectSelected();
+			}
 			else if (sel.equals("first-letter"))
 			{
 				//sets this droidQuery object's data Object to the first letter of every element in selection.
