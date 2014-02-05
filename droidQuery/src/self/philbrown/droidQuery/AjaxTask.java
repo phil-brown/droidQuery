@@ -1005,5 +1005,14 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		public int status;
 		/** The error string */
 		public String reason;
+		
+		/**
+		 * Prints the error in the format <pre>Error ({@literal <status>}): {@literal <reason>}</pre>
+		 */
+		@Override
+		public String toString()
+		{
+			return String.format(Locale.US, "Error (%d): %s", status, reason);
+		}
 	}
 }

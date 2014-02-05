@@ -45,7 +45,6 @@ import org.json.JSONObject;
 import org.w3c.dom.Document;
 
 import self.philbrown.css.CSSSelector;
-import self.philbrown.css.StyleSheet;
 import self.philbrown.cssparser.TokenSequence;
 import self.philbrown.droidQuery.AjaxOptions.Redundancy;
 import self.philbrown.droidQuery.SwipeDetector.SwipeListener;
@@ -69,7 +68,6 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
@@ -953,7 +951,16 @@ public class $
 	{
 		Number value = null;
 		
+		boolean negativeValue = false;
+		if (_value.startsWith("-"))
+		{
+			negativeValue = true;
+			_value = _value.substring(1);
+		}
+		
 		String[] split = (_value).split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)");
+		if (negativeValue)
+			split[0] = String.format(Locale.US, "-%s", split[0]);
 		if (split.length == 1)
 		{
 			if (split[0].contains("."))
@@ -984,23 +991,10 @@ public class $
 					value = Integer.valueOf(split[0]);
 				}
 			}
-			else if (split[1].equalsIgnoreCase("dip"))
+			else if (split[1].equalsIgnoreCase("dip") || split[1].equalsIgnoreCase("dp"))
 			{
 				float px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, Float.parseFloat(split[0]), context.getResources().getDisplayMetrics());
 				if (split[0].contains("."))
-				{
-					value = px;
-				}
-				else
-				{
-					value = (int) px;
-				}
-			}
-			else if (split[1].equalsIgnoreCase("dp"))
-			{
-				DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-			    float px = Float.parseFloat(split[0]) * (metrics.density/160f);
-			    if (split[0].contains("."))
 				{
 					value = px;
 				}
@@ -3313,6 +3307,29 @@ public class $
 	}
 	
 	/**
+	 * Set the tag for all selected Views
+	 * @param tag the Object to set as the tag, or {@code null} to clear the tag
+	 * @return this
+	 */
+	public $ tag(Object tag)
+	{
+		for (int i = 0; i < views.size(); i++)
+		{
+			views.get(i).setTag(tag);
+		}
+		return this;
+	}
+	
+	/**
+	 * Get the tag for the first selected view
+	 * @return the tag for the first view in the current selection
+	 */
+	public Object tag()
+	{
+		return view(0).getTag();
+	}
+	
+	/**
 	 * Set the current selection to the set of views with the given id.
 	 * @param ids
 	 * @return
@@ -4670,6 +4687,77 @@ public class $
 		}));
 	}
 	
+	/**
+	 * creates a text string in standard URL-encoded notation
+	 * @return
+	 */
+	public String serialize()
+	{
+		StringBuilder serial = new StringBuilder();
+		boolean isFirst = true;
+		synchronized(views)
+		{
+			for (int i = 0; i < views.size(); i++)
+			{
+				View v = views.get(i);
+				if (v.getId() != 0)
+				{
+					String name = v.getContext().getResources().getResourceEntryName(v.getId());
+					Object value = $.with(v).val();
+					if (value != null)
+					{
+						if (isFirst)
+						{
+							serial.append(String.format(Locale.US, "%s=%s", name, value.toString()));
+							isFirst = false;
+						}
+						else
+							serial.append(String.format(Locale.US, "&%s=%s", name, value.toString()));
+						
+					}
+				}
+			}
+		}
+		return serial.toString();
+	}
+	
+	/**
+	 * creates a JavaScript array of objects, ready to be encoded as a JSON string
+	 * @return
+	 */
+	public String serializeArray()
+	{
+		StringBuilder serial = new StringBuilder("]");
+		boolean isFirst = true;
+		synchronized(views)
+		{
+			for (int i = 0; i < views.size(); i++)
+			{
+				View v = views.get(i);
+				if (v.getId() != 0)
+				{
+					String name = v.getContext().getResources().getResourceEntryName(v.getId());
+					Object value = $.with(v).val();
+					if (value != null)
+					{
+						if (isFirst)
+						{
+							serial.append(String.format(Locale.US, "{\"name\":\"%s\",\"value\":%s}", name, (value instanceof String ? String.format(Locale.US, "%s", value) : value.toString())));
+							isFirst = false;
+						}
+						else
+						{
+							serial.append(String.format(Locale.US, ",{\"name\":\"%s\",\"value\":%s}", name, (value instanceof String ? String.format(Locale.US, "%s", value) : value.toString())));
+						}
+						
+					}
+				}
+			}
+		}
+		serial.append("]");
+		return serial.toString();
+	}
+	
 	//// Convenience
 	
 	/**
@@ -5779,10 +5867,6 @@ public class $
 		public Count()
 		{
 			index = 0;
-		}
-		public Count(int startingIndex)
-		{
-			index = startingIndex;
 		}
 	}
 }
