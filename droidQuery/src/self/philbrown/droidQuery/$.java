@@ -740,8 +740,9 @@ public class $
 	public $ parent()
 	{
 		List<View> _views = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewParent parent = view.getParent();
 			if (parent != null && !_views.contains(parent) && parent instanceof View)
 			{
@@ -1234,8 +1235,9 @@ public class $
 		});
 		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 1.0f);
 			if (builder == null) 
 			{
@@ -1285,8 +1287,9 @@ public class $
 		});
 		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 0.0f);
 			if (builder == null) 
 			{
@@ -1338,8 +1341,9 @@ public class $
 		});
 		anim.setDuration(duration);
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", opacity);
 			if (builder == null) 
 			{
@@ -1363,8 +1367,9 @@ public class $
 	{
 		List<View> zeros = new ArrayList<View>();
 		List<View> ones = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			if (ViewHelper.getAlpha(view) < 0.5)
 				zeros.add(view);
 			else
@@ -1383,8 +1388,9 @@ public class $
 	{
 		List<View> zeros = new ArrayList<View>();
 		List<View> ones = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			if (ViewHelper.getAlpha(view) < 0.5)
 				zeros.add(view);
 			else
@@ -1419,8 +1425,9 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewParent parent = view.getParent();
 			float y = 0;
 			if (parent != null && parent instanceof View)
@@ -1507,8 +1514,9 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			
 			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "y", 0);
 			if (builder == null)
@@ -1573,8 +1581,9 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewParent parent = view.getParent();
 			float x = 0;
 			if (parent != null && parent instanceof View)
@@ -1660,8 +1669,9 @@ public class $
 			public void onAnimationStart(Animator animation) {}
 		});
 		AnimatorSet.Builder builder = null;
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ObjectAnimator animator = ObjectAnimator.ofFloat(view, "x", 0);
 			if (builder == null)
 				builder = anim.play(animator);
@@ -1747,8 +1757,9 @@ public class $
 	 */
 	public $ attr(String s, Object o)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			try
 			{
 				Class<?> objClass = o.getClass();
@@ -2024,8 +2035,9 @@ public class $
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(eventType));
 		String listener = String.format(Locale.US, "On%sListener", capitalize(eventType));
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			Class<?>[] classes = view.getClass().getClasses();
 			try
 			{
@@ -2099,8 +2111,9 @@ public class $
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(event));
 		String listener = String.format(Locale.US, "On%sListener", capitalize(event));
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			Class<?>[] classes = view.getClass().getClasses();
 			
 			try
@@ -2343,8 +2356,9 @@ public class $
 	 */
 	public $ val(Object object)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			if (view instanceof TextView && object instanceof CharSequence)
 			{
 				((TextView) view).setText((CharSequence) object);
@@ -2376,8 +2390,9 @@ public class $
 	 */
 	public $ click()
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.performClick();
 		}
 		return this;
@@ -2391,8 +2406,9 @@ public class $
 	 */
 	public $ click(final Function function)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.setOnClickListener(new View.OnClickListener(){
 
 				@Override
@@ -2418,8 +2434,9 @@ public class $
 	 */
 	public $ click(final Object eventData, final Function function)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.setOnClickListener(new View.OnClickListener(){
 
 				@Override
@@ -2438,8 +2455,9 @@ public class $
 	 */
 	public $ longclick()
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.performLongClick();
 		}
 		return this;
@@ -2453,8 +2471,9 @@ public class $
 	 */
 	public $ longclick(final Function function)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.setOnLongClickListener(new View.OnLongClickListener(){
 
 				@Override
@@ -2481,8 +2500,9 @@ public class $
 	 */
 	public $ longclick(final Object eventData, final Function function)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.setOnLongClickListener(new View.OnLongClickListener(){
 
 				@Override
@@ -2624,8 +2644,9 @@ public class $
 	 */
 	public $ focus()
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			if (view.requestFocus()) {
 				break;
 			}
@@ -2652,8 +2673,9 @@ public class $
 	 */
 	public $ focusout()
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.clearFocus();
 		}
 		return this;
@@ -2720,8 +2742,9 @@ public class $
 	 */
 	public $ select(final Function function)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			if (view instanceof AdapterView)
 			{
 				((AdapterView<?>) view).setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -2748,8 +2771,9 @@ public class $
 	 */
 	public $ select(int index)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			try
 			{
 				Method m = view.getClass().getMethod("setSelection", new Class<?>[]{Integer.class});
@@ -2773,8 +2797,9 @@ public class $
 	public void unbind(String eventType)
 	{
 		String method = String.format(Locale.US, "setOn%sListener", capitalize(eventType));
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			String listener = String.format(Locale.US, "%s.On%sListener", view.getClass().getName(), capitalize(eventType));
 			try
 			{
@@ -2950,8 +2975,9 @@ public class $
 	 */
 	public void remove()
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewParent parent = view.getParent();
 			if (parent != null && parent instanceof ViewGroup)
 			{
@@ -3011,8 +3037,9 @@ public class $
 	public $ selectAll()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectAllSubViews(view));
 		}
 		return $.with(context, subviews);
@@ -3061,8 +3088,9 @@ public class $
 	public $ selectByType(Class<?> clazz)
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectByType(view, clazz));
 		}
 		return $.with(context, subviews);
@@ -3127,8 +3155,9 @@ public class $
 	public $ selectEmpties()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectEmpties(view));
 		}
 		return $.with(context, subviews);
@@ -3168,8 +3197,9 @@ public class $
 		View focused = recursivelyFindFocusedSubView(rootView);
 		if (focused != null)
 			return $.with(focused);
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			focused = recursivelyFindFocusedSubView(view);
 			if (focused != null)
 				return $.with(focused);
@@ -3188,8 +3218,9 @@ public class $
 		if (selected != null)
 			return $.with(selected);
 		selected = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			selected.addAll(recursivelyFindSelectedSubView(view));
 		}
 		
@@ -3266,8 +3297,9 @@ public class $
 	public $ selectHidden()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectHidden(view));
 		}
 		return $.with(context, subviews);
@@ -3281,8 +3313,9 @@ public class $
 	public $ selectVisible()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectVisible(view));
 		}
 		return $.with(context, subviews);
@@ -3354,8 +3387,9 @@ public class $
 	public $ selectImages()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectByType(view, ImageView.class));
 		}
 		return $.with(context, subviews);
@@ -3390,8 +3424,9 @@ public class $
 	public $ selectOnlyChilds()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectOnlyChilds(view));
 		}
 		return $.with(context, subviews);
@@ -3434,8 +3469,9 @@ public class $
 	public $ selectNthChilds(int n)
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectNthChilds(view, n));
 		}
 		return $.with(context, subviews);
@@ -3481,8 +3517,9 @@ public class $
 	public $ selectNthFromEndChilds(int n)
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectNthFromEndChilds(view, n));
 		}
 		return $.with(context, subviews);
@@ -3530,8 +3567,9 @@ public class $
 	public $ selectNthChildsOfType(int n, Class<?> type)
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectNthChildsOfType(view, n, type));
 		}
 		return $.with(context, subviews);
@@ -3625,8 +3663,9 @@ public class $
 	public $ selectNthFromEndChildsOfType(int n, Class<?> type)
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectNthFromEndChildsOfType(view, n, type));
 		}
 		return $.with(context, subviews);
@@ -3705,8 +3744,9 @@ public class $
 	public $ selectLastChilds(int n)
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectLastChilds(view, n));
 		}
 		return $.with(context, subviews);
@@ -3719,8 +3759,9 @@ public class $
 	public $ selectParents()
 	{
 		List<View> subviews = new ArrayList<View>();
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			subviews.addAll(recursivelySelectByType(view, ViewGroup.class));
 		}
 		return $.with(context, subviews);
@@ -4779,8 +4820,9 @@ public class $
 	 */
 	public $ html(String html)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			try
 			{
 				Method m = view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
@@ -4833,8 +4875,9 @@ public class $
 	 */
 	public $ text(CharSequence text)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			try
 			{
 				Method m = view.getClass().getMethod("setText", new Class<?>[]{CharSequence.class});
@@ -5518,8 +5561,9 @@ public class $
 	 */
 	public $ height(int height)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewGroup.LayoutParams params = view.getLayoutParams();
 			params.height = height;
 			view.setLayoutParams(params);
@@ -5542,8 +5586,9 @@ public class $
 	 */
 	public $ width(int width)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewGroup.LayoutParams params = view.getLayoutParams();
 			params.width = width;
 			view.setLayoutParams(params);
@@ -5640,8 +5685,9 @@ public class $
 	 */
 	public $ offset(int x, int y)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			Point offset = offset(view);
 			int offsetX = x - offset.x;
 			int offsetY = y - offset.y;
@@ -5680,8 +5726,9 @@ public class $
 	 */
 	public $ position(int x, int y)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			ViewHelper.setX(view, x);
 			ViewHelper.setY(view, y);
 		}
@@ -5703,8 +5750,9 @@ public class $
 	 */
 	public $ scrollLeft(int position)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.scrollTo(position, view.getScrollY());
 		}
 		return this;
@@ -5725,8 +5773,9 @@ public class $
 	 */
 	public $ scrollTop(int position)
 	{
-		for (View view : this.views)
+		for (int i = 0; i < this.views.size(); i++)
 		{
+			View view = this.views.get(i);
 			view.scrollTo(view.getScrollX(), position);
 		}
 		return this;
