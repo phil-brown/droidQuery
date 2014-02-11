@@ -67,6 +67,7 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -627,6 +628,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 					{
 						parsedResponse = parseImage(response);
 					}
+					else if (dataType.equalsIgnoreCase("raw"))
+					{
+						parsedResponse = parseRawContent(response);
+					}
 				}
 				catch (ClientProtocolException cpe)
 				{
@@ -797,9 +802,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			{
 				//invoke success with parsed response and the status string
 				if (options.context() != null)
-					options.success().invoke($.with(options.context()), s.obj, s.reason);
+					options.success().invoke($.with(options.context()), s.obj, s.reason, s.headers);
 				else
-					options.success().invoke(null, s.obj, s.reason);
+					options.success().invoke(null, s.obj, s.reason, s.headers);
 			}
 			
 			if (options.global())
@@ -946,6 +951,16 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
         
         is.close();
         return bitmap.get();
+	}
+	
+	/**
+	 * Parses the HTTP response as a raw byte[]
+	 * @param response the response to parse
+	 * @return a byte[] response
+	 */
+	private byte[] parseRawContent(HttpResponse response) throws IOException
+	{
+		return EntityUtils.toByteArray(response.getEntity());
 	}
 	
 	/**

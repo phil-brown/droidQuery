@@ -198,6 +198,11 @@ and as long as the request was successful, the native camera app would open once
 If the script does not issue an *adb* command, but instead calculates some data, the response would include the script
 output.
 
+**News**
+
+I introduced *droidQuery* at [Google DevFest Twin Cities](http://devfest.mn/)! You can view my slides
+online at http://www.slideshare.net/PhDBrown/droid-query .
+
 **Special Thanks**
 
 This project uses [AsyncTaskEx](https://github.com/commonsguy/cwac-task) to allow an unlimited number

@@ -366,6 +366,7 @@ public class AjaxOptions implements Cloneable
 	 * "json": Evaluates the response as JSON and returns a JSONObject object. The JSON data is parsed in a strict manner; any malformed JSON is rejected and a parse error is thrown. (See json.org for more information on proper JSON formatting.)
 	 * "text": A plain text string.
 	 * "image" : returns a bitmap object
+	 * "raw" : a byte[]
 	 * @note if Script is used, {@link context} MUST be set.
 
 	 */
@@ -387,6 +388,7 @@ public class AjaxOptions implements Cloneable
 	 * "json": Evaluates the response as JSON and returns a JSONObject object. The JSON data is parsed in a strict manner; any malformed JSON is rejected and a parse error is thrown. (See json.org for more information on proper JSON formatting.)
 	 * "text": A plain text string.
 	 * "image" : returns a bitmap object
+	 * "raw" : a byte[]
 	 * @note if Script is used, {@link context} MUST be set.
 	 * @param dataType
 	 * @return this
@@ -1203,11 +1205,35 @@ public class AjaxOptions implements Cloneable
 	    while (iterator.hasNext()) {
 	        String key = iterator.next();
 	        try {
-	            Object value = json.get(key);
+	            final Object value = json.get(key);
 	            for (Field f : fields)
 	            {
 	            	if (f.getName().equalsIgnoreCase(key))
-	            		f.set(this, value);
+	            	{
+	            		if (f.getType() == Function.class && value instanceof String)
+	            		{
+	            			//special case for handling strings as Functions
+	            			f.set(this, new Function() {
+								
+								@Override
+								public void invoke($ droidQuery, Object... params) {
+									if (params == null)
+										EventCenter.trigger(droidQuery, (String) value, null, null);
+									else
+									{
+										Map<String, Object> args = new HashMap<String, Object>();
+										for (int i = 0; i < params.length; i++)
+										{
+											args.put(String.valueOf(i), params[i]);
+										}
+										EventCenter.trigger(droidQuery, (String) value, args, null);
+									}
+								}
+							});
+	            		}
+	            		else
+	            			f.set(this, value);
+	            	}
 	            }
 	            
 	        } catch (JSONException e) {
