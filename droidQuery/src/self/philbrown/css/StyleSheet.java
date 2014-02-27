@@ -221,6 +221,7 @@ public class StyleSheet implements ParserConstants
 			final TokenSequence property = prop.getProperty();
 			final TokenSequence value = prop.getValue();
 			final AnimationOptions animation = new AnimationOptions();
+			//FIXME: this does not seem optimal!
 			droidQuery.each(new Function() {
 				
 				@Override
@@ -791,43 +792,210 @@ public class StyleSheet implements ParserConstants
 
 	public static void border($ droidQuery, final TokenSequence value)
 	{
-		
+		Log.w("CSS", "CSS \"border\" not supported (yet?). Use each attribute separately, such as \"border-color\".");
 	}
 	
 	public static void borderColor($ droidQuery, TokenSequence value) { border_color(droidQuery, value); }
 	public static void border_color($ droidQuery, final TokenSequence value)
 	{
+		Token spaceToken = new Token(Token.SPACE);
+		if (value.contains(spaceToken))
+		{
+			TokenSequence[] parts = value.split(spaceToken);
+			//can be one, two, or four different strings
+			if (parts.length == 2)
+			{
+				border_left_color(droidQuery, parts[1]);
+				border_top_color(droidQuery, parts[0]);
+				border_right_color(droidQuery, parts[1]);
+				border_bottom_color(droidQuery, parts[0]);
+			}
+			else if (parts.length == 4)
+			{
+				border_top_color(droidQuery, parts[0]);
+				border_right_color(droidQuery, parts[1]);
+				border_bottom_color(droidQuery, parts[2]);
+				border_left_color(droidQuery, parts[3]);
+			}
+			else
+			{
+				Log.w("CSS", "Invalid number of arguments for \"border_color\" property");
+			}
+		}
+		else
+		{
+			border_left_color(droidQuery, value);
+			border_top_color(droidQuery, value);
+			border_right_color(droidQuery, value);
+			border_bottom_color(droidQuery, value);
+		}
 		
 	}
 	
 	public static void borderStyle($ droidQuery, TokenSequence value) { border_style(droidQuery, value); }
 	public static void border_style($ droidQuery, final TokenSequence value)
 	{
-		
+		Token spaceToken = new Token(Token.SPACE);
+		if (value.contains(spaceToken))
+		{
+			TokenSequence[] parts = value.split(spaceToken);
+			//can be one, two, or four different strings
+			if (parts.length == 2)
+			{
+				border_left_style(droidQuery, parts[1]);
+				border_top_style(droidQuery, parts[0]);
+				border_right_style(droidQuery, parts[1]);
+				border_bottom_style(droidQuery, parts[0]);
+			}
+			else if (parts.length == 4)
+			{
+				border_top_style(droidQuery, parts[0]);
+				border_right_style(droidQuery, parts[1]);
+				border_bottom_style(droidQuery, parts[2]);
+				border_left_style(droidQuery, parts[3]);
+			}
+			else
+			{
+				Log.w("CSS", "Invalid number of arguments for \"border_color\" property");
+			}
+		}
+		else
+		{
+			border_left_style(droidQuery, value);
+			border_top_style(droidQuery, value);
+			border_right_style(droidQuery, value);
+			border_bottom_style(droidQuery, value);
+		}
 	}
 	
 	public static void borderWidth($ droidQuery, TokenSequence value) { border_width(droidQuery, value); }
 	public static void border_width($ droidQuery, final TokenSequence value)
 	{
-		
+		Token spaceToken = new Token(Token.SPACE);
+		if (value.contains(spaceToken))
+		{
+			TokenSequence[] parts = value.split(spaceToken);
+			//can be one, two, or four different strings
+			if (parts.length == 2)
+			{
+				border_left_width(droidQuery, parts[1]);
+				border_top_width(droidQuery, parts[0]);
+				border_right_width(droidQuery, parts[1]);
+				border_bottom_width(droidQuery, parts[0]);
+			}
+			else if (parts.length == 4)
+			{
+				border_top_width(droidQuery, parts[0]);
+				border_right_width(droidQuery, parts[1]);
+				border_bottom_width(droidQuery, parts[2]);
+				border_left_width(droidQuery, parts[3]);
+			}
+			else
+			{
+				Log.w("CSS", "Invalid number of arguments for \"border_color\" property");
+			}
+		}
+		else
+		{
+			border_left_width(droidQuery, value);
+			border_top_width(droidQuery, value);
+			border_right_width(droidQuery, value);
+			border_bottom_width(droidQuery, value);
+		}
 	}
 	
 	public static void borderRadius($ droidQuery, TokenSequence value) { border_radius(droidQuery, value); }
 	public static void border_radius($ droidQuery, final TokenSequence value)
 	{
-		
+		//TODO
+		String string = value.toString();
+		if (string.equalsIgnoreCase("initial"))
+		{
+			
+		}
+		else if (string.equalsIgnoreCase("inherit"))
+		{
+			
+		}
+		else 
+		{
+			Token slashToken = new Token(Token.SLASH);
+			Token spaceToken = new Token(Token.SPACE);
+			if (value.contains(slashToken))
+			{
+				
+			}
+			else if (value.contains(spaceToken))
+			{
+				
+			}
+			else
+			{
+				
+			}
+		}
 	}
 	
 	public static void borderBottom($ droidQuery, TokenSequence value) { border_bottom(droidQuery, value); }
 	public static void border_bottom($ droidQuery, final TokenSequence value)
 	{
-		
+		Log.w("CSS", "CSS \"border-bottom\" not supported (yet?). Use each attribute separately, such as \"border-bottom-color\".");
 	}
 	
 	public static void borderBottomColor($ droidQuery, TokenSequence value) { border_bottom_color(droidQuery, value); }
 	public static void border_bottom_color($ droidQuery, final TokenSequence value)
 	{
-		
+		//TODO this is NOT completed - just started
+		String string = value.toString();
+		if (string.equalsIgnoreCase("transparent"))
+		{
+			droidQuery.each(new Function() {
+				
+				@Override
+				public void invoke($ d, Object... params) {
+					//TODO
+				}
+			});
+		}
+		else if (string.equalsIgnoreCase("initial"))
+		{
+			droidQuery.each(new Function() {
+				
+				@Override
+				public void invoke($ d, Object... params) {
+					//TODO
+				}
+			});
+		}
+		else if (string.equalsIgnoreCase("inherit"))
+		{
+			droidQuery.each(new Function() {
+				
+				@Override
+				public void invoke($ d, Object... params) {
+					//TODO
+				}
+			});
+		}
+		else
+		{
+			int color = 0x000000;
+			try
+			{
+				Color.parseColor(string);
+				droidQuery.each(new Function() {
+					
+					@Override
+					public void invoke($ d, Object... params) {
+						//TODO
+					}
+				});
+			}
+			catch (IllegalArgumentException e)
+			{
+				Log.w("CSS", "Cannot parse the color " + string);
+			}
+		}
 	}
 	
 	public static void borderBottomStyle($ droidQuery, TokenSequence value) { border_bottom_style(droidQuery, value); }
@@ -857,7 +1025,7 @@ public class StyleSheet implements ParserConstants
 	public static void borderLeft($ droidQuery, TokenSequence value) { border_left(droidQuery, value); }
 	public static void border_left($ droidQuery, final TokenSequence value)
 	{
-		
+		Log.w("CSS", "CSS \"border-left\" not supported (yet?). Use each attribute separately, such as \"border-left-color\".");
 	}
 	
 	public static void borderLeftColor($ droidQuery, TokenSequence value) { border_left_color(droidQuery, value); }
@@ -881,7 +1049,7 @@ public class StyleSheet implements ParserConstants
 	public static void borderRight($ droidQuery, TokenSequence value) { border_right(droidQuery, value); }
 	public static void border_right($ droidQuery, final TokenSequence value)
 	{
-		
+		Log.w("CSS", "CSS \"border-right\" not supported (yet?). Use each attribute separately, such as \"border-right-color\".");
 	}
 	
 	public static void borderRightColor($ droidQuery, TokenSequence value) { border_right_color(droidQuery, value); }
@@ -905,7 +1073,7 @@ public class StyleSheet implements ParserConstants
 	public static void borderTop($ droidQuery, TokenSequence value) { border_top(droidQuery, value); }
 	public static void border_top($ droidQuery, final TokenSequence value)
 	{
-		
+		Log.w("CSS", "CSS \"border-top\" not supported (yet?). Use each attribute separately, such as \"border-top-color\".");
 	}
 	
 	public static void borderTopColor($ droidQuery, TokenSequence value) { border_top_color(droidQuery, value); }

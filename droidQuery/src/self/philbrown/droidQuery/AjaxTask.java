@@ -770,9 +770,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				error.reason = "null response";
 				//invoke error with Request, Status, and Error
 				if (options.context() != null)
-					options.error().invoke($.with(options.context()), error, 0, "null response");
+					options.error().invoke($.with(options.context()), error, 0, "null response", null);
 				else
-					options.error().invoke(null, error, 0, "null response");
+					options.error().invoke(null, error, 0, "null response", null);
 			}
 			
 			if (options.global())
@@ -785,9 +785,9 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				//invoke error with Request, Status, and Error
 				Error e = (Error) response;
 				if (options.context() != null)
-					options.error().invoke($.with(options.context()), e.error, e.status, e.reason);
+					options.error().invoke($.with(options.context()), e.error, e.status, e.reason, e.headers);
 				else
-					options.error().invoke(null, e.error, e.status, e.reason);
+					options.error().invoke(null, e.error, e.status, e.reason, e.headers);
 			}
 			
 			if (options.global())
@@ -816,16 +816,16 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			if (response != null)
 			{
 				if (options.context() != null)
-					options.complete().invoke($.with(options.context()), options, response.reason);
+					options.complete().invoke($.with(options.context()), options, response.reason, response.headers);
 				else
-					options.complete().invoke(null, options, response.reason);
+					options.complete().invoke(null, options, response.reason, response.headers);
 			}
 			else
 			{
 				if (options.context() != null)
-					options.complete().invoke($.with(options.context()), options, "null response");
+					options.complete().invoke($.with(options.context()), options, "null response", null);
 				else
-					options.complete().invoke(null, options, "null response");
+					options.complete().invoke(null, options, "null response", null);
 			}
 		}
 		if (options.global())
