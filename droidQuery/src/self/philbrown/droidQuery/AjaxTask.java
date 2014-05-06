@@ -506,10 +506,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		SingleClientConnManager mgr = new SingleClientConnManager(params, schemeRegistry);
 		HttpClient client = new DefaultHttpClient(mgr, params);
 		
-		
+		HttpResponse response = null;
 		try {
-			
-			HttpResponse response;
 			
 			if (options.cookies() != null)
 			{
@@ -745,6 +743,26 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		} catch (Throwable t) {
 			if (options.debug())
 				t.printStackTrace();
+			if (t instanceof java.net.SocketTimeoutException)
+			{
+				Error e = new Error();
+				AjaxError error = new AjaxError();
+				error.request = request;
+				error.options = options;
+				e.status = 0;
+				String reason = t.getMessage();
+				if (reason == null)
+					reason = "Socket Timeout";
+				e.reason = reason;
+				error.status = e.status;
+				error.reason = e.reason;
+				if (response != null)
+					e.headers = response.getAllHeaders();
+				else
+					e.headers = new Header[0];
+				e.error = error;
+				return e;
+			}
 			return null;
 		}
 	}

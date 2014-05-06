@@ -671,6 +671,17 @@ public class $
 	}
 	
 	/**
+	 * Selects the subviews specified by the given resource {@code ids}.
+	 * @param view
+	 * @param ids
+	 * @return
+	 */
+	public static $ with(View view, int... ids)
+	{
+		return $.with(view).ids(ids);
+	}
+	
+	/**
 	 * Initiate new droidQuery with the given selector
 	 * @param context
 	 * @param selector
