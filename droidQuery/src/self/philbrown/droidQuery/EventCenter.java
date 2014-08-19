@@ -32,12 +32,12 @@ public class EventCenter
 	 * Mapping of Scope to a Mapping of Event Names and a List of functions that respond to events
 	 * with the name for the scope.
 	 */
-	private static Map<Object, Map<String, List<Function>>> receivers = new HashMap<Object, Map<String, List<Function>>>();
+	private static volatile Map<Object, Map<String, List<Function>>> receivers = new HashMap<Object, Map<String, List<Function>>>();
 
 	/**
 	 * Global Scope
 	 */
-	private static Object global = new Object();
+	private static volatile Object global = new Object();
 	
 	/**
 	 * Constructor
@@ -55,16 +55,19 @@ public class EventCenter
 	 */
 	public static void bind(String trigger, Function function, Object scope)
 	{
-		if (scope == null) scope = global;
-		Map<String, List<Function>> triggers = receivers.get(scope);
-		if (triggers == null)
-			triggers = new HashMap<String, List<Function>>();
-		List<Function> functions = triggers.get(trigger);
-		if (functions == null)
-			functions = new ArrayList<Function>();
-		functions.add(function);
-		triggers.put(trigger, functions);
-		receivers.put(scope, triggers);
+		synchronized(receivers) {
+			if (scope == null) scope = global;
+			Map<String, List<Function>> triggers = receivers.get(scope);
+			if (triggers == null)
+				triggers = new HashMap<String, List<Function>>();
+			List<Function> functions = triggers.get(trigger);
+			if (functions == null)
+				functions = new ArrayList<Function>();
+			functions.add(function);
+			triggers.put(trigger, functions);
+			receivers.put(scope, triggers);
+		}
+		
 		
 	}
 	
@@ -76,16 +79,18 @@ public class EventCenter
 	 */
 	public static void unbind(String trigger, Function function, Object scope)
 	{
-		if (scope == null) scope = global;
-		Map<String, List<Function>> triggers = receivers.get(scope);
-		if (triggers == null)
-			return;
-		List<Function> functions = triggers.get(trigger);
-		if (functions == null)
-			return;
-		functions.remove(function);
-		triggers.put(trigger, functions);
-		receivers.put(scope, triggers);
+		synchronized(receivers) {
+			if (scope == null) scope = global;
+			Map<String, List<Function>> triggers = receivers.get(scope);
+			if (triggers == null)
+				return;
+			List<Function> functions = triggers.get(trigger);
+			if (functions == null)
+				return;
+			functions.remove(function);
+			triggers.put(trigger, functions);
+			receivers.put(scope, triggers);
+		}
 	}
 	
 	/**
@@ -96,18 +101,21 @@ public class EventCenter
 	 */
 	public static void trigger(String text, Map<String, Object> args, Object scope)
 	{
-		if (scope == null) scope = global;
-		Map<String, List<Function>> triggers = receivers.get(scope);
-		if (triggers == null)
-			return;
-		List<Function> functions = triggers.get(text);
-		if (functions == null)
-			return;
-		
-		for (Function f : functions)
-		{
-			f.invoke(null, text, args);
+		synchronized(receivers) {
+			if (scope == null) scope = global;
+			Map<String, List<Function>> triggers = receivers.get(scope);
+			if (triggers == null)
+				return;
+			List<Function> functions = triggers.get(text);
+			if (functions == null)
+				return;
+			
+			for (Function f : functions)
+			{
+				f.invoke(null, text, args);
+			}
 		}
+		
 	}
 	
 	/**
@@ -119,18 +127,21 @@ public class EventCenter
 	 */
 	public static void trigger($ droidQuery, String text, Map<String, Object> args, Object scope)
 	{
-		if (scope == null) scope = global;
-		Map<String, List<Function>> triggers = receivers.get(scope);
-		if (triggers == null)
-			return;
-		List<Function> functions = triggers.get(text);
-		if (functions == null)
-			return;
-		
-		for (Function f : functions)
-		{
-			f.invoke(droidQuery, text, args);
+		synchronized(receivers) {
+			if (scope == null) scope = global;
+			Map<String, List<Function>> triggers = receivers.get(scope);
+			if (triggers == null)
+				return;
+			List<Function> functions = triggers.get(text);
+			if (functions == null)
+				return;
+			
+			for (Function f : functions)
+			{
+				f.invoke(droidQuery, text, args);
+			}
 		}
+		
 	}
 	
 }
