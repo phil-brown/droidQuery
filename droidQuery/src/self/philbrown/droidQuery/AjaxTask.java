@@ -553,10 +553,106 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				
 			}
 			
+			//handle dataType
+			String dataType = options.dataType();
+			if (dataType == null)
+				dataType = "text";
+			Object parsedResponse = null;
+			boolean success = true;
+			try
+			{
+				if (dataType.equalsIgnoreCase("text") || dataType.equalsIgnoreCase("html"))
+				{
+					parsedResponse = parseText(response);
+				}
+				else if (dataType.equalsIgnoreCase("xml"))
+				{
+					if (options.customXMLParser() != null)
+					{
+						InputStream is = response.getEntity().getContent();
+						if (options.SAXContentHandler() != null)
+							options.customXMLParser().parse(is, options.SAXContentHandler());
+						else
+							options.customXMLParser().parse(is, new DefaultHandler());
+						parsedResponse = "Response handled by custom SAX parser";
+					}
+					else if (options.SAXContentHandler() != null)
+					{
+						InputStream is = response.getEntity().getContent();
+						
+						SAXParserFactory factory = SAXParserFactory.newInstance();
+						
+						factory.setFeature("http://xml.org/sax/features/namespaces", false);
+						factory.setFeature("http://xml.org/sax/features/namespace-prefixes", true);
+						
+						SAXParser parser = factory.newSAXParser();
+						
+						XMLReader reader = parser.getXMLReader();
+						reader.setContentHandler(options.SAXContentHandler());
+						reader.parse(new InputSource(is));
+						parsedResponse = "Response handled by custom SAX content handler";
+					}
+					else
+					{
+						parsedResponse = parseXML(response);
+					}
+				}
+				else if (dataType.equalsIgnoreCase("json"))
+				{
+					parsedResponse = parseJSON(response);
+				}
+				else if (dataType.equalsIgnoreCase("script"))
+				{
+					parsedResponse = parseScript(response);
+				}
+				else if (dataType.equalsIgnoreCase("image"))
+				{
+					parsedResponse = parseImage(response);
+				}
+				else if (dataType.equalsIgnoreCase("raw"))
+				{
+					parsedResponse = parseRawContent(response);
+				}
+			}
+			catch (ClientProtocolException cpe)
+			{
+				if (options.debug())
+					cpe.printStackTrace();
+				success = false;
+				Error e = new Error(parsedResponse);
+				AjaxError error = new AjaxError();
+				error.request = request;
+				error.options = options;
+				e.status = statusLine.getStatusCode();
+				e.reason = statusLine.getReasonPhrase();
+				error.status = e.status;
+				error.reason = e.reason;
+				e.headers = response.getAllHeaders();
+				e.error = error;
+				return e;
+			}
+			catch (Exception ioe)
+			{
+				if (options.debug())
+					ioe.printStackTrace();
+				success = false;
+				Error e = new Error(parsedResponse);
+				AjaxError error = new AjaxError();
+				error.request = request;
+				error.options = options;
+				e.status = statusLine.getStatusCode();
+				e.reason = statusLine.getReasonPhrase();
+				error.status = e.status;
+				error.reason = e.reason;
+				e.headers = response.getAllHeaders();
+				e.error = error;
+				return e;
+			}
+			
 			if (statusLine.getStatusCode() >= 300)
 	        {
 				//an error occurred
-				Error e = new Error();
+				Error e = new Error(parsedResponse);
 				AjaxError error = new AjaxError();
 				error.request = request;
 				error.options = options;
@@ -570,104 +666,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	        }
 			else
 			{
-				//handle dataType
-				String dataType = options.dataType();
-				if (dataType == null)
-					dataType = "text";
-				Object parsedResponse = null;
-				boolean success = true;
-				try
-				{
-					if (dataType.equalsIgnoreCase("text") || dataType.equalsIgnoreCase("html"))
-					{
-						parsedResponse = parseText(response);
-					}
-					else if (dataType.equalsIgnoreCase("xml"))
-					{
-						if (options.customXMLParser() != null)
-						{
-							InputStream is = response.getEntity().getContent();
-							if (options.SAXContentHandler() != null)
-								options.customXMLParser().parse(is, options.SAXContentHandler());
-							else
-								options.customXMLParser().parse(is, new DefaultHandler());
-							parsedResponse = "Response handled by custom SAX parser";
-						}
-						else if (options.SAXContentHandler() != null)
-						{
-							InputStream is = response.getEntity().getContent();
-							
-							SAXParserFactory factory = SAXParserFactory.newInstance();
-							
-							factory.setFeature("http://xml.org/sax/features/namespaces", false);
-							factory.setFeature("http://xml.org/sax/features/namespace-prefixes", true);
-							
-							SAXParser parser = factory.newSAXParser();
-							
-							XMLReader reader = parser.getXMLReader();
-							reader.setContentHandler(options.SAXContentHandler());
-							reader.parse(new InputSource(is));
-							parsedResponse = "Response handled by custom SAX content handler";
-						}
-						else
-						{
-							parsedResponse = parseXML(response);
-						}
-					}
-					else if (dataType.equalsIgnoreCase("json"))
-					{
-						parsedResponse = parseJSON(response);
-					}
-					else if (dataType.equalsIgnoreCase("script"))
-					{
-						parsedResponse = parseScript(response);
-					}
-					else if (dataType.equalsIgnoreCase("image"))
-					{
-						parsedResponse = parseImage(response);
-					}
-					else if (dataType.equalsIgnoreCase("raw"))
-					{
-						parsedResponse = parseRawContent(response);
-					}
-				}
-				catch (ClientProtocolException cpe)
-				{
-					if (options.debug())
-						cpe.printStackTrace();
-					success = false;
-					Error e = new Error();
-					AjaxError error = new AjaxError();
-					error.request = request;
-					error.options = options;
-					e.status = statusLine.getStatusCode();
-					e.reason = statusLine.getReasonPhrase();
-					error.status = e.status;
-					error.reason = e.reason;
-					e.headers = response.getAllHeaders();
-					e.error = error;
-					return e;
-				}
-				catch (Exception ioe)
-				{
-					if (options.debug())
-						ioe.printStackTrace();
-					success = false;
-					Error e = new Error();
-					AjaxError error = new AjaxError();
-					error.request = request;
-					error.options = options;
-					e.status = statusLine.getStatusCode();
-					e.reason = statusLine.getReasonPhrase();
-					error.status = e.status;
-					error.reason = e.reason;
-					e.headers = response.getAllHeaders();
-					e.error = error;
-					return e;
-				}
 				if (success)
 				{
-					
 					//handle ajax ifModified option
 					Header[] lastModifiedHeaders = response.getHeaders("last-modified");
 					if (lastModifiedHeaders.length >= 1) {
@@ -688,7 +688,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 								{
 									//request response has not been modified. 
 									//Causes an error instead of a success.
-									Error e = new Error();
+									Error e = new Error(parsedResponse);
 									AjaxError error = new AjaxError();
 									error.request = request;
 									error.options = options;
@@ -745,7 +745,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				t.printStackTrace();
 			if (t instanceof java.net.SocketTimeoutException)
 			{
-				Error e = new Error();
+				Error e = new Error(null);
 				AjaxError error = new AjaxError();
 				error.request = request;
 				error.options = options;
@@ -786,6 +786,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				error.status = 0;
 				error.options = options;
 				error.reason = "null response";
+				error.response = null;
 				//invoke error with Request, Status, and Error
 				if (options.context() != null)
 					options.error().invoke($.with(options.context()), error, 0, "null response", null);
@@ -800,12 +801,19 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		{
 			if (options.error() != null)
 			{
+				AjaxError error = new AjaxError();
+				error.request = request;
+				error.status = 0;
+				error.options = options;
+				error.reason = "null response";
+				error.response = response;
+				
 				//invoke error with Request, Status, and Error
 				Error e = (Error) response;
 				if (options.context() != null)
-					options.error().invoke($.with(options.context()), e.error, e.status, e.reason, e.headers);
+					options.error().invoke($.with(options.context()), error, e.status, e.reason, e.headers);
 				else
-					options.error().invoke(null, e.error, e.status, e.reason, e.headers);
+					options.error().invoke(null, error, e.status, e.reason, e.headers);
 			}
 			
 			if (options.global())
@@ -1013,6 +1021,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	{
 		/** The response Object */
 		public AjaxError error;
+		
+		public Error(Object response) {
+			
+		}
 	}
 	
 	/**
@@ -1038,6 +1050,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		public int status;
 		/** The error string */
 		public String reason;
+		/** The response body */
+		public Object response;
 		
 		/**
 		 * Prints the error in the format <pre>Error ({@literal <status>}): {@literal <reason>}</pre>
