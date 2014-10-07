@@ -55,7 +55,6 @@ public class ScriptResponseHandler implements ResponseHandler<ScriptResponse>
 		if (statusLine.getStatusCode() >= 300)
         {
         	Log.e("droidQuery", "HTTP Response Error " + statusLine.getStatusCode() + ":" + statusLine.getReasonPhrase());
-        	return null;
         }
 
         HttpEntity entity = response.getEntity();

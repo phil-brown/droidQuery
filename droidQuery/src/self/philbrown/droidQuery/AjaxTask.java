@@ -368,8 +368,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		//handle ajax caching option
 		if (cachedResponse != null && options.cache())
 		{
-			Success s = new Success();
-			s.obj = cachedResponse;
+			Success s = new Success(cachedResponse);
 			s.reason = "cached response";
 			s.headers = null;
 			return s;
@@ -557,15 +556,21 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			String dataType = options.dataType();
 			if (dataType == null)
 				dataType = "text";
+			if (options.debug())
+				Log.i("Ajax", "dataType = " + dataType);
 			Object parsedResponse = null;
 			try
 			{
 				if (dataType.equalsIgnoreCase("text") || dataType.equalsIgnoreCase("html"))
 				{
+					if (options.debug())
+						Log.i("Ajax", "parsing text");
 					parsedResponse = parseText(response);
 				}
 				else if (dataType.equalsIgnoreCase("xml"))
 				{
+					if (options.debug())
+						Log.i("Ajax", "parsing xml");
 					if (options.customXMLParser() != null)
 					{
 						InputStream is = response.getEntity().getContent();
@@ -598,18 +603,26 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				}
 				else if (dataType.equalsIgnoreCase("json"))
 				{
+					if (options.debug())
+						Log.i("Ajax", "parsing json");
 					parsedResponse = parseJSON(response);
 				}
 				else if (dataType.equalsIgnoreCase("script"))
 				{
+					if (options.debug())
+						Log.i("Ajax", "parsing script");
 					parsedResponse = parseScript(response);
 				}
 				else if (dataType.equalsIgnoreCase("image"))
 				{
+					if (options.debug())
+						Log.i("Ajax", "parsing image");
 					parsedResponse = parseImage(response);
 				}
 				else if (dataType.equalsIgnoreCase("raw"))
 				{
+					if (options.debug())
+						Log.i("Ajax", "parsing raw data");
 					parsedResponse = parseRawContent(response);
 				}
 			}
@@ -625,6 +638,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				e.reason = statusLine.getReasonPhrase();
 				error.status = e.status;
 				error.reason = e.reason;
+				error.response = e.response;
 				e.headers = response.getAllHeaders();
 				e.error = error;
 				return e;
@@ -641,6 +655,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				e.reason = statusLine.getReasonPhrase();
 				error.status = e.status;
 				error.reason = e.reason;
+				error.response = e.response;
 				e.headers = response.getAllHeaders();
 				e.error = error;
 				return e;
@@ -650,15 +665,19 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	        {
 				//an error occurred
 				Error e = new Error(parsedResponse);
-				AjaxError error = new AjaxError();
-				error.request = request;
-				error.options = options;
+				Log.e("Ajax Test", parsedResponse.toString());
+				//AjaxError error = new AjaxError();
+				//error.request = request;
+				//error.options = options;
 				e.status = statusLine.getStatusCode();
 				e.reason = statusLine.getReasonPhrase();
-				error.status = e.status;
-				error.reason = e.reason;
+				//error.status = e.status;
+				//error.reason = e.reason;
+				//error.response = e.response;
 				e.headers = response.getAllHeaders();
-				e.error = error;
+				//e.error = error;
+				if (options.debug())
+					Log.i("Ajax", "Error " + e.status + ": " + e.reason);
 				return e;
 	        }
 			else
@@ -691,6 +710,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 								e.reason = statusLine.getReasonPhrase();
 								error.status = e.status;
 								error.reason = e.reason;
+								error.response = e.response;
 								e.headers = response.getAllHeaders();
 								e.error = error;
 								Function func = options.statusCode().get(304);
@@ -721,8 +741,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				
 				//Now handle a successful request
 				
-				Success s = new Success();
-				s.obj = parsedResponse;
+				Success s = new Success(parsedResponse);
 				s.reason = statusLine.getReasonPhrase();
 				s.headers = response.getAllHeaders();
 				return s;
@@ -737,6 +756,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				AjaxError error = new AjaxError();
 				error.request = request;
 				error.options = options;
+				error.response = e.response;
 				e.status = 0;
 				String reason = t.getMessage();
 				if (reason == null)
@@ -764,6 +784,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		}
 		if (response == null)
 		{
+
+			if (options.debug())
+				Log.w("Ajax", "null response");
+			
 			if (this.isCancelled())
 				return;
 			
@@ -789,15 +813,18 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		{
 			if (options.error() != null)
 			{
+				Error e = (Error) response;
 				AjaxError error = new AjaxError();
 				error.request = request;
-				error.status = 0;
+				error.status = e.status;
 				error.options = options;
-				error.reason = "bad request";
-				error.response = ((Error) response).response;
+				error.reason = e.reason;
+				error.response = e.response;
+
+				if (options.debug())
+					Log.i("Ajax", error.toString());
 				
 				//invoke error with Request, Status, and Error
-				Error e = (Error) response;
 				if (options.context() != null)
 					options.error().invoke($.with(options.context()), error, e.status, e.reason, e.headers);
 				else
@@ -811,14 +838,14 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		{
 			Success s = (Success) response;
 			if (options.cache())
-				AjaxCache.sharedCache().cacheResponse(s.obj, options);
+				AjaxCache.sharedCache().cacheResponse(s.response, options);
 			if (options.success() != null)
 			{
 				//invoke success with parsed response and the status string
 				if (options.context() != null)
-					options.success().invoke($.with(options.context()), s.obj, s.reason, s.headers);
+					options.success().invoke($.with(options.context()), s.response, s.reason, s.headers);
 				else
-					options.success().invoke(null, s.obj, s.reason, s.headers);
+					options.success().invoke(null, s.response, s.reason, s.headers);
 			}
 			
 			if (options.global())
@@ -994,12 +1021,20 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	 * @see Success
 	 */
 	class TaskResponse {
+		
+		/** The parsed response */
+		public final Object response;
+		
 		/** The reason text */
 		public String reason;
 		/** The status ID */
 		public int status;
 		/** The response Headers. If a cached response is returned, {@code headers} will be {@code null}. */
 		public Header[] headers;
+		
+		public TaskResponse(Object response){
+			this.response = response;
+		}
 	}
 	
 	/**
@@ -1010,11 +1045,8 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		/** The response Object */
 		public AjaxError error;
 		
-		/** The parsed response */
-		public final Object response;
-		
 		public Error(Object response) {
-			this.response = response;
+			super(response);
 		}
 	}
 	
@@ -1023,8 +1055,10 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	 */
 	class Success extends TaskResponse
 	{
-		/** The response Object */
-		public Object obj;
+		
+		public Success(Object response) {
+			super(response);
+		}
 	}
 	
 	/**

@@ -44,8 +44,7 @@ public class JSONResponseHandler implements ResponseHandler<Object>
 		StatusLine statusLine = response.getStatusLine();
 		if (statusLine.getStatusCode() >= 300)
         {
-        	Log.e("droidQuery", "HTTP Response Error " + statusLine.getStatusCode() + ":" + statusLine.getReasonPhrase());
-        	return null;
+        	Log.e("droidQuery", "HTTP Response Error " + statusLine.getStatusCode() + ": " + statusLine.getReasonPhrase());
         }
 
         HttpEntity entity = response.getEntity();
@@ -73,8 +72,11 @@ public class JSONResponseHandler implements ResponseHandler<Object>
         catch (JSONException e) 
         {
         	throw new IOException("Received malformed JSON");
-        	
 		}
+        catch (NullPointerException e) 
+        {
+        	return null;
+        }
 	}
 
 }

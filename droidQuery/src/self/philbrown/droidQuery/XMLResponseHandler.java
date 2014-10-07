@@ -47,7 +47,6 @@ public class XMLResponseHandler implements ResponseHandler<Document>
         if (statusLine.getStatusCode() >= 300)
         {
         	Log.e("droidQuery", "HTTP Response Error " + statusLine.getStatusCode() + ":" + statusLine.getReasonPhrase());
-        	return null;
         }
 
         final HttpEntity entity = response.getEntity();
@@ -64,7 +63,9 @@ public class XMLResponseHandler implements ResponseHandler<Document>
 			throw new IOException();
 		} catch (ParserConfigurationException e) {
 			throw new IOException();
-		}
+		} catch (NullPointerException e)  {
+        	return null;
+        }
 	}
 
 }
