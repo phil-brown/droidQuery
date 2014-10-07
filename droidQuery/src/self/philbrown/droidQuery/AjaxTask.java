@@ -558,7 +558,6 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			if (dataType == null)
 				dataType = "text";
 			Object parsedResponse = null;
-			boolean success = true;
 			try
 			{
 				if (dataType.equalsIgnoreCase("text") || dataType.equalsIgnoreCase("html"))
@@ -618,7 +617,6 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			{
 				if (options.debug())
 					cpe.printStackTrace();
-				success = false;
 				Error e = new Error(parsedResponse);
 				AjaxError error = new AjaxError();
 				error.request = request;
@@ -635,7 +633,6 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 			{
 				if (options.debug())
 					ioe.printStackTrace();
-				success = false;
 				Error e = new Error(parsedResponse);
 				AjaxError error = new AjaxError();
 				error.request = request;
@@ -666,73 +663,64 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 	        }
 			else
 			{
-				if (success)
-				{
-					//handle ajax ifModified option
-					Header[] lastModifiedHeaders = response.getHeaders("last-modified");
-					if (lastModifiedHeaders.length >= 1) {
-						try
+				//handle ajax ifModified option
+				Header[] lastModifiedHeaders = response.getHeaders("last-modified");
+				if (lastModifiedHeaders.length >= 1) {
+					try
+					{
+						Header h = lastModifiedHeaders[0];
+						SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
+						Date lastModified = format.parse(h.getValue());
+						if (options.ifModified() && lastModified != null)
 						{
-							Header h = lastModifiedHeaders[0];
-							SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
-							Date lastModified = format.parse(h.getValue());
-							if (options.ifModified() && lastModified != null)
+							Date lastModifiedDate;
+							synchronized(lastModifiedUrls)
 							{
-								Date lastModifiedDate;
+								lastModifiedDate = lastModifiedUrls.get(options.url());
+							}
+							
+							if (lastModifiedDate != null && lastModifiedDate.compareTo(lastModified) == 0)
+							{
+								//request response has not been modified. 
+								//Causes an error instead of a success.
+								Error e = new Error(parsedResponse);
+								AjaxError error = new AjaxError();
+								error.request = request;
+								error.options = options;
+								e.status = statusLine.getStatusCode();
+								e.reason = statusLine.getReasonPhrase();
+								error.status = e.status;
+								error.reason = e.reason;
+								e.headers = response.getAllHeaders();
+								e.error = error;
+								Function func = options.statusCode().get(304);
+								if (func != null)
+								{
+									if (options.context() != null)
+										func.invoke($.with(options.context()));
+									else
+										func.invoke(null);
+								}
+								return e;
+							}
+							else
+							{
 								synchronized(lastModifiedUrls)
 								{
-									lastModifiedDate = lastModifiedUrls.get(options.url());
-								}
-								
-								if (lastModifiedDate != null && lastModifiedDate.compareTo(lastModified) == 0)
-								{
-									//request response has not been modified. 
-									//Causes an error instead of a success.
-									Error e = new Error(parsedResponse);
-									AjaxError error = new AjaxError();
-									error.request = request;
-									error.options = options;
-									e.status = statusLine.getStatusCode();
-									e.reason = statusLine.getReasonPhrase();
-									error.status = e.status;
-									error.reason = e.reason;
-									e.headers = response.getAllHeaders();
-									e.error = error;
-									Function func = options.statusCode().get(304);
-									if (func != null)
-									{
-										if (options.context() != null)
-											func.invoke($.with(options.context()));
-										else
-											func.invoke(null);
-									}
-									return e;
-								}
-								else
-								{
-									synchronized(lastModifiedUrls)
-									{
-										lastModifiedUrls.put(options.url(), lastModified);
-									}
+									lastModifiedUrls.put(options.url(), lastModified);
 								}
 							}
 						}
-						catch (Throwable t)
-						{
-							Log.e("Ajax", "Could not parse Last-Modified Header", t);
-						}
-						
+					}
+					catch (Throwable t)
+					{
+						Log.e("Ajax", "Could not parse Last-Modified Header", t);
 					}
 					
-					//Now handle a successful request
-					
-					Success s = new Success();
-					s.obj = parsedResponse;
-					s.reason = statusLine.getReasonPhrase();
-					s.headers = response.getAllHeaders();
-					return s;
 				}
-				//success
+				
+				//Now handle a successful request
+				
 				Success s = new Success();
 				s.obj = parsedResponse;
 				s.reason = statusLine.getReasonPhrase();
