@@ -793,7 +793,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 				error.request = request;
 				error.status = 0;
 				error.options = options;
-				error.reason = "null response";
+				error.reason = "bad request";
 				error.response = response;
 				
 				//invoke error with Request, Status, and Error
