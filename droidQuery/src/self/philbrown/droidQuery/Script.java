@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import self.philbrown.droidQuery.$.FileLocation;
 import android.content.Context;
 
 /**

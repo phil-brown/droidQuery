@@ -189,18 +189,18 @@ public class AnimationOptions implements Cloneable
 	/**
 	 * Indicates which function to use for the transition. Default is Linear.
 	 */
-	private $.Easing easing = $.Easing.LINEAR;
+	private Easing easing = Easing.LINEAR;
 	/**
 	 * @return the Easing function that will be used to animate the view
 	 */
-	public $.Easing easing() { return easing; }
+	public Easing easing() { return easing; }
 	
 	/**
 	 * Set the Easing type that will be used to animate the view
 	 * @param easing
 	 * @return
 	 */
-	public AnimationOptions easing($.Easing easing)
+	public AnimationOptions easing(Easing easing)
 	{
 		this.easing = easing;
 		return this;
@@ -214,10 +214,10 @@ public class AnimationOptions implements Cloneable
 	 */
 	public AnimationOptions easing(String easing)
 	{
-		this.easing = $.Easing.valueOf(easing.toUpperCase());
+		this.easing = Easing.valueOf(easing.toUpperCase());
 		if (this.easing == null) 
 		{
-			this.easing = $.Easing.LINEAR;
+			this.easing = Easing.LINEAR;
 		}
 		return this;
 	}

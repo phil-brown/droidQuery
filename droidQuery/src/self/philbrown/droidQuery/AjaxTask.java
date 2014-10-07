@@ -65,6 +65,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -504,6 +505,7 @@ public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
 		}
 		
 		SingleClientConnManager mgr = new SingleClientConnManager(params, schemeRegistry);
+		
 		HttpClient client = new DefaultHttpClient(mgr, params);
 		
 		HttpResponse response = null;

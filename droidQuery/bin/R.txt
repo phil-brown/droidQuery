@@ -1,0 +1,20 @@
+int attr action 0x7f010000
+int attr debug 0x7f010002
+int attr form_field 0x7f010004
+int attr form_name 0x7f010006
+int attr form_required 0x7f010003
+int attr form_submit_onclick 0x7f010005
+int attr validate 0x7f010001
+int drawable ic_launcher 0x7f020000
+int layout main 0x7f030000
+int string app_name 0x7f040001
+int string hello 0x7f040000
+int[] styleable Form { 0x7f010000, 0x7f010001, 0x7f010002 }
+int styleable Form_action 0
+int styleable Form_debug 2
+int styleable Form_validate 1
+int[] styleable Form_Layout { 0x7f010003, 0x7f010004, 0x7f010005, 0x7f010006 }
+int styleable Form_Layout_form_field 1
+int styleable Form_Layout_form_name 3
+int styleable Form_Layout_form_required 0
+int styleable Form_Layout_form_submit_onclick 2
