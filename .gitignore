@@ -8,10 +8,6 @@
 # Java class files
 *.class
 
-# built native files
-*.o
-*.so
-
 # generated files
 bin/
 gen/
