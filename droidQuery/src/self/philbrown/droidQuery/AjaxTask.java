@@ -79,16 +79,15 @@ import self.philbrown.droidQuery.AjaxTask.TaskResponse;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
-
-import com.commonsware.cwac.task.AsyncTaskEx;
 
 /**
  * Asynchronously performs HTTP Requests
  * @author Phil Brown
  */
-public class AjaxTask extends AsyncTaskEx<Void, Void, TaskResponse>
+public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 {
 	/** Options used to configure this task */
 	private AjaxOptions options;
