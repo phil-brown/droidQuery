@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -250,6 +251,12 @@ public class $
 	private Function swipeRight;
 	/** Used to detect swipes on this {@link #view}. */
 	private SwipeDetector swiper;
+	
+	/** 
+	 * This is used short-term to ensure that the Ajax refactor does not cause issues for current users. It is 
+	 * recommended to start using this mechanism, since the old one (using {@link AjaxTask}) will be deprecated at some point. 
+	 */
+	private static boolean useNewAjax = false;
 	
 	/**
 	 * Constructor. Accepts a {@code Context} Object. If the {@code context} is an {@link Activity},
@@ -4482,7 +4489,10 @@ public class $
 	{
 		try
 		{
-			new AjaxTask(options).execute();
+			if (useNewAjax)
+				new Ajax(options).execute();
+			else
+				new AjaxTask(options).execute();
 		}
 		catch (Throwable t)
 		{
@@ -4498,12 +4508,19 @@ public class $
 	{
 		try
 		{
-			new AjaxTask(options).execute();
+			if (useNewAjax)
+				new Ajax(options).execute();
+			else
+				new AjaxTask(options).execute();
 		}
 		catch (Throwable t)
 		{
 			Log.e("droidQuery", "Could not complete ajax task!", t);
 		}
+	}
+	/** Switch to the new and improved Ajax methods. This will change some details with callbacks and may break implementations using the outdated Ajax. */
+	public static void enableNewAjax() {
+		useNewAjax = true;
 	}
 	
 	/**
@@ -4511,10 +4528,22 @@ public class $
 	 * @param request the request
 	 * @param options the configuration
 	 * @see AjaxTask.AjaxError
+	 * @deprecated This will make a request using the legacy AjaxTask, which is no longer supported. 
+	 * Using {@link #ajax(HttpURLConnection, AjaxOptions)} is recommended.
 	 */
 	public static void ajax(HttpUriRequest request, AjaxOptions options)
 	{
 		new AjaxTask(request, options).execute();
+	}
+	
+	/**
+	 * Perform an Ajax Task. This is usually done as the result of an Ajax Error. Note that this uses new Ajax methods.
+	 * @param request the request
+	 * @param options the configuration
+	 * @see AjaxTask.AjaxError
+	 */
+	public static void ajax(HttpURLConnection request, AjaxOptions options) {
+		new Ajax(request, options).execute();
 	}
 	
 	///////ajax shortcut methods
@@ -4693,7 +4722,8 @@ public class $
 	 * @param prefilter {@link Function} that will receive one Map argument with the following contents:
 	 * <ul>
 	 * <li>"options" : AjaxOptions for the request
-	 * <li>"request" : HttpClient request Object
+	 * <li>"request" : HttpClient request Object (if Ajax uses the deprecated {@link AjaxTask} class - otherwise this will always be {@code null})
+	 * <li>"connection" : HttpURLConnection Object (only if request is null - if not, this object will not be mapped).
 	 * </ul>
 	 * 
 	 */
@@ -4717,6 +4747,7 @@ public class $
 	public static void ajaxKillAll()
 	{
 		AjaxTask.killTasks();
+		Ajax.killTasks();
 	}
 	
 	/**

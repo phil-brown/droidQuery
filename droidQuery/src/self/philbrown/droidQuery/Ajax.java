@@ -22,6 +22,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,9 +31,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -43,14 +48,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpTrace;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -59,7 +57,6 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -68,34 +65,34 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
-import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 import self.philbrown.droidQuery.AjaxOptions.Redundancy;
+import self.philbrown.droidQuery.AjaxTask.AjaxError;
+import self.philbrown.droidQuery.AjaxTask.Error;
+import self.philbrown.droidQuery.AjaxTask.Success;
 import self.philbrown.droidQuery.AjaxTask.TaskResponse;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 
 /**
- * Asynchronously performs HTTP Requests<br>
- * TODO: change to use HttpURLConnection, use Executors instead of AsyncTasks, allow SSL tricks, etc.
+ * Ajax
+ * TODO Description
  * <br>
  * @author Phil Brown
+ * @since 4:56:37 PM, Jan 5, 2015
+ *
  */
-public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
-{
-	/** Options used to configure this task */
+public class Ajax {
+	
 	private AjaxOptions options;
-	/** The HTTP Request to perform */
-	private HttpUriRequest request = null;
+	private HttpURLConnection connection;
 	/** Used to run functions in the thread in which this task was started. */
 	private Handler mHandler;
 	/** 
@@ -115,48 +112,103 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	 * {@code true} if the current thread is locked. This is used for synchronous requests.
 	 */
 	private volatile boolean isLocked = false;
-	/** Contains the current non-global tasks */
-	private static volatile List<AjaxTask> localTasks = new ArrayList<AjaxTask>();
-	/** Contains the current global tasks */
-	private static volatile List<AjaxTask> globalTasks = new ArrayList<AjaxTask>();
+	
+	private boolean isCancelled = false;
+	
 	/** Contains all AjaxOptions for current tasks. This is used to handle redundancy.*/
 	private static volatile Map<String, AjaxOptions> redundancyHelper = new HashMap<String, AjaxOptions>();
 	/** Used to keep track of the last modified dates for specific URLs */
 	private static volatile Map<String, Date> lastModifiedUrls = new HashMap<String, Date>();
+
+	/**
+     * Executor service handling request threads.
+     */
+    private ExecutorService executor;
+
+	/** Contains the current non-global tasks */
+	private static volatile List<Ajax> localTasks = new ArrayList<Ajax>();
+	/** Contains the current global tasks */
+	private static volatile List<Ajax> globalTasks = new ArrayList<Ajax>();
 	
 	/**
 	 * Constructor
 	 * @param options JSON representation of the Ajax Options
 	 * @throws Exception if the JSON is malformed
 	 */
-	public AjaxTask(JSONObject options) throws Exception
+	public Ajax(JSONObject options) throws Exception
 	{
 		this(new AjaxOptions(options));
 	}
 	
 	/**
 	 * Can be used to restart an Ajax Task
-	 * @param request a request (to retry)
+	 * @param connection a request (to retry)
 	 * @param options options for request retry.
 	 */
-	public AjaxTask(HttpUriRequest request, AjaxOptions options)
+	public Ajax(HttpURLConnection connection, AjaxOptions options)
 	{
 		this(options);
-		this.request = request;
+		this.connection = connection;
 	}
 	
 	/**
 	 * Constructor
 	 * @param options used to configure this task
 	 */
-	public AjaxTask(AjaxOptions options)
+	public Ajax(AjaxOptions options)
 	{
 		this.options = options;
 		if (options.url() == null)
 		{
 			throw new NullPointerException("Cannot call Ajax with null URL!");
 		}
-		mHandler = new Handler();
+		this.mHandler = new Handler();
+		this.executor = Executors.newFixedThreadPool(1, new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable runnable) {
+				Thread t = new Thread(runnable);
+				t.setPriority(Ajax.this.options.priority());
+				return t;
+			}
+		});
+	}
+	
+	/**
+	 * Run the Ajax Request
+	 */
+	public void execute() {
+		try {
+			onPreExecute();
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					final TaskResponse response = doInBackground();
+					mHandler.post(new Runnable() {
+						@Override
+						public void run() {
+							onPostExecute(response);
+						}
+					});
+				}
+				
+			});
+		} catch (Exception e) {
+			if (options.debug())
+				e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Cancel the executor
+	 * @param now	{@code true} to cancel immediately. {@false} to allow existing tasks to complete, but don't allow new ones to begin.
+	 */
+	public void cancel(boolean now) {
+		if (now)
+			executor.shutdownNow();
+		else
+			executor.shutdown();
+		isCancelled = true;
 	}
 	
 	/**
@@ -164,19 +216,18 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	 */
 	public static void killTasks()
 	{
-		for (AjaxTask task : globalTasks) {
-			task.cancel(true);
+		for (int i = 0; i < globalTasks.size(); i++) {
+			globalTasks.get(i).cancel(true);
 		}
-		for (AjaxTask task : localTasks) {
-			task.cancel(true);
+		for (int i = 0; i < localTasks.size(); i++) {
+			localTasks.get(i).cancel(true);
 		}
+		
 		globalTasks.clear();
 		localTasks.clear();
 		$.ajaxStop();
-		
 	}
-	
-	@Override
+
 	protected void onPreExecute()
 	{
 		//handle redundacy options
@@ -302,10 +353,9 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 		
 	}
 
-	@Override
 	protected TaskResponse doInBackground(Void... arg0) 
 	{
-		if (this.isCancelled())
+		if (this.isCancelled)
 			return null;
 		
 		//if synchronous, block on the background thread until ready. Then call beforeSend, etc, before resuming.
@@ -343,7 +393,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 							{
 								$.ajaxStart();
 							}
-							globalTasks.add(AjaxTask.this);
+							globalTasks.add(Ajax.this);
 						}
 						$.ajaxSend();
 					}
@@ -351,7 +401,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 					{
 						synchronized(localTasks)
 						{
-							localTasks.add(AjaxTask.this);
+							localTasks.add(Ajax.this);
 						}
 					}
 					isLocked = false;
@@ -377,68 +427,43 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			
 		}
 		
-		if (request == null)
+		if (connection == null)
 		{
 			String type = options.type();
-			if (type == null)
+			URL url = new URL(options.url());
+			if (type == null) {
 				type = "GET";
-			if (type.equalsIgnoreCase("DELETE"))
-			{
-				request = new HttpDelete(options.url());
 			}
-			else if (type.equalsIgnoreCase("GET"))
-			{
-				request = new HttpGet(options.url());
-			}
-			else if (type.equalsIgnoreCase("HEAD"))
-			{
-				request = new HttpHead(options.url());
-			}
-			else if (type.equalsIgnoreCase("OPTIONS"))
-			{
-				request = new HttpOptions(options.url());
-			}
-			else if (type.equalsIgnoreCase("POST"))
-			{
-				request = new HttpPost(options.url());
-			}
-			else if (type.equalsIgnoreCase("PUT"))
-			{
-				request = new HttpPut(options.url());
-			}
-			else if (type.equalsIgnoreCase("TRACE"))
-			{
-				request = new HttpTrace(options.url());
-			}
-			else if (type.equalsIgnoreCase("CUSTOM"))
-			{
+			if (type.equalsIgnoreCase("CUSTOM")) {
+				
 				try
 				{
-					request = options.customRequest();
+					connection = options.customConnection();
 				}
 				catch (Exception e)
 				{
-					request = null;
+					connection = null;
 				}
 				
-				if (request == null)
+				if (connection == null)
 				{
 					Log.w("droidQuery.ajax", "CUSTOM type set, but AjaxOptions.customRequest is invalid. Defaulting to GET.");
-					request = new HttpGet();
+					connection = (HttpURLConnection) url.openConnection();
+					connection.setRequestMethod("GET");
 				}
-				
 			}
-			else
-			{
-				//default to GET
-				request = new HttpGet();
+			else {
+	            connection = (HttpURLConnection) url.openConnection();
+				connection.setRequestMethod(type);
 			}
 		}
 		
+		//TODO add SSL support
 		
 		Map<String, Object> args = new HashMap<String, Object>();
 		args.put("options", options);
-		args.put("request", request);
+		args.put("request", null);
+		args.put("connection", connection);
 		EventCenter.trigger("ajaxPrefilter", args, null);
 		
 		if (options.headers() != null)
@@ -455,7 +480,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			
 			for (Entry<String, String> entry : options.headers().map().entrySet())
 			{
-				request.addHeader(entry.getKey(), entry.getValue());
+				connection.setRequestProperty(entry.getKey(), entry.getValue());
 			}
 		}
 		
@@ -603,14 +628,14 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 					}
 					else
 					{
-						parsedResponse = parseXML(response);
+						parsedResponse = AjaxTask.parseXML(response);
 					}
 				}
 				else if (dataType.equalsIgnoreCase("json"))
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing json");
-					parsedResponse = parseJSON(response);
+					parsedResponse = AjaxTask.parseJSON(response);
 				}
 				else if (dataType.equalsIgnoreCase("script"))
 				{
@@ -628,7 +653,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing raw data");
-					parsedResponse = parseRawContent(response);
+					parsedResponse = AjaxTask.parseRawContent(response);
 				}
 			}
 			catch (ClientProtocolException cpe)
@@ -637,7 +662,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 					cpe.printStackTrace();
 				Error e = new Error(parsedResponse);
 				AjaxError error = new AjaxError();
-				error.request = request;
+				error.connection = connection;
 				error.options = options;
 				e.status = statusLine.getStatusCode();
 				e.reason = statusLine.getReasonPhrase();
@@ -654,7 +679,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 					ioe.printStackTrace();
 				Error e = new Error(parsedResponse);
 				AjaxError error = new AjaxError();
-				error.request = request;
+				error.connection = connection;
 				error.options = options;
 				e.status = statusLine.getStatusCode();
 				e.reason = statusLine.getReasonPhrase();
@@ -709,7 +734,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 								//Causes an error instead of a success.
 								Error e = new Error(parsedResponse);
 								AjaxError error = new AjaxError();
-								error.request = request;
+								error.connection = connection;
 								error.options = options;
 								e.status = statusLine.getStatusCode();
 								e.reason = statusLine.getReasonPhrase();
@@ -759,7 +784,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			{
 				Error e = new Error(null);
 				AjaxError error = new AjaxError();
-				error.request = request;
+				error.connection = connection;
 				error.options = options;
 				error.response = e.response;
 				e.status = 0;
@@ -780,7 +805,6 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 		}
 	}
 	
-	@Override
 	public void onPostExecute(TaskResponse response)
 	{
 		if (!options.async())
@@ -793,13 +817,13 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			if (options.debug())
 				Log.w("Ajax", "null response");
 			
-			if (this.isCancelled())
+			if (this.isCancelled)
 				return;
 			
 			if (options.error() != null)
 			{
 				AjaxError error = new AjaxError();
-				error.request = request;
+				error.connection = connection;
 				error.status = 0;
 				error.options = options;
 				error.reason = "null response";
@@ -820,7 +844,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			{
 				Error e = (Error) response;
 				AjaxError error = new AjaxError();
-				error.request = request;
+				error.connection = connection;
 				error.status = e.status;
 				error.options = options;
 				error.reason = e.reason;
@@ -916,39 +940,6 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	}
 	
 	/**
-	 * Parses the HTTP response as JSON representation
-	 * @param response the response to parse
-	 * @return a JSONObject response
-	 */
-	public static Object parseJSON(HttpResponse response) throws ClientProtocolException, IOException
-	{
-		JSONResponseHandler handler = new JSONResponseHandler();
-		return handler.handleResponse(response);
-	}
-	
-	/**
-	 * Parses the HTTP response as XML representation
-	 * @param response the response to parse
-	 * @return an XML Document response
-	 */
-	public static Document parseXML(HttpResponse response) throws ClientProtocolException, IOException
-	{
-		XMLResponseHandler handler = new XMLResponseHandler();
-		return handler.handleResponse(response);
-	}
-	
-	/**
-	 * Parses the HTTP response as Text
-	 * @param response the response to parse
-	 * @return a String response
-	 */
-	public static String parseText(HttpResponse response) throws ClientProtocolException, IOException
-	{
-		BasicResponseHandler handler = new BasicResponseHandler();
-		return handler.handleResponse(response);
-	}
-	
-	/**
 	 * Parses the HTTP response as a Script, then runs it.
 	 * @param response the response to parse
 	 * @return a ScriptResponse Object containing the output String, if any, as well as the original
@@ -1000,16 +991,6 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	}
 	
 	/**
-	 * Parses the HTTP response as a raw byte[]
-	 * @param response the response to parse
-	 * @return a byte[] response
-	 */
-	public static byte[] parseRawContent(HttpResponse response) throws IOException
-	{
-		return EntityUtils.toByteArray(response.getEntity());
-	}
-	
-	/**
 	 * Checks to see if a request is redundant. This is only used for Redundancy Types 
 	 * {@link AjaxOptions.Redundancy#ABORT_REDUNDANT_REQUESTS} and {@link AjaxOptions.Redundancy#RESPOND_TO_ALL_LISTENERS}.
 	 * @return {@code true} if the same request is already taking place. Otherwise {@code false}.
@@ -1018,82 +999,5 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	{
 		String key = String.format(Locale.US, "%s::%s::%s::%s", options.dataType(), (options.type() == null ? "GET" : options.type()), options.url(), (options.data() == null ? "" : options.data().toString()));
 		return redundancyHelper.containsKey(key);
-	}
-	
-	/**
-	 * Defines a response to a Task
-	 * @see Error
-	 * @see Success
-	 */
-	public static class TaskResponse {
-		
-		/** The parsed response */
-		public final Object response;
-		
-		/** The reason text */
-		public String reason;
-		/** The status ID */
-		public int status;
-		/** The response Headers. If a cached response is returned, {@code headers} will be {@code null}. */
-		public Header[] headers;
-		
-		public TaskResponse(Object response){
-			this.response = response;
-		}
-	}
-	
-	/**
-	 * Response for tasks that run into an error or exception
-	 */
-	public static class Error extends TaskResponse
-	{
-		/** The response Object */
-		public AjaxError error;
-		
-		public Error(Object response) {
-			super(response);
-		}
-	}
-	
-	/**
-	 * Response for tasks that complete successfully
-	 */
-	public static class Success extends TaskResponse
-	{
-		
-		public Success(Object response) {
-			super(response);
-		}
-	}
-	
-	/**
-	 * This is the first object that is returned when an Error occurs for an Ajax Request
-	 * @see AjaxTask#AjaxTask(HttpUriRequest, AjaxOptions)
-	 */
-	public static class AjaxError
-	{
-		/** The original request 
-		 * @deprecated this is part of the old Ajax, which uses some out-dated or deprecated mechanisms. Use {@link #connection} instead.
-		 */
-		public HttpUriRequest request;
-		/** The original Http connection. This will be closed. */
-		public HttpURLConnection connection;
-		/** The original options */
-		public AjaxOptions options;
-		/** The error status code */
-		public int status;
-		/** The error string */
-		public String reason;
-		/** The response body */
-		public Object response;
-		
-		/**
-		 * Prints the error in the format <pre>Error ({@literal <status>}): {@literal <reason>}</pre>
-		 */
-		@Override
-		public String toString()
-		{
-			return String.format(Locale.US, "Error (%d): %s", status, reason);
-		}
 	}
 }

@@ -19,6 +19,7 @@ package self.philbrown.droidQuery;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -981,6 +982,7 @@ public class AjaxOptions implements Cloneable
 	 * If {@link #type} is set to "CUSTOM", then this can be used to pass a custom HTTP Request 
 	 * type to the HTTP Client by setting it to name of a custom class that must extend 
 	 * {@link CustomHttpUriRequest}. 
+	 * @deprecated Use {@link #customConnectionClass}
 	 */
 	private String customRequestClass;
 	
@@ -989,6 +991,7 @@ public class AjaxOptions implements Cloneable
 	 * {@link #type() type} option is set to "CUSTOM".
 	 * @return the new instance 
 	 * @throws Exception if the class name is {@code null} or is not a valid class name
+	 * @deprecated Use {@link #customConnection}
 	 */
 	public CustomHttpUriRequest customRequest() throws Exception { 
 		try
@@ -1010,11 +1013,52 @@ public class AjaxOptions implements Cloneable
 	 * @param customRequestClass the name of the class. Should include the full package name. 
 	 * For example: "com.example.android.MyCustomHttpUriRequest".
 	 * @return this
+	 * @deprecated Use {@link #customConnection(String)}
 	 */
 	public AjaxOptions customRequest(String customRequestClass)
 	{
 		this.customRequestClass = customRequestClass;
 		return this;
+	}
+	
+	/**
+	 * Set the class name of the subclass of {@link CustomHttpUrlConnection} that is used when the 
+	 * {@link #type() type} option is set to "CUSTOM". Once instantiated, the Object is used to pass
+	 * a custom HTTP Connection type to the HTTP Client.
+	 * @param customRequestClass the name of the class. Should include the full package name. 
+	 * For example: "com.example.android.MyCustomHttpUrlConnection".
+	 * @return this
+	 */
+	public AjaxOptions customConnection(String customConnectionClass)
+	{
+		this.customConnectionClass = customConnectionClass;
+		return this;
+	}
+	
+	/** 
+	 * If {@link #type} is set to "CUSTOM", then this can be used to pass a custom HTTP Connection 
+	 * type to the HTTP Client by setting it to name of a custom class that must extend 
+	 * {@link CustomHttpUrlConnection}. 
+	 */
+	private String customConnectionClass;
+	
+	/**
+	 * Get a new instance of the subclass of {@link CustomHttpUriRequest} that is used when the 
+	 * {@link #type() type} option is set to "CUSTOM".
+	 * @return the new instance 
+	 * @throws Exception if the class name is {@code null} or is not a valid class name
+	 */
+	public CustomHttpUrlConnection customConnection() throws Exception { 
+		try
+		{
+			Class<?> clazz = Class.forName(customConnectionClass);
+			Constructor<?> constructor = clazz.getConstructor(new Class<?>[]{URL.class});
+			return (CustomHttpUrlConnection) constructor.newInstance(new URL(url));
+		}
+		catch (Throwable t)
+		{
+			throw new Exception("Invalid Custom Request Class!");
+		}
 	}
 	
 	/** 
@@ -1047,6 +1091,8 @@ public class AjaxOptions implements Cloneable
 		this.trustAllSSLCertificates = trustAllSSLCertificates;
 		return this;
 	}
+	
+	//TODO add specific trusted certs.
 	
 	/** Defines how redundant Ajax Requests are handled. */
 	private Redundancy redundancy = Redundancy.RESPOND_TO_ALL_LISTENERS;
@@ -1093,6 +1139,36 @@ public class AjaxOptions implements Cloneable
 	public boolean isAborted()
 	{
 		return this.aborted;
+	}
+	
+	/**
+	 * Specifies the task's thread priority. Default is {@link Thread#NORM_PRIORITY}. Must be [0-10].
+	 */
+	private int priority = Thread.NORM_PRIORITY;
+	
+	/**
+	 * Get the Thread priority for the Ajax task
+	 * @return
+	 */
+	public int priority()
+	{
+		return this.priority;
+	}
+	
+	/**
+	 * Set the thread priority
+	 * @param priority
+	 * @return this
+	 * throws IllegalArgumentException if the given priority is less than {@link Thread#MIN_PRIORITY} or greater than {@link Thread#MAX_PRIORITY}.
+	 */
+	public AjaxOptions priority(int priority) 
+	{
+		if (priority < Thread.MIN_PRIORITY || priority > Thread.MAX_PRIORITY) 
+		{
+			throw new IllegalArgumentException("invalid priority value. Must be [0-10].");
+		}
+		this.priority = priority;
+		return this;
 	}
 	
 	/**
