@@ -252,12 +252,6 @@ public class $
 	/** Used to detect swipes on this {@link #view}. */
 	private SwipeDetector swiper;
 	
-	/** 
-	 * This is used short-term to ensure that the Ajax refactor does not cause issues for current users. It is 
-	 * recommended to start using this mechanism, since the old one (using {@link AjaxTask}) will be deprecated at some point. 
-	 */
-	private static boolean useNewAjax = false;
-	
 	/**
 	 * Constructor. Accepts a {@code Context} Object. If the {@code context} is an {@link Activity},
 	 * {@link #view} will be set to the content view. For example:<br>
@@ -4489,10 +4483,7 @@ public class $
 	{
 		try
 		{
-			if (useNewAjax)
-				new Ajax(options).execute();
-			else
-				new AjaxTask(options).execute();
+			ajax(new AjaxOptions(options));
 		}
 		catch (Throwable t)
 		{
@@ -4508,7 +4499,7 @@ public class $
 	{
 		try
 		{
-			if (useNewAjax)
+			if (options.usesNewAPI())
 				new Ajax(options).execute();
 			else
 				new AjaxTask(options).execute();
@@ -4517,10 +4508,6 @@ public class $
 		{
 			Log.e("droidQuery", "Could not complete ajax task!", t);
 		}
-	}
-	/** Switch to the new and improved Ajax methods. This will change some details with callbacks and may break implementations using the outdated Ajax. */
-	public static void enableNewAjax() {
-		useNewAjax = true;
 	}
 	
 	/**

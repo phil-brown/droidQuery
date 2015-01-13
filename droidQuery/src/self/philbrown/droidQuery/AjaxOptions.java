@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.security.cert.Certificate;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -331,7 +332,7 @@ public class AjaxOptions implements Cloneable
 	/**
 	 * A function to be used to handle the raw response data. This is a 
 	 * pre-filtering function to sanitize the response. You should return the sanitized 
-	 * data. The function accepts two arguments: The raw data returned from the server (HttpResponse) 
+	 * data. The function accepts two arguments: The raw data returned from the server (HttpResponse if using AjaxTask, HttpURLConnection if using Ajax) 
 	 * and the 'dataType' parameter (String).
 	 */
 	private Function dataFilter;
@@ -345,7 +346,7 @@ public class AjaxOptions implements Cloneable
 	/**
 	 * Set the function to be used to handle the raw response data. This is a 
 	 * pre-filtering function to sanitize the response. You should return the sanitized 
-	 * data. The function accepts two varargs: The raw data returned from the server (HttpResponse) 
+	 * data. The function accepts two varargs: The raw data returned from the server (HttpResponse if using AjaxTask, HttpURLConnection if using Ajax) 
 	 * and the 'dataType' parameter (String). It will also receive a {@code null} Object for the
 	 * <em>droidQuery</em> parameter unless {@link #context() context} is non-null. If that is
 	 * the case, {@code dataFilter} will receive a <em>droidQuery</em> instance with that <em>context</em>.
@@ -1065,6 +1066,7 @@ public class AjaxOptions implements Cloneable
 	 * If {@code true}, all SSL certificates will be trusted (for HTTPS requests). Default is 
 	 * {@code false}, since allowing this poses a security threat. Never allow this for production 
 	 * applications.
+	 * @deprecated this is not secure, and is not used in the new API.
 	 */
 	private boolean trustAllSSLCertificates = false;
 	
@@ -1072,6 +1074,7 @@ public class AjaxOptions implements Cloneable
 	 * Allows all SSL certificates to be trusted (for HTTPS requests). This should <b>never</b> be
 	 * {@code true} in a production application, as it poses a security threat.
 	 * @return {@code true} if all SSL certificates are trusted, otherwise {@code false}.
+	 * @deprecated this is not secure, and is not used in the new API.
 	 */
 	public boolean trustAllSSLCertificates()
 	{
@@ -1085,10 +1088,56 @@ public class AjaxOptions implements Cloneable
 	 * as {@code true} will cause the logcat to output this setting on every Ajax call. This is helpful
 	 * for ensuring this is not forgotten in production applications. Default is {@code false}.
 	 * @return this
+	 * @deprecated this is not secure, and is not used in the new API.
 	 */
 	public AjaxOptions trustAllSSLCertificates(boolean trustAllSSLCertificates)
 	{
 		this.trustAllSSLCertificates = trustAllSSLCertificates;
+		return this;
+	}
+	
+	/**
+	 * Specifies a trusted certificate for HTTPS requests.
+	 */
+	private Certificate trustedCertificate;
+	
+	/**
+	 * Specifies a trusted certificate for HTTPS requests.
+	 */
+	public Certificate trustedCertificate() {
+		return trustedCertificate;
+	}
+	/**
+	 * Specifies a trusted certificate for HTTPS requests.
+	 * @param trustedCertificate
+	 * @return this
+	 */
+	public AjaxOptions trustedCertificate(Certificate trustedCertificate) {
+		this.trustedCertificate = trustedCertificate;
+		return this;
+	}
+	
+	/**
+	 * If {@code true}, AjaxOptions will configure the Ajax task to use the new API, which uses executors and HttpURLConnections, instead of the Apache Framework.
+	 * This is still a work in progress, so currently defaults to {@code false}.
+	 */
+	private boolean usesNewAPI = false;
+	
+	/**
+	 * If {@code true}, AjaxOptions will configure the Ajax task to use the new API, which uses executors and HttpURLConnections, instead of the Apache Framework.
+	 * This is still a work in progress, so currently defaults to {@code false}.
+	 */
+	public boolean usesNewAPI() {
+		return usesNewAPI;
+	}
+	
+	/**
+	 * If {@code true}, AjaxOptions will configure the Ajax task to use the new API, which uses executors and HttpURLConnections, instead of the Apache Framework.
+	 * This is still a work in progress, so currently defaults to {@code false}.
+	 * @return this
+	 */
+	public AjaxOptions usesNewAPI(boolean usesNewAPI) {
+		this.usesNewAPI = usesNewAPI;
 		return this;
 	}
 	

@@ -18,8 +18,10 @@ package self.philbrown.droidQuery;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.http.Header;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -78,6 +80,29 @@ public class Headers
 	{
 		this();
 		unpackJSON(json);
+	}
+	
+	/**
+	 * Create Headers from Apache Http Headers
+	 * @param headers
+	 */
+	public Headers(Header[] headers) {
+		this();
+		for (Header h : headers) {
+			this.headers.put(h.getName(), h.getValue());
+		}
+	}
+	
+	/**
+	 * Create headers from HttpUrlConnection headers.
+	 * @param headers
+	 */
+	public static Headers createHeaders(Map<String, List<String>> headers) {
+		Headers h = new Headers();
+		for (Map.Entry<String, List<String>> header : headers.entrySet()) {
+			h.headers.put(header.getKey(), header.getValue().get(0));
+		}
+		return h;
 	}
 
 	/**

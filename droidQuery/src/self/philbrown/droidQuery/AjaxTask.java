@@ -22,6 +22,13 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,6 +40,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.LockSupport;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -85,11 +94,10 @@ import android.os.Handler;
 import android.util.Log;
 
 /**
- * Asynchronously performs HTTP Requests<br>
- * TODO: change to use HttpURLConnection, use Executors instead of AsyncTasks, allow SSL tricks, etc.
- * <br>
+ * Asynchronously performs HTTP Requests using AsyncTask and Apache HttpClient.<br>
  * @author Phil Brown
  */
+@SuppressWarnings("deprecation")
 public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 {
 	/** Options used to configure this task */
@@ -499,8 +507,51 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			schemeRegistry.register(new Scheme("https", socketFactory, 443));
 			Log.w("Ajax", "Warning: All SSL Certificates have been trusted!");
 		}
-		else if (options.trustSomeSSLCerts()) {
-			//TODO
+		else if (options.trustedCertificate() != null) {
+			
+            Certificate ca = options.trustedCertificate();
+
+            String keyStoreType = KeyStore.getDefaultType();
+            KeyStore keyStore = null;
+			try {
+				keyStore = KeyStore.getInstance(keyStoreType);
+				keyStore.load(null, null);
+				keyStore.setCertificateEntry("ca", ca);
+			} catch (KeyStoreException e) {
+				if (options.debug())
+					e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				if (options.debug())
+					e.printStackTrace();
+			} catch (CertificateException e) {
+				if (options.debug())
+					e.printStackTrace();
+			} catch (IOException e) {
+				if (options.debug())
+					e.printStackTrace();
+			}
+			
+			if (keyStore == null) {
+				Log.w("Ajax", "Could not configure trusted certificate");
+			}
+			else {
+				try {
+		            SSLSocketFactory socketFactory = new SSLSocketFactory(keyStore);
+					schemeRegistry.register(new Scheme("https", socketFactory, 443));
+				} catch (KeyManagementException e) {
+					if (options.debug())
+						e.printStackTrace();
+				} catch (UnrecoverableKeyException e) {
+					if (options.debug())
+						e.printStackTrace();
+				} catch (NoSuchAlgorithmException e) {
+					if (options.debug())
+						e.printStackTrace();
+				} catch (KeyStoreException e) {
+					if (options.debug())
+						e.printStackTrace();
+				}
+			}
 		}
 		else
 		{
@@ -777,6 +828,22 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 				return e;
 			}
 			return null;
+		} finally {
+			//close resources.
+			if (response.getEntity() != null) {
+				try {
+					response.getEntity().consumeContent();
+				} catch (IOException e) {
+					if (options.debug())
+						e.printStackTrace();
+				}
+			}
+			try {
+				client.getConnectionManager().shutdown();
+			} catch (Exception e) {
+				if (options.debug())
+					e.printStackTrace();
+			}
 		}
 	}
 	
@@ -1034,8 +1101,14 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 		public String reason;
 		/** The status ID */
 		public int status;
-		/** The response Headers. If a cached response is returned, {@code headers} will be {@code null}. */
+		/** 
+		 * The response Headers. If a cached response is returned, {@code headers} will be {@code null}. 
+		 * @deprecated This will be {@code null} for the new API (via Ajax, no AjaxTask). Use {@link #allHeaders}. This will be completely removed
+		 * in the near fuure.
+		 */
 		public Header[] headers;
+		
+		public Headers allHeaders;
 		
 		public TaskResponse(Object response){
 			this.response = response;

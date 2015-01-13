@@ -16,13 +16,24 @@
 
 package self.philbrown.droidQuery;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.net.CookieManager;
+import java.net.CookieStore;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -38,34 +49,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
@@ -79,6 +70,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
 
 /**
@@ -422,43 +414,62 @@ public class Ajax {
 		{
 			Success s = new Success(cachedResponse);
 			s.reason = "cached response";
-			s.headers = null;
+			s.allHeaders = null;
 			return s;
 			
 		}
 		
 		if (connection == null)
 		{
-			String type = options.type();
-			URL url = new URL(options.url());
-			if (type == null) {
-				type = "GET";
-			}
-			if (type.equalsIgnoreCase("CUSTOM")) {
-				
-				try
-				{
-					connection = options.customConnection();
+			try {
+				String type = options.type();
+				URL url = new URL(options.url());
+				if (type == null) {
+					type = "GET";
 				}
-				catch (Exception e)
-				{
-					connection = null;
+				if (type.equalsIgnoreCase("CUSTOM")) {
+					
+					try
+					{
+						connection = options.customConnection();
+					}
+					catch (Exception e)
+					{
+						connection = null;
+					}
+					
+					if (connection == null)
+					{
+						Log.w("droidQuery.ajax", "CUSTOM type set, but AjaxOptions.customRequest is invalid. Defaulting to GET.");
+						connection = (HttpURLConnection) url.openConnection();
+						connection.setRequestMethod("GET");
+					}
 				}
-				
-				if (connection == null)
-				{
-					Log.w("droidQuery.ajax", "CUSTOM type set, but AjaxOptions.customRequest is invalid. Defaulting to GET.");
-					connection = (HttpURLConnection) url.openConnection();
-					connection.setRequestMethod("GET");
+				else {
+		            connection = (HttpURLConnection) url.openConnection();
+					connection.setRequestMethod(type);
+					if (type.equalsIgnoreCase("POST") || type.equalsIgnoreCase("PUT")) {
+						connection.setDoOutput(true);
+					}
 				}
+			} catch (Throwable t) {
+				if (options.debug())
+					t.printStackTrace();
+				Error e = new Error(null);
+				AjaxError error = new AjaxError();
+				error.connection = connection;
+				error.options = options;
+				e.status = 0;
+				e.reason = "Bad Configuration";
+				error.status = e.status;
+				error.reason = e.reason;
+				error.response = e.response;
+				e.allHeaders = new Headers();
+				e.error = error;
+				return e;
 			}
-			else {
-	            connection = (HttpURLConnection) url.openConnection();
-				connection.setRequestMethod(type);
-			}
+			
 		}
-		
-		//TODO add SSL support
 		
 		Map<String, Object> args = new HashMap<String, Object>();
 		args.put("options", options);
@@ -488,84 +499,101 @@ public class Ajax {
 		{
 			try
 			{
-				Method setEntity = request.getClass().getMethod("setEntity", new Class<?>[]{HttpEntity.class});
-				if (options.processData() == null)
-				{
-					setEntity.invoke(request, new StringEntity(options.data().toString()));
-				}
-				else
-				{
-					Class<?> dataProcessor = Class.forName(options.processData());
-					Constructor<?> constructor = dataProcessor.getConstructor(new Class<?>[]{Object.class});
-					setEntity.invoke(request, constructor.newInstance(options.data()));
-				}
+				OutputStream os = connection.getOutputStream();
+				os.write(options.data().toString().getBytes());
+				os.close();
 			}
 			catch (Throwable t)
 			{
 				Log.w("Ajax", "Could not post data");
 			}
 		}
-		
-		HttpParams params = new BasicHttpParams();
-		
+				
 		if (options.timeout() != 0)
 		{
-			HttpConnectionParams.setConnectionTimeout(params, options.timeout());
-			HttpConnectionParams.setSoTimeout(params, options.timeout());
+			connection.setConnectTimeout(options.timeout());
+			connection.setReadTimeout(options.timeout());
 		}
 		
-		SchemeRegistry schemeRegistry = new SchemeRegistry();
-		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-		if (options.trustAllSSLCertificates())
-		{
-			X509HostnameVerifier hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-			SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
-			socketFactory.setHostnameVerifier(hostnameVerifier);
-			schemeRegistry.register(new Scheme("https", socketFactory, 443));
-			Log.w("Ajax", "Warning: All SSL Certificates have been trusted!");
-		}
-		else if (options.trustSomeSSLCerts()) {
-			//TODO
-		}
-		else
-		{
-			schemeRegistry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+		if (options.trustedCertificate() != null) {
+			
+            Certificate ca = options.trustedCertificate();
+
+            String keyStoreType = KeyStore.getDefaultType();
+            KeyStore keyStore = null;
+			try {
+				keyStore = KeyStore.getInstance(keyStoreType);
+				keyStore.load(null, null);
+				keyStore.setCertificateEntry("ca", ca);
+			} catch (KeyStoreException e) {
+				if (options.debug())
+					e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				if (options.debug())
+					e.printStackTrace();
+			} catch (CertificateException e) {
+				if (options.debug())
+					e.printStackTrace();
+			} catch (IOException e) {
+				if (options.debug())
+					e.printStackTrace();
+			}
+			
+			if (keyStore == null) {
+				Log.w("Ajax", "Could not configure trusted certificate");
+			}
+			else {
+				try {
+					//Create a TrustManager that trusts the CAs in our KeyStore
+		            String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+		            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+		            tmf.init(keyStore);
+
+		            //Create an SSLContext that uses our TrustManager
+		            SSLContext sslContext = SSLContext.getInstance("TLS");
+		            sslContext.init(null, tmf.getTrustManagers(), null);
+		            ((HttpsURLConnection) connection).setSSLSocketFactory(sslContext.getSocketFactory());
+				} catch (KeyManagementException e) {
+					if (options.debug())
+						e.printStackTrace();
+				} catch (NoSuchAlgorithmException e) {
+					if (options.debug())
+						e.printStackTrace();
+				} catch (KeyStoreException e) {
+					if (options.debug())
+						e.printStackTrace();
+				}
+			}
 		}
 		
-		SingleClientConnManager mgr = new SingleClientConnManager(params, schemeRegistry);
-		HttpClient client = new DefaultHttpClient(mgr, params);
-		
-		HttpResponse response = null;
 		try {
 			
 			if (options.cookies() != null)
 			{
-				CookieStore cookies = new BasicCookieStore();
+				CookieManager cm = new CookieManager();
+				CookieStore cookies = cm.getCookieStore();
+				URI uri = URI.create(options.url());
 				for (Entry<String, String> entry : options.cookies().entrySet())
 				{
-					cookies.addCookie(new BasicClientCookie(entry.getKey(), entry.getValue()));
+					HttpCookie cookie = new HttpCookie(entry.getKey(), entry.getValue());
+					cookies.add(uri, cookie);
 				}
-				HttpContext httpContext = new BasicHttpContext();
-				httpContext.setAttribute(ClientContext.COOKIE_STORE, cookies);
-				response = client.execute(request, httpContext);
-			}
-			else
-			{
-				response = client.execute(request);
+				connection.setRequestProperty("Cookie", TextUtils.join(",",  cookies.getCookies()));
 			}
 			
+			connection.connect();
+			final int statusCode = connection.getResponseCode();
+			final String message = connection.getResponseMessage();
 			
 			if (options.dataFilter() != null)
 			{
 				if (options.context() != null)
-					options.dataFilter().invoke($.with(options.context()), response, options.dataType());
+					options.dataFilter().invoke($.with(options.context()), connection, options.dataType());
 				else
-					options.dataFilter().invoke(null, response, options.dataType());
+					options.dataFilter().invoke(null, connection, options.dataType());
 			}
 			
-			final StatusLine statusLine = response.getStatusLine();
-			
-			final Function function = options.statusCode().get(statusLine.getStatusCode());
+			final Function function = options.statusCode().get(statusCode);
 			if (function != null)
 			{
 				mHandler.post(new Runnable() {
@@ -573,9 +601,9 @@ public class Ajax {
 					@Override
 					public void run() {
 						if (options.context() != null)
-							function.invoke($.with(options.context()), statusLine.getStatusCode(), options.clone());
+							function.invoke($.with(options.context()), statusCode, options.clone());
 						else
-							function.invoke(null, statusLine.getStatusCode(), options.clone());
+							function.invoke(null, statusCode, options.clone());
 					}
 					
 				});
@@ -595,7 +623,7 @@ public class Ajax {
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing text");
-					parsedResponse = parseText(response);
+					parsedResponse = parseText(connection);
 				}
 				else if (dataType.equalsIgnoreCase("xml"))
 				{
@@ -603,16 +631,17 @@ public class Ajax {
 						Log.i("Ajax", "parsing xml");
 					if (options.customXMLParser() != null)
 					{
-						InputStream is = response.getEntity().getContent();
+						InputStream is = connection.getInputStream();
 						if (options.SAXContentHandler() != null)
 							options.customXMLParser().parse(is, options.SAXContentHandler());
 						else
 							options.customXMLParser().parse(is, new DefaultHandler());
 						parsedResponse = "Response handled by custom SAX parser";
+						is.close();
 					}
 					else if (options.SAXContentHandler() != null)
 					{
-						InputStream is = response.getEntity().getContent();
+						InputStream is = connection.getInputStream();
 						
 						SAXParserFactory factory = SAXParserFactory.newInstance();
 						
@@ -625,35 +654,36 @@ public class Ajax {
 						reader.setContentHandler(options.SAXContentHandler());
 						reader.parse(new InputSource(is));
 						parsedResponse = "Response handled by custom SAX content handler";
+						is.close();
 					}
 					else
 					{
-						parsedResponse = AjaxTask.parseXML(response);
+						parsedResponse = parseXML(connection);
 					}
 				}
 				else if (dataType.equalsIgnoreCase("json"))
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing json");
-					parsedResponse = AjaxTask.parseJSON(response);
+					parsedResponse = parseJSON(connection);
 				}
 				else if (dataType.equalsIgnoreCase("script"))
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing script");
-					parsedResponse = parseScript(response);
+					parsedResponse = parseScript(connection);
 				}
 				else if (dataType.equalsIgnoreCase("image"))
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing image");
-					parsedResponse = parseImage(response);
+					parsedResponse = parseImage(connection);
 				}
 				else if (dataType.equalsIgnoreCase("raw"))
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing raw data");
-					parsedResponse = AjaxTask.parseRawContent(response);
+					parsedResponse = parseRawContent(connection);
 				}
 			}
 			catch (ClientProtocolException cpe)
@@ -664,12 +694,12 @@ public class Ajax {
 				AjaxError error = new AjaxError();
 				error.connection = connection;
 				error.options = options;
-				e.status = statusLine.getStatusCode();
-				e.reason = statusLine.getReasonPhrase();
+				e.status = statusCode;
+				e.reason = message;
 				error.status = e.status;
 				error.reason = e.reason;
 				error.response = e.response;
-				e.headers = response.getAllHeaders();
+				e.allHeaders = Headers.createHeaders(connection.getHeaderFields());
 				e.error = error;
 				return e;
 			}
@@ -681,17 +711,21 @@ public class Ajax {
 				AjaxError error = new AjaxError();
 				error.connection = connection;
 				error.options = options;
-				e.status = statusLine.getStatusCode();
-				e.reason = statusLine.getReasonPhrase();
+				e.status = statusCode;
+				e.reason = message;
 				error.status = e.status;
 				error.reason = e.reason;
 				error.response = e.response;
-				e.headers = response.getAllHeaders();
+				e.allHeaders = Headers.createHeaders(connection.getHeaderFields());
 				e.error = error;
 				return e;
 			}
+			finally
+			{
+				connection.disconnect();
+			}
 			
-			if (statusLine.getStatusCode() >= 300)
+			if (statusCode >= 300)
 	        {
 				//an error occurred
 				Error e = new Error(parsedResponse);
@@ -699,12 +733,12 @@ public class Ajax {
 				//AjaxError error = new AjaxError();
 				//error.request = request;
 				//error.options = options;
-				e.status = statusLine.getStatusCode();
-				e.reason = statusLine.getReasonPhrase();
+				e.status = e.status;
+				e.reason = e.reason;
 				//error.status = e.status;
 				//error.reason = e.reason;
 				//error.response = e.response;
-				e.headers = response.getAllHeaders();
+				e.allHeaders = Headers.createHeaders(connection.getHeaderFields());
 				//e.error = error;
 				if (options.debug())
 					Log.i("Ajax", "Error " + e.status + ": " + e.reason);
@@ -713,13 +747,13 @@ public class Ajax {
 			else
 			{
 				//handle ajax ifModified option
-				Header[] lastModifiedHeaders = response.getHeaders("last-modified");
-				if (lastModifiedHeaders.length >= 1) {
+				List<String> lastModifiedHeaders = connection.getHeaderFields().get("last-modified");
+				if (lastModifiedHeaders.size() >= 1) {
 					try
 					{
-						Header h = lastModifiedHeaders[0];
+						String h = lastModifiedHeaders.get(0);
 						SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
-						Date lastModified = format.parse(h.getValue());
+						Date lastModified = format.parse(h);
 						if (options.ifModified() && lastModified != null)
 						{
 							Date lastModifiedDate;
@@ -736,12 +770,12 @@ public class Ajax {
 								AjaxError error = new AjaxError();
 								error.connection = connection;
 								error.options = options;
-								e.status = statusLine.getStatusCode();
-								e.reason = statusLine.getReasonPhrase();
+								e.status = e.status;
+								e.reason = e.reason;
 								error.status = e.status;
 								error.reason = e.reason;
 								error.response = e.response;
-								e.headers = response.getAllHeaders();
+								e.allHeaders = Headers.createHeaders(connection.getHeaderFields());
 								e.error = error;
 								Function func = options.statusCode().get(304);
 								if (func != null)
@@ -772,8 +806,8 @@ public class Ajax {
 				//Now handle a successful request
 				
 				Success s = new Success(parsedResponse);
-				s.reason = statusLine.getReasonPhrase();
-				s.headers = response.getAllHeaders();
+				s.reason = message;
+				s.allHeaders = Headers.createHeaders(connection.getHeaderFields());
 				return s;
 			}
 			
@@ -794,10 +828,10 @@ public class Ajax {
 				e.reason = reason;
 				error.status = e.status;
 				error.reason = e.reason;
-				if (response != null)
-					e.headers = response.getAllHeaders();
+				if (connection != null)
+					e.allHeaders = Headers.createHeaders(connection.getHeaderFields());
 				else
-					e.headers = new Header[0];
+					e.allHeaders = new Headers();
 				e.error = error;
 				return e;
 			}
@@ -855,9 +889,9 @@ public class Ajax {
 				
 				//invoke error with Request, Status, and Error
 				if (options.context() != null)
-					options.error().invoke($.with(options.context()), error, e.status, e.reason, e.headers);
+					options.error().invoke($.with(options.context()), error, e.status, e.reason, e.allHeaders);
 				else
-					options.error().invoke(null, error, e.status, e.reason, e.headers);
+					options.error().invoke(null, error, e.status, e.reason, e.allHeaders);
 			}
 			
 			if (options.global())
@@ -872,9 +906,9 @@ public class Ajax {
 			{
 				//invoke success with parsed response and the status string
 				if (options.context() != null)
-					options.success().invoke($.with(options.context()), s.response, s.reason, s.headers);
+					options.success().invoke($.with(options.context()), s.response, s.reason, s.allHeaders);
 				else
-					options.success().invoke(null, s.response, s.reason, s.headers);
+					options.success().invoke(null, s.response, s.reason, s.allHeaders);
 			}
 			
 			if (options.global())
@@ -886,9 +920,9 @@ public class Ajax {
 			if (response != null)
 			{
 				if (options.context() != null)
-					options.complete().invoke($.with(options.context()), options, response.reason, response.headers);
+					options.complete().invoke($.with(options.context()), options, response.reason, response.allHeaders);
 				else
-					options.complete().invoke(null, options, response.reason, response.headers);
+					options.complete().invoke(null, options, response.reason, response.allHeaders);
 			}
 			else
 			{
@@ -940,17 +974,56 @@ public class Ajax {
 	}
 	
 	/**
+	 * Parses the HTTP response as JSON representation
+	 * @param response the response to parse
+	 * @return a JSONObject response
+	 */
+	public static Object parseJSON(HttpURLConnection connection) throws ClientProtocolException, IOException
+	{
+		JSONResponseHandler handler = new JSONResponseHandler();
+		return handler.handleResponse(connection);
+	}
+	
+	/**
+	 * Parses the HTTP response as XML representation
+	 * @param response the response to parse
+	 * @return an XML Document response
+	 */
+	public static Document parseXML(HttpURLConnection connection) throws ClientProtocolException, IOException
+	{
+		XMLResponseHandler handler = new XMLResponseHandler();
+		return handler.handleResponse(connection);
+	}
+	
+	/**
+	 * Parses the HTTP response as Text
+	 * @param connecion the current connection to parse
+	 * @return a String response
+	 */
+	public static String parseText(HttpURLConnection connection) throws ClientProtocolException, IOException
+	{
+		BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        br.close();
+		return sb.toString();
+	}
+	
+	/**
 	 * Parses the HTTP response as a Script, then runs it.
 	 * @param response the response to parse
 	 * @return a ScriptResponse Object containing the output String, if any, as well as the original
 	 * Script
 	 */
-	private ScriptResponse parseScript(HttpResponse response) throws ClientProtocolException, IOException
+	private ScriptResponse parseScript(HttpURLConnection connection) throws ClientProtocolException, IOException
 	{
 		if (options.context() != null)
 		{
 			ScriptResponseHandler handler = new ScriptResponseHandler(options.context());
-			return handler.handleResponse(response);
+			return handler.handleResponse(connection);
 		}
 		else
 		{
@@ -963,9 +1036,9 @@ public class Ajax {
 	 * @param response the response to parse
 	 * @return a Bitmap response
 	 */
-	private Bitmap parseImage(HttpResponse response) throws IllegalStateException, IOException
+	private Bitmap parseImage(HttpURLConnection connection) throws IllegalStateException, IOException
 	{
-		InputStream is = response.getEntity().getContent();
+		InputStream is = connection.getInputStream();
     	BitmapFactory.Options opt = new BitmapFactory.Options();
 		opt.inSampleSize = 1;
 		opt.inPurgeable = true;
@@ -988,6 +1061,16 @@ public class Ajax {
         
         is.close();
         return bitmap.get();
+	}
+	
+	/**
+	 * Parses the HTTP response as a raw byte[]
+	 * @param response the response to parse
+	 * @return a byte[] response
+	 */
+	public static byte[] parseRawContent(HttpURLConnection connection) throws IOException
+	{
+		return parseText(connection).getBytes();
 	}
 	
 	/**

@@ -17,6 +17,7 @@
 package self.philbrown.droidQuery;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -55,6 +56,43 @@ public class JSONResponseHandler implements ResponseHandler<Object>
         try 
         {
         	json = EntityUtils.toString(entity);
+        	if (json.startsWith("{"))
+        	{
+        		return new JSONObject(json);
+        	}
+        	else
+        	{
+        		return new JSONArray(json);
+        	}
+        	
+		} 
+        catch (ParseException e) 
+        {
+			throw e;
+		} 
+        catch (JSONException e) 
+        {
+        	throw new IOException("Received malformed JSON");
+		}
+        catch (NullPointerException e) 
+        {
+        	return null;
+        }
+	}
+	
+	public Object handleResponse(HttpURLConnection connection) throws ClientProtocolException, IOException
+	{
+		int statusCode = connection.getResponseCode();
+		
+        if (statusCode >= 300)
+        {
+        	Log.e("droidQuery", "HTTP Response Error " + statusCode + ":" + connection.getResponseMessage());
+        }
+
+        String json = null;
+        try 
+        {
+        	json = Ajax.parseText(connection);
         	if (json.startsWith("{"))
         	{
         		return new JSONObject(json);
