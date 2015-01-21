@@ -830,7 +830,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			return null;
 		} finally {
 			//close resources.
-			if (response.getEntity() != null) {
+			if (response != null && response.getEntity() != null) {
 				try {
 					response.getEntity().consumeContent();
 				} catch (IOException e) {

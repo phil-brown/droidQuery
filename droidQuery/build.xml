@@ -1,7 +1,7 @@
 <project name="droidQuery" default="help" >
     
     <target name="setup" description="setup values, such as version number" >
-        <property name="version" value="1.2.0" />
+        <property name="version" value="1.2.1" />
         <property name="build_type" value="production" />
         <property name="release_dir" value="build/${build_type}/${version}/" />
         <mkdir dir="${release_dir}" />
