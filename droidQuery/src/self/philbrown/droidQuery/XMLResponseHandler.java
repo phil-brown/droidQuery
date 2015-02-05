@@ -17,6 +17,8 @@
 package self.philbrown.droidQuery;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,6 +67,34 @@ public class XMLResponseHandler implements ResponseHandler<Document>
 			throw new IOException();
 		} catch (NullPointerException e)  {
         	return null;
+        }
+	}
+	
+	public Document handleResponse(HttpURLConnection connection) throws ClientProtocolException, IOException
+	{
+		int statusCode = connection.getResponseCode();
+		
+        if (statusCode >= 300)
+        {
+        	Log.e("droidQuery", "HTTP Response Error " + statusCode + ":" + connection.getResponseMessage());
+        }
+
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		InputStream is = null;
+		try {
+			is = connection.getInputStream();
+			return factory.newDocumentBuilder().parse(is);
+		} catch (IllegalStateException e) {
+			throw e;
+		} catch (SAXException e) {
+			throw new IOException();
+		} catch (ParserConfigurationException e) {
+			throw new IOException();
+		} catch (NullPointerException e)  {
+        	return null;
+        } finally {
+        	if (is != null)
+        		is.close();
         }
 	}
 

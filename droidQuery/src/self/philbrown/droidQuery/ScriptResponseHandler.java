@@ -17,6 +17,7 @@
 package self.philbrown.droidQuery;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -63,6 +64,32 @@ public class ScriptResponseHandler implements ResponseHandler<ScriptResponse>
         
         ScriptResponse script = new ScriptResponse();
         script.text = EntityUtils.toString(entity);
+        //new line characters currently represent a new command. 
+        //Although one file can be all one line, it will be executed as a shell script.
+        //for something else, the first line should contain be: #!<shell>\n, where <shell> points
+        //to the shell that should be used.
+        String[] commands = script.text.split("\n");
+        script.script = new Script(context, commands);
+        try {
+			script.output = script.script.execute();
+		} catch (Throwable t) {
+			//could not execute script
+			script.output = null;
+		}
+        return script;
+	}
+	
+	public ScriptResponse handleResponse(HttpURLConnection connection) throws ClientProtocolException, IOException
+	{
+		int statusCode = connection.getResponseCode();
+		
+        if (statusCode >= 300)
+        {
+        	Log.e("droidQuery", "HTTP Response Error " + statusCode + ":" + connection.getResponseMessage());
+        }
+
+        ScriptResponse script = new ScriptResponse();
+        script.text = Ajax.parseText(connection);
         //new line characters currently represent a new command. 
         //Although one file can be all one line, it will be executed as a shell script.
         //for something else, the first line should contain be: #!<shell>\n, where <shell> points
