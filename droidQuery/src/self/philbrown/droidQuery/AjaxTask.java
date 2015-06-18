@@ -40,8 +40,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.LockSupport;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -68,7 +66,6 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -615,6 +612,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			if (options.debug())
 				Log.i("Ajax", "dataType = " + dataType);
 			Object parsedResponse = null;
+			InputStream stream = null;
 			try
 			{
 				if (dataType.equalsIgnoreCase("text") || dataType.equalsIgnoreCase("html"))
@@ -629,16 +627,16 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 						Log.i("Ajax", "parsing xml");
 					if (options.customXMLParser() != null)
 					{
-						InputStream is = response.getEntity().getContent();
+						stream = AjaxUtil.getInputStream(response);
 						if (options.SAXContentHandler() != null)
-							options.customXMLParser().parse(is, options.SAXContentHandler());
+							options.customXMLParser().parse(stream, options.SAXContentHandler());
 						else
-							options.customXMLParser().parse(is, new DefaultHandler());
+							options.customXMLParser().parse(stream, new DefaultHandler());
 						parsedResponse = "Response handled by custom SAX parser";
 					}
 					else if (options.SAXContentHandler() != null)
 					{
-						InputStream is = response.getEntity().getContent();
+						stream = AjaxUtil.getInputStream(response);
 						
 						SAXParserFactory factory = SAXParserFactory.newInstance();
 						
@@ -649,7 +647,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 						
 						XMLReader reader = parser.getXMLReader();
 						reader.setContentHandler(options.SAXContentHandler());
-						reader.parse(new InputSource(is));
+						reader.parse(new InputSource(stream));
 						parsedResponse = "Response handled by custom SAX content handler";
 					}
 					else
@@ -673,7 +671,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing image");
-					parsedResponse = parseImage(response);
+					parsedResponse = parseImage(stream);
 				}
 				else if (dataType.equalsIgnoreCase("raw"))
 				{
@@ -715,6 +713,13 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 				e.headers = response.getAllHeaders();
 				e.error = error;
 				return e;
+			}
+			finally {
+				if (stream != null) {
+					try {
+						stream.close();
+					} catch (IOException e) {}
+				}
 			}
 			
 			if (statusLine.getStatusCode() >= 300)
@@ -1011,8 +1016,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	 */
 	public static String parseText(HttpResponse response) throws ClientProtocolException, IOException
 	{
-		BasicResponseHandler handler = new BasicResponseHandler();
-		return handler.handleResponse(response);
+		return AjaxUtil.toString(response.getEntity());
 	}
 	
 	/**
@@ -1036,12 +1040,11 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 	
 	/**
 	 * Parses the HTTP response as a Bitmap
-	 * @param response the response to parse
+	 * @param stream the response to parse
 	 * @return a Bitmap response
 	 */
-	private Bitmap parseImage(HttpResponse response) throws IllegalStateException, IOException
+	private Bitmap parseImage(InputStream stream) throws IllegalStateException, IOException
 	{
-		InputStream is = response.getEntity().getContent();
     	BitmapFactory.Options opt = new BitmapFactory.Options();
 		opt.inSampleSize = 1;
 		opt.inPurgeable = true;
@@ -1050,7 +1053,7 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			opt.outWidth = options.imageWidth();
 		if (options.imageHeight() >= 0)
 			opt.outHeight = options.imageHeight();
-		WeakReference<Bitmap> bitmap = new WeakReference<Bitmap>(BitmapFactory.decodeStream(is, new Rect(0,0,0,0), opt));
+		WeakReference<Bitmap> bitmap = new WeakReference<Bitmap>(BitmapFactory.decodeStream(stream, new Rect(0,0,0,0), opt));
 		
 		if (bitmap == null || bitmap.get() == null)
 		{
@@ -1062,7 +1065,6 @@ public class AjaxTask extends AsyncTask<Void, Void, TaskResponse>
 			return null;
 		}
         
-        is.close();
         return bitmap.get();
 	}
 	

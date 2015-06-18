@@ -617,13 +617,15 @@ public class Ajax {
 			if (options.debug())
 				Log.i("Ajax", "dataType = " + dataType);
 			Object parsedResponse = null;
+			InputStream stream = null;
 			try
 			{
 				if (dataType.equalsIgnoreCase("text") || dataType.equalsIgnoreCase("html"))
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing text");
-					parsedResponse = parseText(connection);
+					stream = AjaxUtil.getInputStream(connection);
+					parsedResponse = parseText(stream);
 				}
 				else if (dataType.equalsIgnoreCase("xml"))
 				{
@@ -631,18 +633,16 @@ public class Ajax {
 						Log.i("Ajax", "parsing xml");
 					if (options.customXMLParser() != null)
 					{
-						InputStream is = connection.getInputStream();
+						stream = AjaxUtil.getInputStream(connection);
 						if (options.SAXContentHandler() != null)
-							options.customXMLParser().parse(is, options.SAXContentHandler());
+							options.customXMLParser().parse(stream, options.SAXContentHandler());
 						else
-							options.customXMLParser().parse(is, new DefaultHandler());
+							options.customXMLParser().parse(stream, new DefaultHandler());
 						parsedResponse = "Response handled by custom SAX parser";
-						is.close();
 					}
 					else if (options.SAXContentHandler() != null)
-					{
-						InputStream is = connection.getInputStream();
-						
+					{				
+						stream = AjaxUtil.getInputStream(connection);		
 						SAXParserFactory factory = SAXParserFactory.newInstance();
 						
 						factory.setFeature("http://xml.org/sax/features/namespaces", false);
@@ -652,9 +652,8 @@ public class Ajax {
 						
 						XMLReader reader = parser.getXMLReader();
 						reader.setContentHandler(options.SAXContentHandler());
-						reader.parse(new InputSource(is));
+						reader.parse(new InputSource(stream));
 						parsedResponse = "Response handled by custom SAX content handler";
-						is.close();
 					}
 					else
 					{
@@ -677,7 +676,8 @@ public class Ajax {
 				{
 					if (options.debug())
 						Log.i("Ajax", "parsing image");
-					parsedResponse = parseImage(connection);
+					stream = AjaxUtil.getInputStream(connection);
+					parsedResponse = parseImage(stream);
 				}
 				else if (dataType.equalsIgnoreCase("raw"))
 				{
@@ -723,6 +723,11 @@ public class Ajax {
 			finally
 			{
 				connection.disconnect();
+				try {
+					if (stream != null) {
+						stream.close();
+					}
+				} catch (IOException e) {}
 			}
 			
 			if (statusCode >= 300)
@@ -975,7 +980,7 @@ public class Ajax {
 	
 	/**
 	 * Parses the HTTP response as JSON representation
-	 * @param response the response to parse
+	 * @param connection the response to parse
 	 * @return a JSONObject response
 	 */
 	public static Object parseJSON(HttpURLConnection connection) throws ClientProtocolException, IOException
@@ -986,7 +991,7 @@ public class Ajax {
 	
 	/**
 	 * Parses the HTTP response as XML representation
-	 * @param response the response to parse
+	 * @param connection the response to parse
 	 * @return an XML Document response
 	 */
 	public static Document parseXML(HttpURLConnection connection) throws ClientProtocolException, IOException
@@ -997,12 +1002,12 @@ public class Ajax {
 	
 	/**
 	 * Parses the HTTP response as Text
-	 * @param connecion the current connection to parse
+	 * @param stream the current connection to parse
 	 * @return a String response
 	 */
-	public static String parseText(HttpURLConnection connection) throws ClientProtocolException, IOException
-	{
-		BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+	public static String parseText(InputStream stream) throws ClientProtocolException, IOException
+	{		
+		BufferedReader br = new BufferedReader(new InputStreamReader(stream));
         StringBuilder sb = new StringBuilder();
         String line;
         while ((line = br.readLine()) != null) {
@@ -1014,7 +1019,7 @@ public class Ajax {
 	
 	/**
 	 * Parses the HTTP response as a Script, then runs it.
-	 * @param response the response to parse
+	 * @param connection the response to parse
 	 * @return a ScriptResponse Object containing the output String, if any, as well as the original
 	 * Script
 	 */
@@ -1033,12 +1038,11 @@ public class Ajax {
 	
 	/**
 	 * Parses the HTTP response as a Bitmap
-	 * @param response the response to parse
+	 * @param stream the response to parse
 	 * @return a Bitmap response
 	 */
-	private Bitmap parseImage(HttpURLConnection connection) throws IllegalStateException, IOException
+	private Bitmap parseImage(InputStream stream) throws IllegalStateException, IOException
 	{
-		InputStream is = connection.getInputStream();
     	BitmapFactory.Options opt = new BitmapFactory.Options();
 		opt.inSampleSize = 1;
 		opt.inPurgeable = true;
@@ -1047,7 +1051,7 @@ public class Ajax {
 			opt.outWidth = options.imageWidth();
 		if (options.imageHeight() >= 0)
 			opt.outHeight = options.imageHeight();
-		WeakReference<Bitmap> bitmap = new WeakReference<Bitmap>(BitmapFactory.decodeStream(is, new Rect(0,0,0,0), opt));
+		WeakReference<Bitmap> bitmap = new WeakReference<Bitmap>(BitmapFactory.decodeStream(stream, new Rect(0,0,0,0), opt));
 		
 		if (bitmap == null || bitmap.get() == null)
 		{
@@ -1059,7 +1063,6 @@ public class Ajax {
 			return null;
 		}
         
-        is.close();
         return bitmap.get();
 	}
 	
@@ -1070,7 +1073,16 @@ public class Ajax {
 	 */
 	public static byte[] parseRawContent(HttpURLConnection connection) throws IOException
 	{
-		return parseText(connection).getBytes();
+		InputStream is = connection.getInputStream();
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        br.close();
+        is.close();
+		return sb.toString().getBytes();
 	}
 	
 	/**

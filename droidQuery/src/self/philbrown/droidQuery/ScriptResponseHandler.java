@@ -17,6 +17,7 @@
 package self.philbrown.droidQuery;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 
 import org.apache.http.HttpEntity;
@@ -24,7 +25,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.util.EntityUtils;
 
 import android.content.Context;
 import android.util.Log;
@@ -63,7 +63,7 @@ public class ScriptResponseHandler implements ResponseHandler<ScriptResponse>
         	return null;
         
         ScriptResponse script = new ScriptResponse();
-        script.text = EntityUtils.toString(entity);
+        script.text = AjaxUtil.toString(entity);
         //new line characters currently represent a new command. 
         //Although one file can be all one line, it will be executed as a shell script.
         //for something else, the first line should contain be: #!<shell>\n, where <shell> points
@@ -89,7 +89,8 @@ public class ScriptResponseHandler implements ResponseHandler<ScriptResponse>
         }
 
         ScriptResponse script = new ScriptResponse();
-        script.text = Ajax.parseText(connection);
+        InputStream stream = AjaxUtil.getInputStream(connection);
+        script.text = Ajax.parseText(stream);
         //new line characters currently represent a new command. 
         //Although one file can be all one line, it will be executed as a shell script.
         //for something else, the first line should contain be: #!<shell>\n, where <shell> points
@@ -101,6 +102,12 @@ public class ScriptResponseHandler implements ResponseHandler<ScriptResponse>
 		} catch (Throwable t) {
 			//could not execute script
 			script.output = null;
+		} finally
+		{
+			if (stream != null) 
+			{
+				stream.close();
+			}
 		}
         return script;
 	}
