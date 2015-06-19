@@ -58,7 +58,7 @@ public class XMLResponseHandler implements ResponseHandler<Document>
         
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		try {
-			return factory.newDocumentBuilder().parse(entity.getContent());
+			return factory.newDocumentBuilder().parse(AjaxUtil.getInputStream(entity));
 		} catch (IllegalStateException e) {
 			throw e;
 		} catch (SAXException e) {
@@ -82,7 +82,7 @@ public class XMLResponseHandler implements ResponseHandler<Document>
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		InputStream is = null;
 		try {
-			is = connection.getInputStream();
+			is = AjaxUtil.getInputStream(connection);
 			return factory.newDocumentBuilder().parse(is);
 		} catch (IllegalStateException e) {
 			throw e;

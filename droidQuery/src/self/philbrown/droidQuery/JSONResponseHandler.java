@@ -17,6 +17,7 @@
 package self.philbrown.droidQuery;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 
 import org.apache.http.HttpEntity;
@@ -25,7 +26,6 @@ import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,7 +55,7 @@ public class JSONResponseHandler implements ResponseHandler<Object>
         String json = null;
         try 
         {
-        	json = EntityUtils.toString(entity);
+        	json = AjaxUtil.toString(entity);
         	if (json.startsWith("{"))
         	{
         		return new JSONObject(json);
@@ -90,9 +90,11 @@ public class JSONResponseHandler implements ResponseHandler<Object>
         }
 
         String json = null;
+        InputStream stream = null;
         try 
         {
-        	json = Ajax.parseText(connection);
+        	stream = AjaxUtil.getInputStream(connection);
+        	json = Ajax.parseText(stream);
         	if (json.startsWith("{"))
         	{
         		return new JSONObject(json);
@@ -114,6 +116,17 @@ public class JSONResponseHandler implements ResponseHandler<Object>
         catch (NullPointerException e) 
         {
         	return null;
+        }
+        finally
+        {
+        	if (stream != null) 
+        	{
+        		try 
+        		{
+        			stream.close();
+        		} 
+        		catch (IOException e) {}
+        	}
         }
 	}
 
