@@ -100,6 +100,9 @@ start an ajax task is with the `$.ajax(AjaxOptions)` method. For example:
                                     Log.e("Ajax", statusCode + " " + error);
                                 }
                             }));
+                            
+**A Note About OLD APIs. By Default, Ajax currently uses the Apache HTTP Client. This is being deprecated in new version, and is generally less used. To accommodate the update, you
+should call `useNewApi(true)` on your AjaxOptions Object. This WILL cause some differences in behavior of returned classes, but it should be minimal. More docs coming soon.**
 
 **Attributes**
 
