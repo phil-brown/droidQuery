@@ -50,6 +50,9 @@ limitations under the License.
 ### How to Use
 
 > Note: droidQuery is a work in progress. If you find any bugs or would like functionality that is missing, please create a new issue (https://github.com/phil-brown/droidQuery/issues).
+> Note About new APIs. By default, Ajax requests currently uses the Apache HTTP Client. This is being deprecated in the newest version of Android, and is generally less used. To accommodate 
+> the update, you will either need to include the client in your dependencies, or better yet, you should call `useNewApi(true)` on your AjaxOptions Object. This WILL cause some differences 
+> in behavior of returned objects, but it should be minimal. More docs coming soon.
 
 Below are some of the most common tasks that *droidQuery* can be used for. A full list, as well as 
 examples, is currently under construction in the [wiki](https://github.com/phil-brown/droidQuery/wiki/API-Documentation).
@@ -100,9 +103,7 @@ start an ajax task is with the `$.ajax(AjaxOptions)` method. For example:
                                     Log.e("Ajax", statusCode + " " + error);
                                 }
                             }));
-                            
-**A Note About OLD APIs. By Default, Ajax currently uses the Apache HTTP Client. This is being deprecated in new version, and is generally less used. To accommodate the update, you
-should call `useNewApi(true)` on your AjaxOptions Object. This WILL cause some differences in behavior of returned classes, but it should be minimal. More docs coming soon.**
+                           
 
 **Attributes**
 
